@@ -20,4 +20,6 @@ page_views = app.Table('page_views', default=int)
 async def count_page_views(views):
     async for view in views.group_by(PageView.id):
         page_views[view.id] += 1
+        print(page_views[view.id])
         print(f'Received a page view for page {view.id} from user {view.user}')
+        print()
