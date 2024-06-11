@@ -1,4 +1,7 @@
-class DataPoint:
+import faust
+
+
+class DataPoint(faust.Record):
     """
     A class representing a data point of the Kaggle dataset:
     https://www.kaggle.com/datasets/rajatkumar30/streaming-application-viewership
