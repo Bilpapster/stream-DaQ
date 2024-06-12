@@ -31,7 +31,6 @@ class DataPoint(faust.Record):
     video_id: str
     duration_watched: float
     genre: str
-    genre: str
     country: str
     age: int
     gender: str
