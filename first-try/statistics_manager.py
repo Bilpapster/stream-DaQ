@@ -6,16 +6,32 @@ from Model.DataPoint import DataPoint
 # TODO Check on_window_close function from official example documentation
 # TODO https://github.com/faust-streaming/faust/blob/master/examples/windowed_aggregation.py
 
+
+def todo(key, events):
+    timestamp = key[1][0]
+    values = [event.value for event in events]
+    count = len(values)
+    mean = sum(values) / count
+
+    print(
+        f'processing window:'
+        f'{len(values)} events,'
+        f'mean: {mean:.2f},'
+        f'timestamp {timestamp}',
+    )
+    print("This method is not implemented yet. TODO")
+
+
 # Constant for easy testing and debugging
 TIME_DELTA = timedelta(minutes=2)
 
 app = faust.App(id='statistics_manager', broker='kafka://localhost:9092')
 input_topic = app.topic('input', value_type=DataPoint)
-max_table = app.Table('max_values_per_id', default=(lambda: sys.float_info.min)).tumbling(size=TIME_DELTA)
-min_table = app.Table('min_values_per_id', default=(lambda: sys.float_info.max)).tumbling(size=TIME_DELTA)
-sum_table = app.Table('sum_of_values_per_id', default=int).tumbling(size=TIME_DELTA)
-count_table = app.Table('count_of_values_per_id', default=int).tumbling(size=TIME_DELTA)
-mean_table = app.Table('mean_of_values_per_id', default=int).tumbling(size=TIME_DELTA)
+max_table = app.Table('max_values_per_id', default=(lambda: sys.float_info.min), on_window_close=todo).tumbling(size=TIME_DELTA)
+min_table = app.Table('min_values_per_id', default=(lambda: sys.float_info.max), on_window_close=todo).tumbling(size=TIME_DELTA)
+sum_table = app.Table('sum_of_values_per_id', default=int, on_window_close=todo).tumbling(size=TIME_DELTA)
+count_table = app.Table('count_of_values_per_id', default=int, on_window_close=todo).tumbling(size=TIME_DELTA)
+mean_table = app.Table('mean_of_values_per_id', default=int, on_window_close=todo).tumbling(size=TIME_DELTA)
 
 
 @app.agent(input_topic)
