@@ -1,4 +1,5 @@
 import faust
+import random
 
 
 class DataPoint(faust.Record):
@@ -41,3 +42,28 @@ class DataPoint(faust.Record):
     location: str
     playback_quality: str
     interaction_events: int
+
+
+def produce_random_data_point() -> DataPoint:
+    """
+    Use this method to produce random data points. For testing purposes only.
+    :return: A random data point.
+    """
+    return DataPoint(
+        user_id=str(random.choice(["UserA", "UserB"])),
+        session_id=str(random.randint(1, 1000000)),
+        device_id=str(random.randint(1, 1000000)),
+        video_id=str(random.randint(1, 1000000)),
+        duration_watched=random.random() * random.randint(1, 100),
+        genre=random.choice(["Action", "Romance", "Mystery", "Thriller", "Documentary"]),
+        country=random.choice(["Greece", "Albania", "Costa Rica", "Netherlands"]),
+        age=random.randint(1, 100),
+        gender=random.choice(["Male", "Female"]),
+        subscription_status=random.choice(["Free", "Premium"]),
+        ratings=random.randint(1, 5),
+        languages=random.choice(["Greek", "English", "Polish", "Spanish"]),
+        device_type=random.choice(["Mobile", "Desktop", "Laptop"]),
+        location=random.choice(["South", "North", "West", "East"]),
+        playback_quality=random.choice(["4k", "HD", "SD", "480p", "720p", "1080p"]),
+        interaction_events=random.randint(1, 100)
+    )

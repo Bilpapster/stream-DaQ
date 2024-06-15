@@ -1,62 +1,67 @@
 import faust
-from datetime import timedelta
-import sys
-from Model.DataPoint import DataPoint
+from datetime import datetime, timedelta
+
+from Model.DataPoint import DataPoint, produce_random_data_point
+from Model.WindowProfiler import initialize_statistics_dictionary
+
 
 # TODO Check on_window_close function from official example documentation
 # TODO https://github.com/faust-streaming/faust/blob/master/examples/windowed_aggregation.py
 
 
-def todo(key, events):
-    timestamp = key[1][0]
-    values = [event.value for event in events]
-    count = len(values)
-    mean = sum(values) / count
-
-    print(
-        f'processing window:'
-        f'{len(values)} events,'
-        f'mean: {mean:.2f},'
-        f'timestamp {timestamp}',
-    )
-    print("This method is not implemented yet. TODO")
+def process_window(window_key, window_values):
+    print(f"Key of type {type(window_key)}: {window_key}")
+    print(f"Events of type {type(window_values)}: {window_values}")
+    timestamp = window_key[1][0]
+    print(f"Timestamp of window: {datetime.fromtimestamp(timestamp).strftime('%d/%m/%Y, %H:%M:%S')}")
 
 
-# Constant for easy testing and debugging
-TIME_DELTA = timedelta(minutes=2)
+TOPIC = 'input'
+SINK = 'todo another topic'
+TABLE = 'statistics'
+KAFKA = 'kafka://localhost:9092'
+CLEANUP_INTERVAL = 1.0
+WINDOW = timedelta(seconds=10)
+WINDOW_EXPIRES = timedelta(seconds=1)
 
-app = faust.App(id='statistics_manager', broker='kafka://localhost:9092')
-input_topic = app.topic('input', value_type=DataPoint)
-max_table = app.Table('max_values_per_id', default=(lambda: sys.float_info.min), on_window_close=todo).tumbling(size=TIME_DELTA)
-min_table = app.Table('min_values_per_id', default=(lambda: sys.float_info.max), on_window_close=todo).tumbling(size=TIME_DELTA)
-sum_table = app.Table('sum_of_values_per_id', default=int, on_window_close=todo).tumbling(size=TIME_DELTA)
-count_table = app.Table('count_of_values_per_id', default=int, on_window_close=todo).tumbling(size=TIME_DELTA)
-mean_table = app.Table('mean_of_values_per_id', default=int, on_window_close=todo).tumbling(size=TIME_DELTA)
+app = faust.App('statistics-manager', broker=KAFKA, version=1, topic_partitions=1)
 
-
-@app.agent(input_topic)
-async def max_value_agent(stream):
-    async for data_point in stream.group_by(DataPoint.user_id):
-        if data_point.duration_watched > max_table[data_point.user_id].value():
-            max_table[data_point.user_id] = data_point.duration_watched
-            # print(f'Max duration updated for key {data_point.user_id} to {max_table[data_point.user_id].value()}')
+app.conf.table_cleanup_interval = CLEANUP_INTERVAL
+input_topic = app.topic(TOPIC, value_type=DataPoint)
+statistics_table = (app.Table(
+    name=TABLE,
+    default=initialize_statistics_dictionary,
+    on_window_close=process_window)
+                    .tumbling(WINDOW, expires=WINDOW_EXPIRES))
 
 
 @app.agent(input_topic)
-async def min_value_agent(stream):
+async def statistics_agent(stream):
     async for data_point in stream.group_by(DataPoint.user_id):
-        if data_point.duration_watched < min_table[data_point.user_id].value():
-            min_table[data_point.user_id] = data_point.duration_watched
-            # print(f'Min duration updated for key {data_point.user_id} to {min_table[data_point.user_id].value()}')
+        current_dictionary = statistics_table[data_point.user_id].value()
+
+        # if duration is greater than the current max, then update max
+        if data_point.duration_watched > statistics_table[data_point.user_id].value()['max']:
+            current_dictionary['max'] = data_point.duration_watched
+
+        # if duration is smaller than the current min, then update min
+        if data_point.duration_watched < statistics_table[data_point.user_id].value()['min']:
+            current_dictionary['min'] = data_point.duration_watched
+
+        # update count, sum and sum of squares
+        current_dictionary['count'] = current_dictionary['count'] + 1
+        current_dictionary['sum'] = current_dictionary['sum'] + data_point.duration_watched
+        current_dictionary['sum_squares'] = current_dictionary['sum_squares'] + data_point.duration_watched**2
+
+        # Assign back the value to publish in the internal changelog assigning back the value is crucial for restoration
+        # in case of a failure. For more information about why this assignment is crucial refer to the official docs:
+        # https://faust-streaming.github.io/faust/userguide/tables.html#the-changelog
+        statistics_table[data_point.user_id] = current_dictionary
 
 
-@app.agent(input_topic)
-async def mean_std_value_agent(stream):
-    async for data_point in stream.group_by(DataPoint.user_id):
-        count_table[data_point.user_id] += 1
-        sum_table[data_point.user_id] += data_point.duration_watched
-        mean_table[data_point.user_id] = sum_table[data_point.user_id].current() / count_table[
-            data_point.user_id].current()
+@app.timer(1)
+async def produce():
+    await input_topic.send(value=produce_random_data_point())
 
 
 if __name__ == '__main__':
