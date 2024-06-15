@@ -1,5 +1,9 @@
 import faust
 import random
+import pandas as pd
+from faust import TopicT
+
+VIEWERSHIP_DATASET_KAGGLE = "../datasets/streaming_viewership_data.csv"
 
 
 class DataPoint(faust.Record):
@@ -67,3 +71,64 @@ def produce_random_data_point() -> DataPoint:
         playback_quality=random.choice(["4k", "HD", "SD", "480p", "720p", "1080p"]),
         interaction_events=random.randint(1, 100)
     )
+
+def produce_actual_data_point() -> DataPoint:
+    """
+    Use this method to produce actual data points from the Kaggle dataset.
+    :return: The next data point in the dataset. If no point exists, it returns None.
+    """
+    dataset = pd.read_csv(VIEWERSHIP_DATASET_KAGGLE)
+    for row_index in range(len(dataset)):
+        row = dataset.iloc[row_index]
+        return DataPoint(
+            user_id=str(row['User_ID']),
+            session_id=str(row['Session_ID']),
+            device_id=str(row['Device_ID']),
+            video_id=str(row['Video_ID']),
+            duration_watched=float(row['Duration_Watched (minutes)']),
+            genre=str(row['Genre']),
+            country=str(row['Country']),
+            age=int(row['Age']),
+            gender=str(row['Gender']),
+            subscription_status=str(row['Subscription_Status']),
+            ratings=int(row['Ratings']),
+            languages=str(row['Languages']),
+            device_type=str(row['Device_Type']),
+            location=str(row['Location']),
+            playback_quality=str(row['Playback_Quality']),
+            interaction_events=int(row['Interaction_Events'])
+        )
+
+
+async def produce_send_actual_data_points(topic: TopicT) -> None:
+    import time
+
+    blocked_events = 0
+    dataset = pd.read_csv(VIEWERSHIP_DATASET_KAGGLE)
+    for row_index in range(len(dataset)):
+        row = dataset.iloc[row_index]
+
+        if random.random() < 0.1:
+            blocked_events += 1
+            time.sleep(random.randint(1, 3))
+
+        await topic.send(value=DataPoint(
+            # user_id=str(row['User_ID']),
+            user_id="TestUser",
+            session_id=str(row['Session_ID']),
+            device_id=str(row['Device_ID']),
+            video_id=str(row['Video_ID']),
+            duration_watched=float(row['Duration_Watched (minutes)']),
+            genre=str(row['Genre']),
+            country=str(row['Country']),
+            age=int(row['Age']),
+            gender=str(row['Gender']),
+            subscription_status=str(row['Subscription_Status']),
+            ratings=int(row['Ratings']),
+            languages=str(row['Languages']),
+            device_type=str(row['Device_Type']),
+            location=str(row['Location']),
+            playback_quality=str(row['Playback_Quality']),
+            interaction_events=int(row['Interaction_Events'])
+        ))
+    print(f"Blocked events: {blocked_events}")
