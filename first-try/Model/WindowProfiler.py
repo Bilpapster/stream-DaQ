@@ -1,15 +1,4 @@
 import sys
-import faust
-
-
-class WindowProfiler(faust.Record):
-    max: float
-    min: float
-    sum: float
-    sum_of_squares: float
-    count: int
-    mean: int
-    distinct_count: int
 
 
 def initialize_statistics_dictionary() -> dict:
@@ -19,5 +8,5 @@ def initialize_statistics_dictionary() -> dict:
         'sum': 0,
         'sum_squares': 0,
         'count': 0,
-        'distinct': 0
+        'distinct': set()
     }
