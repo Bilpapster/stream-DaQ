@@ -20,6 +20,7 @@ def process_window(window_key, window_profiler):
     print(f"Min value        : {window_profiler['min']}")
     print(f"Sum value        : {window_profiler['sum']}")
     print(f"Sum of squares   : {window_profiler['sum_squares']}")
+    print(f"Mean value       : {window_profiler['sum'] / window_profiler['count']}")
     print(f"Elements         : {window_profiler['count']}")
     print(f"Distinct         : {len(window_profiler['distinct'])}")
 
