@@ -1,7 +1,7 @@
 import faust
 from datetime import datetime, timedelta
 
-from Model.DataPoint import DataPoint, produce_random_data_point
+from Model.DataPoint import DataPoint, produce_random_data_point, produce_actual_data_point, produce_send_actual_data_points
 from Model.WindowProfiler import initialize_statistics_dictionary
 
 
@@ -10,10 +10,18 @@ from Model.WindowProfiler import initialize_statistics_dictionary
 
 
 def process_window(window_key, window_values):
-    print(f"Key of type {type(window_key)}: {window_key}")
-    print(f"Events of type {type(window_values)}: {window_values}")
-    timestamp = window_key[1][0]
-    print(f"Timestamp of window: {datetime.fromtimestamp(timestamp).strftime('%d/%m/%Y, %H:%M:%S')}")
+    # print(f"Key of type {type(window_key)}: {window_key}")
+    # print(f"Events of type {type(window_values)}: {window_values}")
+    timestamp_start = window_key[1][0]
+    timestamp_end = window_key[1][1]
+    print("--------------------")
+    print(f"{datetime.fromtimestamp(timestamp_start).strftime('%d/%m/%Y, %H:%M:%S')} - {datetime.fromtimestamp(timestamp_end).strftime('%d/%m/%Y, %H:%M:%S')}")
+    print(f"Max value        : {window_values['max']}")
+    print(f"Min value        : {window_values['min']}")
+    print(f"Sum value        : {window_values['sum']}")
+    print(f"Sum of squares   : {window_values['sum_squares']}")
+    print(f"Elements         : {window_values['count']}")
+    print(f"Distinct         : {len(window_values['distinct'])}")
 
 
 TOPIC = 'input'
@@ -52,6 +60,7 @@ async def statistics_agent(stream):
         current_dictionary['count'] = current_dictionary['count'] + 1
         current_dictionary['sum'] = current_dictionary['sum'] + data_point.duration_watched
         current_dictionary['sum_squares'] = current_dictionary['sum_squares'] + data_point.duration_watched**2
+        current_dictionary['distinct'].add(str(round(data_point.duration_watched)))
 
         # Assign back the value to publish in the internal changelog assigning back the value is crucial for restoration
         # in case of a failure. For more information about why this assignment is crucial refer to the official docs:
@@ -59,9 +68,19 @@ async def statistics_agent(stream):
         statistics_table[data_point.user_id] = current_dictionary
 
 
-@app.timer(1)
-async def produce():
-    await input_topic.send(value=produce_random_data_point())
+# @app.timer(1)
+# async def produce():
+    # await input_topic.send(value=produce_random_data_point())
+    # await input_topic.send(value=produce_actual_data_point())
+
+
+# @app.task()
+# async def generate_stream_on_the_fly():
+#     await produce_send_actual_data_points(input_topic)
+
+
+def get_topic() -> faust.TopicT:
+    return input_topic
 
 
 if __name__ == '__main__':
