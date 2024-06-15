@@ -1,40 +1,44 @@
 import faust
 from datetime import datetime, timedelta
 
-from Model.DataPoint import DataPoint, produce_random_data_point, produce_actual_data_point, produce_send_actual_data_points
+from Model.DataPoint import DataPoint
 from Model.WindowProfiler import initialize_statistics_dictionary
 
 
-# TODO Check on_window_close function from official example documentation
-# TODO https://github.com/faust-streaming/faust/blob/master/examples/windowed_aggregation.py
+def process_window(window_key, window_profiler):
+    """
+    A callback function that processes the state of a closed window. Prints data profiling information to the console.
+    """
 
-
-def process_window(window_key, window_values):
-    # print(f"Key of type {type(window_key)}: {window_key}")
-    # print(f"Events of type {type(window_values)}: {window_values}")
+    # the key is a tuple (user_id, (timestamp_start, timestamp_end))
+    # the two timestamps correspond to the range of the window that we are processing
     timestamp_start = window_key[1][0]
     timestamp_end = window_key[1][1]
     print("--------------------")
     print(f"{datetime.fromtimestamp(timestamp_start).strftime('%d/%m/%Y, %H:%M:%S')} - {datetime.fromtimestamp(timestamp_end).strftime('%d/%m/%Y, %H:%M:%S')}")
-    print(f"Max value        : {window_values['max']}")
-    print(f"Min value        : {window_values['min']}")
-    print(f"Sum value        : {window_values['sum']}")
-    print(f"Sum of squares   : {window_values['sum_squares']}")
-    print(f"Elements         : {window_values['count']}")
-    print(f"Distinct         : {len(window_values['distinct'])}")
+    print(f"Max value        : {window_profiler['max']}")
+    print(f"Min value        : {window_profiler['min']}")
+    print(f"Sum value        : {window_profiler['sum']}")
+    print(f"Sum of squares   : {window_profiler['sum_squares']}")
+    print(f"Elements         : {window_profiler['count']}")
+    print(f"Distinct         : {len(window_profiler['distinct'])}")
 
 
-TOPIC = 'input'
-SINK = 'todo another topic'
-TABLE = 'statistics'
-KAFKA = 'kafka://localhost:9092'
-CLEANUP_INTERVAL = 1.0
-WINDOW = timedelta(seconds=10)
-WINDOW_EXPIRES = timedelta(seconds=1)
+TOPIC = 'input'                     # the name of the source topic to read data from
+SINK = 'todo another topic'         # the name of the sink topic to write data to
+TABLE = 'statistics'                # the name of the table (window state) that contains statistic information
+KAFKA = 'kafka://localhost:9092'    # the address of the message broker, here Kafka is used, hosted locally on port 9092
+CLEANUP_INTERVAL = 1.0              # the interval at which faust periodically checks for potential closed windows
+WINDOW = timedelta(seconds=10)      # the time size of the window
+WINDOW_EXPIRES = timedelta(seconds=1)  # the time after the window closure that the window is considered expired (no more out-of-order accepted)
 
+# declare a faust application with one partition, based on Kafka broker
 app = faust.App('statistics-manager', broker=KAFKA, version=1, topic_partitions=1)
 
+# define the cleanup interval, which faust periodically checks for closed windows
 app.conf.table_cleanup_interval = CLEANUP_INTERVAL
+
+# define the input topic that our agent reads from
 input_topic = app.topic(TOPIC, value_type=DataPoint)
 statistics_table = (app.Table(
     name=TABLE,
@@ -43,6 +47,7 @@ statistics_table = (app.Table(
                     .tumbling(WINDOW, expires=WINDOW_EXPIRES))
 
 
+# define the statistics agent that processes asynchronously every incoming element in the stream
 @app.agent(input_topic)
 async def statistics_agent(stream):
     async for data_point in stream.group_by(DataPoint.user_id):
@@ -56,7 +61,7 @@ async def statistics_agent(stream):
         if data_point.duration_watched < statistics_table[data_point.user_id].value()['min']:
             current_dictionary['min'] = data_point.duration_watched
 
-        # update count, sum and sum of squares
+        # update count, sum, sum of squares and distincts' set
         current_dictionary['count'] = current_dictionary['count'] + 1
         current_dictionary['sum'] = current_dictionary['sum'] + data_point.duration_watched
         current_dictionary['sum_squares'] = current_dictionary['sum_squares'] + data_point.duration_watched**2
@@ -68,20 +73,14 @@ async def statistics_agent(stream):
         statistics_table[data_point.user_id] = current_dictionary
 
 
-# @app.timer(1)
-# async def produce():
-    # await input_topic.send(value=produce_random_data_point())
-    # await input_topic.send(value=produce_actual_data_point())
-
-
-# @app.task()
-# async def generate_stream_on_the_fly():
-#     await produce_send_actual_data_points(input_topic)
-
-
 def get_topic() -> faust.TopicT:
+    """
+    Getter for the input topic object.
+    :return: The input topic object that faust agent reads from. Do not modify the returned topic object.
+    """
     return input_topic
 
 
+# to run the worker: <python statistics_manager.py worker -l info> or simply <python statistics_manager.py worker>
 if __name__ == '__main__':
     app.main()
