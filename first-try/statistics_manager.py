@@ -2,12 +2,16 @@ import faust
 from datetime import datetime, timedelta
 
 from Model.DataPoint import DataPoint
-from Model.WindowProfiler import initialize_statistics_dictionary
+from Model.WindowProfiler import initialize_statistics_dictionary, WindowProfiler
 
 
-def process_window(window_key, window_profiler):
+INITIALIZE_DATA_CSV = True
+
+
+async def process_window(window_key, window_profiler):
     """
     A callback function that processes the state of a closed window. Prints data profiling information to the console.
+    Sends aggregated results to visualization's Kafka topic for further processing.
     """
 
     # the key is a tuple (user_id, (timestamp_start, timestamp_end))
@@ -15,7 +19,7 @@ def process_window(window_key, window_profiler):
     timestamp_start = window_key[1][0]
     timestamp_end = window_key[1][1]
     print("--------------------")
-    print(f"{datetime.fromtimestamp(timestamp_start).strftime('%d/%m/%Y, %H:%M:%S')} - {datetime.fromtimestamp(timestamp_end).strftime('%d/%m/%Y, %H:%M:%S')}")
+    print(f"{datetime.fromtimestamp(timestamp_start).strftime('%Y/%m/%d, %H:%M:%S')} - {datetime.fromtimestamp(timestamp_end).strftime('%d/%m/%Y, %H:%M:%S')}")
     print(f"Max value        : {window_profiler['max']}")
     print(f"Min value        : {window_profiler['min']}")
     print(f"Sum value        : {window_profiler['sum']}")
@@ -24,14 +28,24 @@ def process_window(window_key, window_profiler):
     print(f"Elements         : {window_profiler['count']}")
     print(f"Distinct         : {len(window_profiler['distinct'])}")
 
+    await sink_topic.send(value=WindowProfiler(
+        timestamp=timestamp_start,
+        max=window_profiler['max'],
+        min=window_profiler['min'],
+        mean=window_profiler['sum'] / window_profiler['count'],
+        count=window_profiler['count'],
+        distinct=window_profiler['distinct']
+    ))
+
 
 TOPIC = 'input'                     # the name of the source topic to read data from
-SINK = 'todo another topic'         # the name of the sink topic to write data to
+SINK = 'visualizations'             # the name of the sink topic to write data to
 TABLE = 'statistics'                # the name of the table (window state) that contains statistic information
 KAFKA = 'kafka://localhost:9092'    # the address of the message broker, here Kafka is used, hosted locally on port 9092
 CLEANUP_INTERVAL = 1.0              # the interval at which faust periodically checks for potential closed windows
 WINDOW = timedelta(seconds=10)      # the time size of the window
-WINDOW_EXPIRES = timedelta(seconds=1)  # the time after the window closure that the window is considered expired (no more out-of-order accepted)
+WINDOW_EXPIRES = timedelta(seconds=1)   # the time after the window closure that the window is considered expired
+
 
 # declare a faust application with one partition, based on Kafka broker
 app = faust.App('statistics-manager', broker=KAFKA, version=1, topic_partitions=1)
@@ -39,8 +53,10 @@ app = faust.App('statistics-manager', broker=KAFKA, version=1, topic_partitions=
 # define the cleanup interval, which faust periodically checks for closed windows
 app.conf.table_cleanup_interval = CLEANUP_INTERVAL
 
-# define the input topic that our agent reads from
+# define the input topic that our agent reads from and the output topic that the agent writes to
 input_topic = app.topic(TOPIC, value_type=DataPoint)
+sink_topic = app.topic(SINK, value_type=WindowProfiler)
+
 statistics_table = (app.Table(
     name=TABLE,
     default=initialize_statistics_dictionary,
@@ -62,7 +78,7 @@ async def statistics_agent(stream):
         if data_point.duration_watched < statistics_table[data_point.user_id].value()['min']:
             current_dictionary['min'] = data_point.duration_watched
 
-        # update count, sum, sum of squares and distincts' set
+        # update count, sum, sum of squares and distinct' set
         current_dictionary['count'] = current_dictionary['count'] + 1
         current_dictionary['sum'] = current_dictionary['sum'] + data_point.duration_watched
         current_dictionary['sum_squares'] = current_dictionary['sum_squares'] + data_point.duration_watched**2
@@ -74,7 +90,33 @@ async def statistics_agent(stream):
         statistics_table[data_point.user_id] = current_dictionary
 
 
-def get_topic() -> faust.TopicT:
+@app.agent(sink_topic)
+async def visualizations_agent(stream):
+    import csv
+    field_names = [
+        'timestamp',
+        'max',
+        'min',
+        'mean',
+        'count',
+        'distinct'
+    ]
+
+    async for window_profiler in stream:
+        with open('data.csv', 'a') as csv_file:
+            csv_writer = csv.DictWriter(csv_file, fieldnames=field_names)
+            info = {
+                'timestamp': datetime.fromtimestamp(window_profiler.timestamp).strftime('%Y-%m-%d %H:%M:%S'),
+                'max': window_profiler.max,
+                'min': window_profiler.min,
+                'mean': window_profiler.mean,
+                'count': window_profiler.count,
+                'distinct': len(window_profiler.distinct)
+            }
+            csv_writer.writerow(info)
+
+
+def get_input_topic() -> faust.TopicT:
     """
     Getter for the input topic object.
     :return: The input topic object that faust agent reads from. Do not modify the returned topic object.
