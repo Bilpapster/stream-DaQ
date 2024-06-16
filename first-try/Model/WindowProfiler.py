@@ -1,4 +1,14 @@
 import sys
+import faust
+
+
+class WindowProfiler(faust.Record):
+    timestamp: float
+    max: float
+    min: float
+    mean: float
+    count: int
+    distinct: int
 
 
 def initialize_statistics_dictionary() -> dict:
