@@ -12,7 +12,7 @@ def get_subplot(dataframe: pd.DataFrame, y_dataframe_column: str, legend_label: 
     plt.legend(loc='lower left')
 
 
-def update_DQ_dashboard(dummy):
+def update_dq_dashboard(dummy):
     data = pd.read_csv('data.csv')
     data['timestamp'] = pd.to_datetime(data['timestamp'], format='%Y-%m-%d %H:%M:%S')
 
@@ -33,5 +33,5 @@ def update_DQ_dashboard(dummy):
 
 
 plt.style.use('fivethirtyeight')
-animation = FuncAnimation(plt.gcf(), update_DQ_dashboard, interval=1000, cache_frame_data=False)
+animation = FuncAnimation(plt.gcf(), update_dq_dashboard, interval=1000, cache_frame_data=False)
 plt.show()
