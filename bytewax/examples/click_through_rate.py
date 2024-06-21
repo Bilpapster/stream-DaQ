@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import List
 
 from bytewax.connectors.stdio import StdOutSink
-from bytewax.operators.windowing import SessionWindower, EventClock
+from bytewax.operators.windowing import TumblingWindower, EventClock
 
 from bytewax.operators import windowing as wop
 import bytewax.operators as op
@@ -66,6 +66,8 @@ def user_event(event):
 
 def calc_ctr(user__search_session):
     user, (window_metadata, search_session) = user__search_session
+    print(f"First element of the tuple {user__search_session[0]}")
+    print(f"Second element of the tuple {user__search_session[1]}")
 
     searches = [event for event in search_session if isinstance(event, Search)]
     clicks = [event for event in search_session if isinstance(event, ClickResult)]
@@ -92,7 +94,8 @@ event_time_config = EventClock(
     wait_for_system_duration=timedelta(seconds=1)
 )
 # Configuration for the windowing operator
-clock_config = SessionWindower(gap=timedelta(seconds=10))
+# clock_config = SessionWindower(gap=timedelta(seconds=10))
+clock_config = TumblingWindower(length=timedelta(seconds=10), align_to=align_to)
 
 window = wop.collect_window("windowed_data", user_event_map, clock=event_time_config, windower=clock_config)
 calc = op.map("calc_ctr", window.down, calc_ctr)
