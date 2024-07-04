@@ -108,7 +108,8 @@ async def visualizations_agent(stream):
         'min',
         'mean',
         'count',
-        'distinct'
+        'distinct',
+        'processing_time'
     ]
 
     async for window_profiler in stream:
@@ -120,7 +121,8 @@ async def visualizations_agent(stream):
                 'min': window_profiler.min,
                 'mean': window_profiler.mean,
                 'count': window_profiler.count,
-                'distinct': len(window_profiler.distinct)
+                'distinct': len(window_profiler.distinct),
+                'processing_time': window_profiler.processing_time
             }
             csv_writer.writerow(info)
 

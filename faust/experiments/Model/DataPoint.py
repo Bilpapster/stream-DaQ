@@ -132,3 +132,39 @@ async def produce_send_actual_data_points(topic: TopicT) -> None:
             interaction_events=int(row['Interaction_Events'])
         ))
     print(f"Blocked events: {blocked_events}")
+
+
+async def produce_send_random_data_for_experiments(topic: TopicT) -> None:
+    import time
+
+    start = time.time()
+    for index, number in enumerate(range(1, 10**6, 10)):
+        desired_start_time = index * 10
+        while desired_start_time > time.time() - start:
+            time.sleep(0.1)
+
+        points = 0
+        for i in range(number):
+            # if random.random() < 0.5:
+            #     time.sleep(10/number)
+
+            await topic.send(value=DataPoint(
+                user_id=str("GLOBAL_USER"),
+                session_id=str(random.randint(1, 1000000)),
+                device_id=str(random.randint(1, 1000000)),
+                video_id=str(random.randint(1, 1000000)),
+                duration_watched=random.random() * random.randint(1, 100),
+                genre=random.choice(["Action", "Romance", "Mystery", "Thriller", "Documentary"]),
+                country=random.choice(["Greece", "Albania", "Costa Rica", "Netherlands"]),
+                age=random.randint(1, 100),
+                gender=random.choice(["Male", "Female"]),
+                subscription_status=random.choice(["Free", "Premium"]),
+                ratings=random.randint(1, 5),
+                languages=random.choice(["Greek", "English", "Polish", "Spanish"]),
+                device_type=random.choice(["Mobile", "Desktop", "Laptop"]),
+                location=random.choice(["South", "North", "West", "East"]),
+                playback_quality=random.choice(["4k", "HD", "SD", "480p", "720p", "1080p"]),
+                interaction_events=random.randint(1, 100)
+            ))
+            points += 1
+        print(f"Points: {points}")
