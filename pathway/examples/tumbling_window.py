@@ -1,5 +1,10 @@
 import pathway as pw
 
+# taken from online documentation https://pathway.com/glossary/tumbling-window
+# NOTE: there are some new names employed that are not updated in the documentation
+# pw.temporal.tumbling in line 25, instead of pw.window.tumbling
+# pw.this._pw_window in line 27, instead of pw.this.window
+
 t = pw.debug.table_from_markdown(
     '''
             | shard | t   | amount | 
