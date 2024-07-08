@@ -23,7 +23,7 @@ def pipeline(T1, T2):
     return (T2bis, T3)
 
 
-# Code for STREAMING scenario
+# The following code corresponds to STREAMING scenario
 # Note: Streaming mode is infinite, pathway runs forever until the process is killed.
 # Node: Streaming mode is the default mode pathway is designed for being run.
 
@@ -33,3 +33,17 @@ T2bis, T3 = pipeline(T1, T2)
 pw.io.csv.write(T2bis, "output_directory_for_T2bis.csv")
 pw.io.csv.write(T3, "output_directory_for_T3.csv")
 pw.run()
+
+# The following code corresponds to STATIC scenario
+# Note: In order to run this scenario, comment out the lines 30-35 above.
+# Note: The only change that needs to be done is changing mode from "streaming" to "static".
+# Note: This is feasible, since a pw.io.csv connector is compatible with both streaming and static modes.
+
+T1 = pw.io.csv.read("input_dir_1.csv", schema=SchemaT1, mode="static")
+T2 = pw.io.csv.read("input_dir_2.csv", schema=SchemaT2, mode="static")
+T2bis, T3 = pipeline(T1, T2)
+pw.io.csv.write(T2bis, "output_directory_for_T2bis_static.csv")
+pw.io.csv.write(T3, "output_directory_for_T3_static.csv")
+pw.debug.compute_and_print(T2bis, T3)
+# pw.run()
+
