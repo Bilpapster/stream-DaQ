@@ -4,12 +4,22 @@ import matplotlib.pyplot as plt
 
 def main():
     faust = pd.read_csv('data_faust_1.csv')
-    # plt.plot(range(len(faust['count'])), faust['count'])
-    plt.plot(faust['count'], faust['processing_time'])
+    bytewax = pd.read_csv('data_bytewax_1.csv', names=[
+        'timestamp',
+        'window_id',
+        'max',
+        'min',
+        'mean',
+        'count',
+        'distinct',
+        'processing_time'
+    ], parse_dates=['timestamp'])
+    plt.plot(faust['count'], faust['processing_time'], color='green')
+    plt.plot(bytewax['count'], bytewax['processing_time'], color='orange')
     plt.xlabel('Πλήθος στοιχείων ανά παράθυρο ')
     plt.ylabel('Χρόνος επεξεργασίας (sec)')
+    plt.legend(['Faust', 'Bytewax'])
     plt.legend(['Faust'])
-    # plt.title(' Χρόνος επεξεργασίας ως προς το πλήθος των στοιχείων εντός παραθύρου')
     plt.show()
 
 
