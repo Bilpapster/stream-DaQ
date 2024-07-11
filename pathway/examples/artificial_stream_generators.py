@@ -24,3 +24,54 @@ def generate_artificial_noisy_linear_stream(number_of_rows:int = 50, input_rate:
     """
     artificial_noisy_linear_stream = pw.demo.noisy_linear_stream(nb_rows=number_of_rows, input_rate=input_rate)
     return artificial_noisy_linear_stream
+
+
+def generate_artificial_random_viewership_data_stream(number_of_rows:int = 50, input_rate: float = 1.0):
+    """
+    A utility method to generate an artificial stream of random viewership data, based on the viewership data schema.
+    :param number_of_rows: the number of random data points to generate.
+    :param input_rate: the rate with which the data points will be generated. Defaults to 1 data point per second.
+    :return: An artificial, randomly generated stream of viewership data for testing purposes only.
+    """
+    import random
+
+    value_functions = {
+        'user_id': lambda: str(random.choice(["UserA", "UserB"])),
+        'session_id': lambda: str(random.randint(1, 1000000)),
+        'device_id': lambda: str(random.randint(1, 1000000)),
+        'video_id': lambda: str(random.randint(1, 1000000)),
+        'duration_watched': lambda: random.random() * random.randint(1, 100),
+        'genre': lambda: random.choice(["Action", "Romance", "Mystery", "Thriller", "Documentary"]),
+        'country': lambda: random.choice(["Greece", "Albania", "Costa Rica", "Netherlands"]),
+        'age': lambda: random.randint(1, 100),
+        'gender': lambda: random.choice(["Male", "Female"]),
+        'subscription_status': lambda: random.choice(["Free", "Premium"]),
+        'ratings': lambda: random.randint(1, 5),
+        'languages': lambda: random.choice(["Greek", "English", "Polish", "Spanish"]),
+        'device_type': lambda: random.choice(["Mobile", "Desktop", "Laptop"]),
+        'location': lambda: random.choice(["South", "North", "West", "East"]),
+        'playback_quality': lambda: random.choice(["4k", "HD", "SD", "480p", "720p", "1080p"]),
+        'interaction_events': lambda: random.randint(1, 100)
+    }
+
+    class ViewershipSchema(pw.Schema):
+        user_id: str
+        session_id: str
+        device_id: str
+        video_id: str
+        duration_watched: float
+        genre: str
+        country: str
+        age: int
+        gender: str
+        subscription_status: str
+        ratings: int
+        languages: str
+        device_type: str
+        location: str
+        playback_quality: str
+        interaction_events: int
+
+    artificial_viewership_stream = pw.demo.generate_custom_stream(value_generators=value_functions,
+                                                                  schema=ViewershipSchema, input_rate=input_rate)
+    return artificial_viewership_stream
