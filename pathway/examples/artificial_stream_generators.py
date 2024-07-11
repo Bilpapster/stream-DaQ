@@ -25,6 +25,23 @@ def generate_artificial_noisy_linear_stream(number_of_rows:int = 50, input_rate:
     artificial_noisy_linear_stream = pw.demo.noisy_linear_stream(nb_rows=number_of_rows, input_rate=input_rate)
     return artificial_noisy_linear_stream
 
+class ViewershipSchema(pw.Schema):
+    user_id: str
+    session_id: str
+    device_id: str
+    video_id: str
+    duration_watched: float
+    genre: str
+    country: str
+    age: int
+    gender: str
+    subscription_status: str
+    ratings: int
+    languages: str
+    device_type: str
+    location: str
+    playback_quality: str
+    interaction_events: int
 
 def generate_artificial_random_viewership_data_stream(number_of_rows:int = 50, input_rate: float = 1.0):
     """
@@ -54,24 +71,12 @@ def generate_artificial_random_viewership_data_stream(number_of_rows:int = 50, i
         'interaction_events': lambda: random.randint(1, 100)
     }
 
-    class ViewershipSchema(pw.Schema):
-        user_id: str
-        session_id: str
-        device_id: str
-        video_id: str
-        duration_watched: float
-        genre: str
-        country: str
-        age: int
-        gender: str
-        subscription_status: str
-        ratings: int
-        languages: str
-        device_type: str
-        location: str
-        playback_quality: str
-        interaction_events: int
-
     artificial_viewership_stream = pw.demo.generate_custom_stream(value_generators=value_functions,
                                                                   schema=ViewershipSchema, input_rate=input_rate)
+    return artificial_viewership_stream
+
+
+def generate_artificial_actual_viewership_data_stream(path:str, schema: pw.Schema = ViewershipSchema,
+                                                      input_rate: float = 1.0):
+    artificial_viewership_stream = pw.demo.replay_csv(path, schema=schema, input_rate=input_rate)
     return artificial_viewership_stream
