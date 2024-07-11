@@ -21,7 +21,7 @@ in both modules, adapting our solutions to the specific features each one of the
 in a lively-updated dashboard, enabling DQ monitoring over unbounded streams.
 
 <p align="center">
-    <img align="middle" src="faust/Resources/DQ%20monitoring%20dashboard/Figure_1.png" alt="Stream Data Quality dashboard"/>
+    <img align="middle" src="dq_dashboard/dq_dashboard.gif" alt="Stream Data Quality dashboard animation"/>
 </p>
 
 ## Execution
