@@ -103,3 +103,8 @@ dataflow that is to be run is `flow`.
 ```bash
 python live_plotter.py
 ```
+
+## Acknowledgements
+
+Special thanks to [Maria Kavouridou](https://www.linkedin.com/in/maria-kavouridou/) for putting effort and love, in order to give birth to the StreamDaQ logo.
+
