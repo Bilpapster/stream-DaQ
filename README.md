@@ -26,6 +26,21 @@ in a lively-updated dashboard, enabling DQ monitoring over unbounded streams.
 
 ## Execution
 
+The easiest way to run the code in this repository is to create a new conda environment and install the required
+packages. To do so, execute the following commands in a terminal:
+```bash
+conda env create --file environment.yml
+conda activate daq
+pip install -r requirements.txt
+```
+
+The following three commands are required only the *first* time you run the code. For every next run, simply activate
+the conda environment `daq`:
+```bash
+conda activate daq
+```
+and then insert the commands you find below, depending on the streaming module you are interested in using.
+
 ### Faust
 
 Requirements: 
