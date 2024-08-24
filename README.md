@@ -34,7 +34,7 @@ conda activate daq
 pip install -r requirements.txt
 ```
 
-The following three commands are required only the *first* time you run the code. For every next run, simply activate
+The above three commands are required only the *first* time you run the code. For every next run, simply activate
 the conda environment `daq`:
 ```bash
 conda activate daq
