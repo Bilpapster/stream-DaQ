@@ -4,8 +4,11 @@ from typing import List, Tuple
 
 from dateutil.tz import tz
 
-DATA_FILE = 'm2_episode_3_log.csv'
+# DATA_FILE = 'm2_episode_3_log_debug.csv'
+DATA_FILE = 'm2_episode_3_log_actual.csv'
 TIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
+SINK_FILE_NAME = "online_clustering_sink.csv"
+WINDOW_DURATION_SEC = 1000
 
 
 def feed_sand(items: list):
@@ -72,8 +75,9 @@ data = (pw.demo.replay_csv_with_time(DATA_FILE, schema=TimeSeriesEventSchema, ti
 
 result = data.windowby(
     data.date_and_time,
-    window=pw.temporal.tumbling(duration=timedelta(seconds=20)),
-    instance=data.press_id
+    window=pw.temporal.tumbling(duration=timedelta(seconds=WINDOW_DURATION_SEC)),
+    instance=data.press_id,
+    behavior=pw.temporal.exactly_once_behavior(shift=timedelta(seconds=3)),
 ).reduce(
     # pw.this._pw_window,
     window_start=pw.this._pw_window_start,
@@ -91,6 +95,6 @@ result = data.windowby(
     sorted_items_by_timestamp=pw.apply(sort_in_parallel, pw.this.timestamps, pw.this.items).to_string()
 )
 
-pw.io.csv.write(result, "output_stream.csv")
+pw.io.csv.write(result, SINK_FILE_NAME)
 # pw.debug.compute_and_print(result, include_id=False)
 pw.run()
