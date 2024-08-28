@@ -26,6 +26,7 @@ def generate_artificial_noisy_linear_stream(number_of_rows:int = 50, input_rate:
     return artificial_noisy_linear_stream
 
 class ViewershipSchema(pw.Schema):
+    timestamp: int
     user_id: str
     session_id: str
     device_id: str
@@ -53,25 +54,26 @@ def generate_artificial_random_viewership_data_stream(number_of_rows:int = 50, i
     import random
 
     value_functions = {
-        'user_id': lambda: str(random.choice(["UserA", "UserB"])),
-        'session_id': lambda: str(random.randint(1, 1000000)),
-        'device_id': lambda: str(random.randint(1, 1000000)),
-        'video_id': lambda: str(random.randint(1, 1000000)),
-        'duration_watched': lambda: random.random() * random.randint(1, 100),
-        'genre': lambda: random.choice(["Action", "Romance", "Mystery", "Thriller", "Documentary"]),
-        'country': lambda: random.choice(["Greece", "Albania", "Costa Rica", "Netherlands"]),
-        'age': lambda: random.randint(1, 100),
-        'gender': lambda: random.choice(["Male", "Female"]),
-        'subscription_status': lambda: random.choice(["Free", "Premium"]),
-        'ratings': lambda: random.randint(1, 5),
-        'languages': lambda: random.choice(["Greek", "English", "Polish", "Spanish"]),
-        'device_type': lambda: random.choice(["Mobile", "Desktop", "Laptop"]),
-        'location': lambda: random.choice(["South", "North", "West", "East"]),
-        'playback_quality': lambda: random.choice(["4k", "HD", "SD", "480p", "720p", "1080p"]),
-        'interaction_events': lambda: random.randint(1, 100)
+        'timestamp': lambda _: _,
+        'user_id': lambda _: str(random.choice(["UserA", "UserB"])),
+        'session_id': lambda _: str(random.randint(1, 1000000)),
+        'device_id': lambda _: str(random.randint(1, 1000000)),
+        'video_id': lambda _: str(random.randint(1, 1000000)),
+        'duration_watched': lambda _: random.random() * random.randint(1, 100),
+        'genre': lambda _: random.choice(["Action", "Romance", "Mystery", "Thriller", "Documentary"]),
+        'country': lambda _: random.choice(["Greece", "Albania", "Costa Rica", "Netherlands"]),
+        'age': lambda _: random.randint(1, 100),
+        'gender': lambda _: random.choice(["Male", "Female"]),
+        'subscription_status': lambda _: random.choice(["Free", "Premium"]),
+        'ratings': lambda _: random.randint(1, 5),
+        'languages': lambda _: random.choice(["Greek", "English", "Polish", "Spanish"]),
+        'device_type': lambda _: random.choice(["Mobile", "Desktop", "Laptop"]),
+        'location': lambda _: random.choice(["South", "North", "West", "East"]),
+        'playback_quality': lambda _: random.choice(["4k", "HD", "SD", "480p", "720p", "1080p"]),
+        'interaction_events': lambda _: random.randint(1, 100)
     }
 
-    artificial_viewership_stream = pw.demo.generate_custom_stream(value_generators=value_functions,
+    artificial_viewership_stream = pw.demo.generate_custom_stream(value_generators=value_functions, nb_rows=number_of_rows,
                                                                   schema=ViewershipSchema, input_rate=input_rate)
     return artificial_viewership_stream
 
