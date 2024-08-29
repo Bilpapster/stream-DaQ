@@ -8,14 +8,14 @@ from dateutil.tz import tz
 DATA_FILE = 'm2_episode_3_log_actual.csv'
 TIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
 SINK_FILE_NAME = "online_clustering_sink.csv"
-WINDOW_DURATION_SEC = 1000
+WINDOW_DURATION_SEC = 1
 
 
 def feed_sand(items: list):
     print(f"Apostolos do your magic - feed sand with {items}")
     print(f"Count: {len(items)}")
     print()
-    return True
+    return items
 
 
 def convert_to_datetime(timestamp: float) -> str:
@@ -90,9 +90,15 @@ result = data.windowby(
     items=pw.reducers.ndarray(pw.this.value),
     timestamps=pw.reducers.ndarray(pw.this.timestamp),
     dates_and_time=pw.reducers.ndarray(pw.this.date_and_time).to_string(),
-    # status=pw.apply(feed_sand, pw.reducers.ndarray(pw.this.value))
+    # sorted_items_by_timestamp=pw.apply(sort_in_parallel, pw.this.timestamps, pw.this.items)
+    # status=pw.apply(feed_sand, pw.reducers.ndarray(pw.this.value)),
 ).with_columns(
-    sorted_items_by_timestamp=pw.apply(sort_in_parallel, pw.this.timestamps, pw.this.items).to_string()
+    sorted_items_by_timestamp=pw.apply(sort_in_parallel, pw.this.timestamps, pw.this.items)
+).select(
+    window_start=pw.this.window_start,
+    window_end=pw.this.window_end,
+    count=pw.this.count,
+    for_sand=pw.apply(feed_sand, pw.this.sorted_items_by_timestamp),
 )
 
 pw.io.csv.write(result, SINK_FILE_NAME)
