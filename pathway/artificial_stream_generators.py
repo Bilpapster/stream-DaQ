@@ -70,7 +70,7 @@ def generate_artificial_random_viewership_data_stream(number_of_rows:int = 50, i
         'device_type': lambda _: random.choice(["Mobile", "Desktop", "Laptop"]),
         'location': lambda _: random.choice(["South", "North", "West", "East"]),
         'playback_quality': lambda _: random.choice(["4k", "HD", "SD", "480p", "720p", "1080p"]),
-        'interaction_events': lambda _: random.randint(1, 100)
+        'interaction_events': lambda _: random.randint(1, 10)
     }
 
     artificial_viewership_stream = pw.demo.generate_custom_stream(value_generators=value_functions, nb_rows=number_of_rows,
