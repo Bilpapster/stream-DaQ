@@ -17,7 +17,7 @@ WINDOW_DURATION_SEC = 20
 WAIT_FOR_DELAYED_SEC = 1
 SINK_FILE_NAME = "statistics_manager_sink.csv"
 
-data = (artificial_stream_generators.generate_artificial_random_viewership_data_stream(number_of_rows=10000, input_rate=1)
+data = (artificial_stream_generators.generate_artificial_random_viewership_data_stream(number_of_rows=10, input_rate=1)
         .with_columns(date_and_time=pw.apply(convert_to_datetime, pw.this.timestamp))
         .with_columns(date_and_time=pw.this.date_and_time.dt.strptime(TIME_FORMAT)))
 
@@ -36,15 +36,17 @@ data = data.windowby(
     # mean=daq.get_avg_reducer('interaction_events'),
     count=daq.get_count_reducer('interaction_events'),
     # ndarray=daq.get_ndarray_reducer('interaction_events'),
-    # tuple=daq.get_tuple_reducer('interaction_events'),
+    tuple=daq.get_tuple_reducer('interaction_events'),
     # sorted_tuple=daq.get_sorted_tuple_reducer('interaction_events'),
     above_mean=daq.get_number_of_values_above_mean_reducer('interaction_events'),
-    above_mean_frac=daq.get_fraction_of_values_above_mean_reducer('interaction_events'),
+    # above_mean_frac=daq.get_fraction_of_values_above_mean_reducer('interaction_events'),
     distinct=daq.get_number_of_distinct_values_reducer('interaction_events'),
     distinct_approx=daq.get_approx_number_of_distinct_values_reducer('interaction_events'),
     distinct_frac=daq.get_fraction_of_distinct_values_reducer('interaction_events'),
     distinct_frac_approx=daq.get_approx_fraction_of_distinct_values_reducer('interaction_events'),
+    unique=daq.get_number_of_unique_values_reducer('interaction_events'),
+    unique_frac=daq.get_fraction_of_unique_values_reducer('interaction_events'),
 )
-# pw.debug.compute_and_print(data, include_id=False)
-pw.io.csv.write(data, SINK_FILE_NAME)
-pw.run()
+pw.debug.compute_and_print(data, include_id=False)
+# pw.io.csv.write(data, SINK_FILE_NAME)
+# pw.run()

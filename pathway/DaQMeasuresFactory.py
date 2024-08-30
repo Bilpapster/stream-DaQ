@@ -119,7 +119,7 @@ class DaQMeasuresFactory:
         def get_number_of_distinct_values(numbers: list):
             return len(set(numbers))
 
-        return pw.apply(get_number_of_distinct_values, pw.reducers.ndarray(pw.this[column_name]))
+        return pw.apply(get_number_of_distinct_values, pw.reducers.tuple(pw.this[column_name]))
 
     @staticmethod
     def get_fraction_of_distinct_values_reducer(column_name: str,
@@ -136,10 +136,11 @@ class DaQMeasuresFactory:
             fraction = len(set(numbers)) / len(numbers)
             return round(fraction, precision)
 
-        return pw.apply(get_fraction_of_distinct_values, pw.reducers.ndarray(pw.this[column_name]))
+        return pw.apply(get_fraction_of_distinct_values, pw.reducers.tuple(pw.this[column_name]))
 
     @staticmethod
-    def get_approx_number_of_distinct_values_reducer(column_name: str, precision: int = 0) -> pw.internals.expression.ColumnExpression:
+    def get_approx_number_of_distinct_values_reducer(column_name: str,
+                                                     precision: int = 0) -> pw.internals.expression.ColumnExpression:
         """
         todo: It is better if we use this in an incremental way, by extending pw.BaseCustomAccumulator
         todo: update this function, so that it returns a custom reducer https://pathway.com/developers/user-guide/data-transformation/custom-reducers
@@ -152,6 +153,7 @@ class DaQMeasuresFactory:
 
         def get_approx_number_of_distinct_values(elements: list) -> float:
             from datasketch import HyperLogLogPlusPlus
+            # https://ekzhu.com/datasketch/
 
             hpp = HyperLogLogPlusPlus()
             for element in elements:
@@ -162,7 +164,8 @@ class DaQMeasuresFactory:
         return pw.apply(get_approx_number_of_distinct_values, pw.reducers.tuple(pw.this[column_name]))
 
     @staticmethod
-    def get_approx_fraction_of_distinct_values_reducer(column_name: str, precision: int = 3) -> pw.internals.expression.ColumnExpression:
+    def get_approx_fraction_of_distinct_values_reducer(column_name: str,
+                                                       precision: int = 3) -> pw.internals.expression.ColumnExpression:
         """
         todo: It is better if we use this in an incremental way, by extending pw.BaseCustomAccumulator
         todo: update this function, so that it returns a custom reducer https://pathway.com/developers/user-guide/data-transformation/custom-reducers
@@ -175,6 +178,7 @@ class DaQMeasuresFactory:
 
         def get_approx_fraction_of_distinct_values(elements: list) -> float:
             from datasketch import HyperLogLogPlusPlus
+            # https://ekzhu.com/datasketch/
 
             hpp = HyperLogLogPlusPlus()
             for element in elements:
@@ -183,3 +187,52 @@ class DaQMeasuresFactory:
             return round(approx_distinct_fraction, precision)
 
         return pw.apply(get_approx_fraction_of_distinct_values, pw.reducers.tuple(pw.this[column_name]))
+
+    @staticmethod
+    def get_number_of_unique_values_reducer(column_name: str) -> pw.internals.expression.ColumnExpression:
+        """
+        todo: Explicitly state the difference between unique (only one appearance) and distinct (at least one appearance)
+        Static getter to retrieve a custom reducer that computes the number of unique elements in the window.
+        The fraction is in range [0, 1]
+        :param column_name: the column name of pw.this table to apply the reducer on
+        :return: a pathway pw.apply statement ready for use as a column
+        """
+        def get_number_of_unique_values(elements: list):
+            import numpy as np
+
+            frequency_dict = dict()
+            for element in elements:
+                key = str(element)
+                frequency_dict[key] = frequency_dict.get(key, 0) + 1
+            frequencies = frequency_dict.values()
+            return np.sum(frequency == 1 for frequency in frequencies)
+
+        return pw.apply(get_number_of_unique_values, pw.reducers.tuple(pw.this[column_name]))
+
+    @staticmethod
+    def get_fraction_of_unique_values_reducer(column_name: str,
+                                              precision: int = 3) -> pw.internals.expression.ColumnExpression:
+        """
+        todo: Explicitly state the difference between unique (only one appearance) and distinct (at least one appearance)
+        Static getter to retrieve a custom reducer that computes the fraction of unique elements in the window.
+        The fraction is in range [0, 1]
+        :param column_name: the column name of pw.this table to apply the reducer on
+        :param precision: the number of decimal points to include in the fraction result. Defaults to 3.
+        :return: a pathway pw.apply statement ready for use as a column
+        """
+
+        def get_fraction_of_unique_values(elements: list):
+            import numpy as np
+
+            frequency_dict = dict()
+            for element in elements:
+                key = str(element)
+                frequency_dict[key] = frequency_dict.get(key, 0) + 1
+            frequencies = frequency_dict.values()
+            fraction = np.sum(frequency == 1 for frequency in frequencies) / len(elements)
+            return round(fraction, precision)
+
+        return pw.apply(get_fraction_of_unique_values, pw.reducers.tuple(pw.this[column_name]))
+
+# todo: extract re-used functions to an external utility class to develop it in one place an use it wherever needed
+# e.g., get_number_above_mean, get_number_of_distinct, etc and reuse for the fraction, dividing by the list length
