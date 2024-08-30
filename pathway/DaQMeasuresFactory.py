@@ -137,3 +137,49 @@ class DaQMeasuresFactory:
             return round(fraction, precision)
 
         return pw.apply(get_fraction_of_distinct_values, pw.reducers.ndarray(pw.this[column_name]))
+
+    @staticmethod
+    def get_approx_number_of_distinct_values_reducer(column_name: str, precision: int = 0) -> pw.internals.expression.ColumnExpression:
+        """
+        todo: It is better if we use this in an incremental way, by extending pw.BaseCustomAccumulator
+        todo: update this function, so that it returns a custom reducer https://pathway.com/developers/user-guide/data-transformation/custom-reducers
+        Static getter to retrieve a custom reducer that computes the approximate number of distinct elements in the
+        window, using the HyperLogLog++ sketch. The fraction is in range [0, 1]
+        :param column_name: the column name of pw.this table to apply the reducer on
+        :param precision: the number of decimal points to include in the fraction result. Defaults to 0 (round to integer).
+        :return: a pathway pw.apply statement ready for use as a column
+        """
+
+        def get_approx_number_of_distinct_values(elements: list) -> float:
+            from datasketch import HyperLogLogPlusPlus
+
+            hpp = HyperLogLogPlusPlus()
+            for element in elements:
+                hpp.update(str(element).encode('utf-8'))
+            approx_distinct = hpp.count()
+            return round(approx_distinct, precision)
+
+        return pw.apply(get_approx_number_of_distinct_values, pw.reducers.tuple(pw.this[column_name]))
+
+    @staticmethod
+    def get_approx_fraction_of_distinct_values_reducer(column_name: str, precision: int = 3) -> pw.internals.expression.ColumnExpression:
+        """
+        todo: It is better if we use this in an incremental way, by extending pw.BaseCustomAccumulator
+        todo: update this function, so that it returns a custom reducer https://pathway.com/developers/user-guide/data-transformation/custom-reducers
+        Static getter to retrieve a custom reducer that computes the approximate fraction of distinct elements in the
+        window, using the HyperLogLog++ sketch. The fraction is in range [0, 1]
+        :param column_name: the column name of pw.this table to apply the reducer on
+        :param precision: the number of decimal points to include in the fraction result. Defaults to 3.
+        :return: a pathway pw.apply statement ready for use as a column
+        """
+
+        def get_approx_fraction_of_distinct_values(elements: list) -> float:
+            from datasketch import HyperLogLogPlusPlus
+
+            hpp = HyperLogLogPlusPlus()
+            for element in elements:
+                hpp.update(str(element).encode('utf-8'))
+            approx_distinct_fraction = hpp.count() / len(elements)
+            return round(approx_distinct_fraction, precision)
+
+        return pw.apply(get_approx_fraction_of_distinct_values, pw.reducers.tuple(pw.this[column_name]))
