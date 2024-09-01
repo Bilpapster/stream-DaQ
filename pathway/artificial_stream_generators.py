@@ -26,7 +26,7 @@ def generate_artificial_noisy_linear_stream(number_of_rows:int = 50, input_rate:
     return artificial_noisy_linear_stream
 
 class ViewershipSchema(pw.Schema):
-    timestamp: int
+    timestamp: str
     user_id: str
     session_id: str
     device_id: str
@@ -52,9 +52,11 @@ def generate_artificial_random_viewership_data_stream(number_of_rows:int = 50, i
     :return: An artificial, randomly generated stream of viewership data for testing purposes only.
     """
     import random
+    from datetime import datetime, timedelta
 
+    DATE_TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
     value_functions = {
-        'timestamp': lambda _: _,
+        'timestamp': lambda _: (datetime.now() - timedelta(days=60) + timedelta(seconds=_)).strftime(DATE_TIME_FORMAT),
         'user_id': lambda _: str(random.choice(["UserA", "UserB"])),
         'session_id': lambda _: str(random.randint(1, 1000000)),
         'device_id': lambda _: str(random.randint(1, 1000000)),

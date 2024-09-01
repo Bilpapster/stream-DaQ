@@ -1,10 +1,8 @@
 import pathway as pw
 from datetime import datetime, timedelta
-
 from dateutil import tz
 
 import artificial_stream_generators
-
 from DaQMeasuresFactory import DaQMeasuresFactory as daq
 
 
@@ -18,8 +16,8 @@ WAIT_FOR_DELAYED_SEC = 1
 SINK_FILE_NAME = "statistics_manager_sink.csv"
 
 data = (artificial_stream_generators.generate_artificial_random_viewership_data_stream(number_of_rows=10, input_rate=1)
-        .with_columns(date_and_time=pw.apply(convert_to_datetime, pw.this.timestamp))
-        .with_columns(date_and_time=pw.this.date_and_time.dt.strptime(TIME_FORMAT)))
+        .with_columns(date_and_time=pw.this.timestamp.dt.strptime(TIME_FORMAT))
+        )
 
 data = data.windowby(
     data.date_and_time,
