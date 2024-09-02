@@ -22,5 +22,10 @@ class StdDevReducer(pw.BaseCustomAccumulator):
         mean_squares = self.sum_squares / self.count
         return mean_squares - mean ** 2
 
+    def retract(self, other):
+        self.count -= other.count
+        self.sum -= other.sum
+        self.sum_squares -= other.sum_squares
+
 
 std_dev_reducer = pw.reducers.udf_reducer(StdDevReducer)
