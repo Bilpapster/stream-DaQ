@@ -51,4 +51,4 @@ class ApproxDistinctReducer(pw.BaseCustomAccumulator):
         return self.hpp_sketch.count()
 
 
-hyperloglog_pp_reducer = pw.reducers.udf_reducer(ApproxDistinctReducer)
+approx_distinct_count_reducer = pw.reducers.udf_reducer(ApproxDistinctReducer)

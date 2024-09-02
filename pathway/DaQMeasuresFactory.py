@@ -33,14 +33,15 @@ class DaQMeasuresFactory:
         return pw.reducers.count(pw.this[column_name])
 
     @staticmethod
-    def get_avg_reducer(column_name: str) -> pw.internals.expression.ColumnExpression:
+    def get_avg_reducer(column_name: str, precision: int = 3) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve an avg pathway reducer, applied on current table (pw.this) and in the column specified
         by column name
         :param column_name: the column name of pw.this table to apply the avg reducer on.
+        :param precision: the number of decimal points to include in the result. Defaults to 3.
         :return: a pathway avg reducer
         """
-        return pw.reducers.avg(pw.this[column_name])
+        return pw.apply(round, pw.reducers.avg(pw.this[column_name]), precision)
 
     @staticmethod
     def get_ndarray_reducer(column_name: str) -> pw.internals.expression.ColumnExpression:
@@ -150,43 +151,29 @@ class DaQMeasuresFactory:
         :param precision: the number of decimal points to include in the fraction result. Defaults to 0 (round to integer).
         :return: a pathway pw.apply statement ready for use as a column
         """
+        from _custom_reducers.CustomReducers import approx_distinct_count_reducer
 
-        def get_approx_number_of_distinct_values(elements: list) -> float:
-            from datasketch import HyperLogLogPlusPlus
-            # https://ekzhu.com/datasketch/
-
-            hpp = HyperLogLogPlusPlus()
-            for element in elements:
-                hpp.update(str(element).encode('utf-8'))
-            approx_distinct = hpp.count()
-            return round(approx_distinct, precision)
-
-        return pw.apply(get_approx_number_of_distinct_values, pw.reducers.tuple(pw.this[column_name]))
+        return pw.apply(round, approx_distinct_count_reducer(pw.this[column_name]), precision)
 
     @staticmethod
     def get_approx_fraction_of_distinct_values_reducer(column_name: str,
                                                        precision: int = 3) -> pw.internals.expression.ColumnExpression:
         """
-        todo: It is better if we use this in an incremental way, by extending pw.BaseCustomAccumulator
-        todo: update this function, so that it returns a custom reducer https://pathway.com/developers/user-guide/data-transformation/custom-reducers
         Static getter to retrieve a custom reducer that computes the approximate fraction of distinct elements in the
         window, using the HyperLogLog++ sketch. The fraction is in range [0, 1]
         :param column_name: the column name of pw.this table to apply the reducer on
         :param precision: the number of decimal points to include in the fraction result. Defaults to 3.
         :return: a pathway pw.apply statement ready for use as a column
         """
+        from _custom_reducers.CustomReducers import approx_distinct_count_reducer
 
-        def get_approx_fraction_of_distinct_values(elements: list) -> float:
-            from datasketch import HyperLogLogPlusPlus
-            # https://ekzhu.com/datasketch/
+        def get_approx_fraction_of_distinct_values(distinct_count: float, total_count: int) -> float:
+            from utils.utils import calculate_fraction
 
-            hpp = HyperLogLogPlusPlus()
-            for element in elements:
-                hpp.update(str(element).encode('utf-8'))
-            approx_distinct_fraction = hpp.count() / len(elements)
-            return round(approx_distinct_fraction, precision)
+            return calculate_fraction(distinct_count, total_count, precision)
 
-        return pw.apply(get_approx_fraction_of_distinct_values, pw.reducers.tuple(pw.this[column_name]))
+        return pw.apply(get_approx_fraction_of_distinct_values, approx_distinct_count_reducer(pw.this[column_name]),
+                        pw.reducers.count(pw.this[column_name]))
 
     @staticmethod
     def get_number_of_unique_values_reducer(column_name: str) -> pw.internals.expression.ColumnExpression:
@@ -199,14 +186,8 @@ class DaQMeasuresFactory:
         """
 
         def get_number_of_unique_values(elements: list):
-            import numpy as np
-
-            frequency_dict = dict()
-            for element in elements:
-                key = str(element)
-                frequency_dict[key] = frequency_dict.get(key, 0) + 1
-            frequencies = frequency_dict.values()
-            return np.sum(frequency == 1 for frequency in frequencies)
+            from utils.utils import calculate_number_of_unique_values
+            return calculate_number_of_unique_values(elements)
 
         return pw.apply(get_number_of_unique_values, pw.reducers.tuple(pw.this[column_name]))
 
@@ -221,22 +202,16 @@ class DaQMeasuresFactory:
         :param precision: the number of decimal points to include in the fraction result. Defaults to 3.
         :return: a pathway pw.apply statement ready for use as a column
         """
-
         def get_fraction_of_unique_values(elements: list):
-            import numpy as np
+            from utils.utils import calculate_number_of_unique_values
 
-            frequency_dict = dict()
-            for element in elements:
-                key = str(element)
-                frequency_dict[key] = frequency_dict.get(key, 0) + 1
-            frequencies = frequency_dict.values()
-            fraction = np.sum(frequency == 1 for frequency in frequencies) / len(elements)
+            fraction = calculate_number_of_unique_values(elements) / len(elements)
             return round(fraction, precision)
 
         return pw.apply(get_fraction_of_unique_values, pw.reducers.tuple(pw.this[column_name]))
 
     @staticmethod
-    def get_std_dev_reducer(column_name: str) -> pw.internals.expression.ColumnExpression:
+    def get_std_dev_reducer(column_name: str, precision: int = 3) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the standard deviation of the values in the window.
         :param column_name: the column name of pw.this table to apply the reducer on
@@ -244,19 +219,4 @@ class DaQMeasuresFactory:
         """
         from _custom_reducers.CustomReducers import std_dev_reducer
 
-        return std_dev_reducer(pw.this[column_name])
-
-    @staticmethod
-    def get_hpp_reducer(column_name: str, precision: int = 0) -> pw.internals.expression.ColumnExpression:
-        """
-        Static getter to retrieve a custom reducer that computes the standard deviation of the values in the window.
-        :param column_name: the column name of pw.this table to apply the reducer on
-        :param precision: the number of decimal points to include in the fraction result. Defaults to 0 (round to integer).
-        :return: a pw.ColumnExpression that corresponds to the application of the custom reducer on the specified column
-        """
-        from _custom_reducers.CustomReducers import hyperloglog_pp_reducer
-
-        return pw.apply(lambda value: round(value, precision), hyperloglog_pp_reducer(pw.this[column_name]))
-
-# todo: extract re-used functions to an external utility class to develop it in one place an use it wherever needed
-# e.g., get_number_above_mean, get_number_of_distinct, etc and reuse for the fraction, dividing by the list length
+        return pw.apply(round, std_dev_reducer(pw.this[column_name]), precision)
