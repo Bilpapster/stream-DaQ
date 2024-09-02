@@ -143,8 +143,6 @@ class DaQMeasuresFactory:
     def get_approx_number_of_distinct_values_reducer(column_name: str,
                                                      precision: int = 0) -> pw.internals.expression.ColumnExpression:
         """
-        todo: It is better if we use this in an incremental way, by extending pw.BaseCustomAccumulator
-        todo: update this function, so that it returns a custom reducer https://pathway.com/developers/user-guide/data-transformation/custom-reducers
         Static getter to retrieve a custom reducer that computes the approximate number of distinct elements in the
         window, using the HyperLogLog++ sketch. The fraction is in range [0, 1]
         :param column_name: the column name of pw.this table to apply the reducer on
@@ -178,9 +176,11 @@ class DaQMeasuresFactory:
     @staticmethod
     def get_number_of_unique_values_reducer(column_name: str) -> pw.internals.expression.ColumnExpression:
         """
-        todo: Explicitly state the difference between unique (only one appearance) and distinct (at least one appearance)
         Static getter to retrieve a custom reducer that computes the number of unique elements in the window.
-        The fraction is in range [0, 1]
+        The fraction is in range [0, 1].
+        IMPORTANT: Unique values are considered the ones that appear **exactly** once inside the window. For example, in
+        [a, a, b] the only unique value is 'b'. In case you wish 'a' and 'b' to appear in the result, consider using
+        a reducer calculating **distinct** values, instead.
         :param column_name: the column name of pw.this table to apply the reducer on
         :return: a pathway pw.apply statement ready for use as a column
         """
@@ -195,9 +195,11 @@ class DaQMeasuresFactory:
     def get_fraction_of_unique_values_reducer(column_name: str,
                                               precision: int = 3) -> pw.internals.expression.ColumnExpression:
         """
-        todo: Explicitly state the difference between unique (only one appearance) and distinct (at least one appearance)
         Static getter to retrieve a custom reducer that computes the fraction of unique elements in the window.
-        The fraction is in range [0, 1]
+        The fraction is in range [0, 1].
+        IMPORTANT: Unique values are considered the ones that appear **exactly** once inside the window. For example, in
+        [a, a, b] the only unique value is 'b'. In case you wish 'a' and 'b' to appear in the result, consider using
+        a reducer calculating **distinct** values, instead.
         :param column_name: the column name of pw.this table to apply the reducer on
         :param precision: the number of decimal points to include in the fraction result. Defaults to 3.
         :return: a pathway pw.apply statement ready for use as a column
