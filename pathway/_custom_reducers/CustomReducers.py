@@ -1,5 +1,6 @@
 import pathway as pw
 from datasketch import HyperLogLogPlusPlus
+# todo check if this implementation of HLL++ sketching is more reliable (Apache) https://apache.github.io/datasketches-python/5.0.2/distinct_counting/hyper_log_log.html
 
 
 class StdDevReducer(pw.BaseCustomAccumulator):
