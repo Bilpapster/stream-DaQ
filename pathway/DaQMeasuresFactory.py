@@ -246,5 +246,17 @@ class DaQMeasuresFactory:
 
         return std_dev_reducer(pw.this[column_name])
 
+    @staticmethod
+    def get_hpp_reducer(column_name: str, precision: int = 0) -> pw.internals.expression.ColumnExpression:
+        """
+        Static getter to retrieve a custom reducer that computes the standard deviation of the values in the window.
+        :param column_name: the column name of pw.this table to apply the reducer on
+        :param precision: the number of decimal points to include in the fraction result. Defaults to 0 (round to integer).
+        :return: a pw.ColumnExpression that corresponds to the application of the custom reducer on the specified column
+        """
+        from _custom_reducers.CustomReducers import hyperloglog_pp_reducer
+
+        return pw.apply(lambda value: round(value, precision), hyperloglog_pp_reducer(pw.this[column_name]))
+
 # todo: extract re-used functions to an external utility class to develop it in one place an use it wherever needed
 # e.g., get_number_above_mean, get_number_of_distinct, etc and reuse for the fraction, dividing by the list length
