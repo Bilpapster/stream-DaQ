@@ -6,10 +6,6 @@ import artificial_stream_generators
 from DaQMeasuresFactory import DaQMeasuresFactory as daq
 
 
-def convert_to_datetime(timestamp: float) -> str:
-    return str(datetime.fromtimestamp(timestamp, tz=tz.tzlocal()).strftime(TIME_FORMAT))
-
-
 TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 WINDOW_DURATION_SEC = 20
 WAIT_FOR_DELAYED_SEC = 1
@@ -44,6 +40,7 @@ data = data.windowby(
     distinct_frac_approx=daq.get_approx_fraction_of_distinct_values_reducer('interaction_events'),
     unique=daq.get_number_of_unique_values_reducer('interaction_events'),
     unique_frac=daq.get_fraction_of_unique_values_reducer('interaction_events'),
+    std_dev=daq.get_std_dev_reducer('interaction_events'),
 )
 pw.debug.compute_and_print(data, include_id=False)
 # pw.io.csv.write(data, SINK_FILE_NAME)
