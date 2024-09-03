@@ -1,4 +1,4 @@
-def calculate_number_of_unique_values(elements: list):
+def calculate_number_of_unique_values(elements: list) -> int:
     import numpy as np
 
     frequency_dict = dict()
@@ -10,5 +10,10 @@ def calculate_number_of_unique_values(elements: list):
     return number_of_unique_elements
 
 
-def calculate_fraction(numerator: float, denominator: float, precision: int):
+def calculate_fraction(numerator: float, denominator: float, precision: int) -> float:
     return round(numerator / denominator, precision)
+
+
+def calculate_median(elements: list):
+    from statistics import median
+    return median(elements)
