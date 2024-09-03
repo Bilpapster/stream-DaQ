@@ -204,6 +204,7 @@ class DaQMeasuresFactory:
         :param precision: the number of decimal points to include in the fraction result. Defaults to 3.
         :return: a pathway pw.apply statement ready for use as a column
         """
+
         def get_fraction_of_unique_values(elements: list):
             from utils.utils import calculate_number_of_unique_values
 
@@ -222,3 +223,23 @@ class DaQMeasuresFactory:
         from _custom_reducers.CustomReducers import std_dev_reducer
 
         return pw.apply(round, std_dev_reducer(pw.this[column_name]), precision)
+
+    @staticmethod
+    def get_percentiles_reducer(column_name: str, percentiles: int | list,
+                                precision: int = 3) -> pw.internals.expression.ColumnExpression:
+        """
+        Static getter to retrieve a custom reducer that computes the specified percentiles of the values in the window.
+        :param column_name: the column name of pw.this table to apply the reducer on
+        :param percentiles: a single (int) or multiple percentiles (list of int) to compute
+        :param precision: the number of decimal points to include in the result. Defaults to 3. In case multiple
+        percentiles are given, all percentile values are rounded to the same number of decimal points.
+        :return: a pw.ColumnExpression that corresponds to the application of the custom reducer on the specified column
+        """
+
+        def get_percentiles(elements: list):
+            import numpy as np
+            result = np.percentile(elements, percentiles, overwrite_input=True)
+            result = np.round(result, precision)
+            return {percentile: value for percentile, value in zip(percentiles, result)}
+
+        return pw.apply(get_percentiles, pw.reducers.ndarray(pw.this[column_name]))
