@@ -5,7 +5,6 @@ from dateutil import tz
 import artificial_stream_generators
 from DaQMeasuresFactory import DaQMeasuresFactory as daq
 
-
 TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 WINDOW_DURATION_SEC = 20
 WAIT_FOR_DELAYED_SEC = 1
@@ -27,7 +26,7 @@ data = data.windowby(
     window_end=pw.this._pw_window_end,
     # min=daq.get_min_reducer('interaction_events'),
     # max=daq.get_max_reducer('interaction_events'),
-    # mean=daq.get_avg_reducer('interaction_events'),
+    mean=daq.get_mean_reducer('interaction_events'),
     median=daq.get_median_reducer('interaction_events'),
     count=daq.get_count_reducer('interaction_events'),
     ndarray=daq.get_ndarray_reducer('interaction_events'),
