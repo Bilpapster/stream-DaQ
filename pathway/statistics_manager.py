@@ -24,6 +24,7 @@ data = data.windowby(
 ).reduce(
     window_start=pw.this._pw_window_start,
     window_end=pw.this._pw_window_end,
+    test=pw.this._pw_window_end - pw.this._pw_window_start,
     # min=daq.get_min_reducer('interaction_events'),
     # max=daq.get_max_reducer('interaction_events'),
     mean=daq.get_mean_reducer('interaction_events'),

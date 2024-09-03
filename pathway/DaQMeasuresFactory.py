@@ -1,4 +1,5 @@
 import pathway as pw
+from datetime import datetime
 
 
 class DaQMeasuresFactory:
@@ -53,6 +54,15 @@ class DaQMeasuresFactory:
         """
         from utils.utils import calculate_median
         return pw.apply(calculate_median, pw.reducers.tuple(pw.this[column_name]))
+
+    @staticmethod
+    def get_window_duration_reducer() -> datetime:
+        """
+        Static getter to retrieve the duration of the window. Semantically meaningful only on session- or count-based
+        windows.
+        :return: a datetime object representing the duration of the window
+        """
+        return pw.this._pw_window_end - pw.this._pw_window_start
 
     @staticmethod
     def get_ndarray_reducer(column_name: str) -> pw.internals.expression.ColumnExpression:
