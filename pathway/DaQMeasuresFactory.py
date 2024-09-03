@@ -44,6 +44,17 @@ class DaQMeasuresFactory:
         return pw.apply(round, pw.reducers.avg(pw.this[column_name]), precision)
 
     @staticmethod
+    def get_median_reducer(column_name: str) -> pw.internals.expression.ColumnExpression:
+        """
+        Static getter to retrieve a median pathway reducer, applied on current table (pw.this) and in the column specified
+        by column name
+        :param column_name: the column name of pw.this table to apply the median reducer on.
+        :return: a pathway avg reducer
+        """
+        from utils.utils import calculate_median
+        return pw.apply(calculate_median, pw.reducers.tuple(pw.this[column_name]))
+
+    @staticmethod
     def get_ndarray_reducer(column_name: str) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve an ndarray pathway reducer, applied on current table (pw.this) and in the column specified

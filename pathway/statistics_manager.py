@@ -28,6 +28,7 @@ data = data.windowby(
     # min=daq.get_min_reducer('interaction_events'),
     # max=daq.get_max_reducer('interaction_events'),
     # mean=daq.get_avg_reducer('interaction_events'),
+    median=daq.get_median_reducer('interaction_events'),
     count=daq.get_count_reducer('interaction_events'),
     ndarray=daq.get_ndarray_reducer('interaction_events'),
     # tuple=daq.get_tuple_reducer('interaction_events'),
