@@ -1,16 +1,16 @@
 import pathway as pw
 from datetime import datetime, timedelta
-from dateutil import tz
 
 import artificial_stream_generators
 from DaQMeasuresFactory import DaQMeasuresFactory as daq
 
 TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
-WINDOW_DURATION_SEC = 20
+WINDOW_DURATION_SEC = 22
 WAIT_FOR_DELAYED_SEC = 1
 SINK_FILE_NAME = "statistics_manager_sink.csv"
+ALLOWED_VALUES = (2, 4, 6, 8)
 
-data = (artificial_stream_generators.generate_artificial_random_viewership_data_stream(number_of_rows=10, input_rate=1)
+data = (artificial_stream_generators.generate_artificial_random_viewership_data_stream(number_of_rows=20, input_rate=1)
         .with_columns(date_and_time=pw.this.timestamp.dt.strptime(TIME_FORMAT))
         )
 
@@ -41,7 +41,11 @@ data = data.windowby(
     # unique=daq.get_number_of_unique_values_reducer('interaction_events'),
     # unique_frac=daq.get_fraction_of_unique_values_reducer('interaction_events'),
     # std_dev=daq.get_std_dev_reducer('interaction_events'),
-    percentiles=daq.get_percentiles_reducer('interaction_events', [10, 20, 80]),
+    # percentiles=daq.get_percentiles_reducer('interaction_events', [10, 20, 80]),
+    range_conformance=daq.get_number_of_range_conformance_reducer('interaction_events', 3, 6, True),
+    range_conformance_frac=daq.get_fraction_of_range_conformance_reducer('interaction_events', 3, 6, True),
+    set_conformance=daq.get_number_of_set_conformance_reducer('interaction_events', ALLOWED_VALUES),
+    set_conformance_frac=daq.get_fraction_of_set_conformance_reducer('interaction_events', ALLOWED_VALUES),
 )
 pw.debug.compute_and_print(data, include_id=False)
 # pw.io.csv.write(data, SINK_FILE_NAME)

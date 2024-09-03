@@ -236,6 +236,83 @@ class DaQMeasuresFactory:
         return pw.apply(round, std_dev_reducer(pw.this[column_name]), precision)
 
     @staticmethod
+    def get_number_of_range_conformance_reducer(column_name: str, low: float,
+                                                high: float,
+                                                inclusive=True) -> pw.internals.expression.ColumnExpression:
+        """
+        Static getter to retrieve a custom reducer that computes the number of values in the window that fall
+        within the range specified by low and high arguments. If the inclusive argument is set to True, the range
+        of allowed values is [low, high], otherwise (low, high). The default behavior is inclusive range.
+        :param column_name: the column name of pw.this table to apply the reducer on
+        :param low: the lower bound of the range
+        :param high: the upper bound of the range
+        :param inclusive: whether to include or not the bounds in the allowed range. Defaults to True, thus [low, high].
+        :return: a pw.ColumnExpression that corresponds to the application of the custom reducer on the specified column
+        """
+        from utils.utils import calculate_number_of_range_conformance
+
+        return pw.apply(calculate_number_of_range_conformance, pw.reducers.tuple(pw.this[column_name]), low, high,
+                        inclusive)
+
+    @staticmethod
+    def get_fraction_of_range_conformance_reducer(column_name: str, low: float, high: float, inclusive=True,
+                                                  precision: int = 3) -> pw.internals.expression.ColumnExpression:
+        """
+        Static getter to retrieve a custom reducer that computes the fraction of values in the window that fall
+        within the range specified by low and high arguments. If the inclusive argument is set to True, the range
+        of allowed values is [low, high], otherwise (low, high). The default behavior is inclusive range. The fraction
+        is a float number in range [0, 1].
+        :param column_name: the column name of pw.this table to apply the reducer on
+        :param low: the lower bound of the range
+        :param high: the upper bound of the range
+        :param inclusive: whether to include or not the bounds in the allowed range. Defaults to True, thus [low, high].
+        :param precision: the number of decimal points to include in the fraction result. Defaults to 3.
+        :return: a pw.ColumnExpression that corresponds to the application of the custom reducer on the specified column
+        """
+
+        def get_fraction_of_range_conformance(elements: tuple):
+            from utils.utils import calculate_number_of_range_conformance
+
+            fraction = calculate_number_of_range_conformance(elements, low, high, inclusive) / len(elements)
+            return round(fraction, precision)
+
+        return pw.apply(get_fraction_of_range_conformance, pw.reducers.tuple(pw.this[column_name]))
+
+    @staticmethod
+    def get_number_of_set_conformance_reducer(column_name: str,
+                                              allowed_values: set) -> pw.internals.expression.ColumnExpression:
+        """
+        Static getter to retrieve a custom reducer that computes the number of values in the window that are contained
+        in the specified set of allowed values.
+        :param column_name: the column name of pw.this table to apply the reducer on
+        :param allowed_values: a set of allowed values
+        :return: a pw.ColumnExpression that corresponds to the application of the custom reducer on the specified column
+        """
+        from utils.utils import calculate_number_of_set_conformance
+
+        return pw.apply(calculate_number_of_set_conformance, pw.reducers.tuple(pw.this[column_name]), allowed_values)
+
+    @staticmethod
+    def get_fraction_of_set_conformance_reducer(column_name: str, allowed_values: set,
+                                                precision: int = 3) -> pw.internals.expression.ColumnExpression:
+        """
+        Static getter to retrieve a custom reducer that computes the fraction of values in the window that are contained
+        in the specified set of allowed values. The fraction is a float number in range [0, 1].
+        :param column_name: the column name of pw.this table to apply the reducer on
+        :param allowed_values: a set of allowed values
+        :param precision: the number of decimal points to include in the fraction result. Defaults to 3.
+        :return: a pw.ColumnExpression that corresponds to the application of the custom reducer on the specified column
+        """
+
+        def get_fraction_of_set_conformance(elements: tuple):
+            from utils.utils import calculate_number_of_set_conformance
+
+            fraction = calculate_number_of_set_conformance(elements, allowed_values) / len(elements)
+            return round(fraction, precision)
+
+        return pw.apply(get_fraction_of_set_conformance, pw.reducers.tuple(pw.this[column_name]))
+
+    @staticmethod
     def get_percentiles_reducer(column_name: str, percentiles: int | list,
                                 precision: int = 3) -> pw.internals.expression.ColumnExpression:
         """
