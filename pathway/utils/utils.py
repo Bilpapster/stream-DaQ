@@ -17,3 +17,16 @@ def calculate_fraction(numerator: float, denominator: float, precision: int) -> 
 def calculate_median(elements: tuple):
     from statistics import median
     return median(elements)
+
+
+def calculate_number_of_range_conformance(elements: tuple, low: float, high: float, inclusive: bool) -> int:
+    import numpy as np
+
+    low, high = np.float64(low), np.float64(high)
+    low_condition = (elements >= low) if inclusive else (elements > low)
+    high_condition = (elements <= high) if inclusive else (elements < high)
+    return (low_condition & high_condition).sum()
+
+
+def calculate_number_of_set_conformance(elements: tuple, allowed_values: set):
+    return sum(element in allowed_values for element in elements)
