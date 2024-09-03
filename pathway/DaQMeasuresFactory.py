@@ -235,6 +235,29 @@ class DaQMeasuresFactory:
         return pw.apply(get_fraction_of_unique_values, pw.reducers.tuple(pw.this[column_name]))
 
     @staticmethod
+    def get_fraction_of_unique_over_distinct_values_reducer(column_name: str,
+                                                            precision: int = 3) -> pw.internals.expression.ColumnExpression:
+        """
+        Static getter to retrieve a custom reducer that computes the fraction of unique elements over distinct ones
+        in the window. The fraction is in range [0, 1], since #unique <= # distinct elements and the equality holds only
+        for the case where all values inside a window are different from one another.
+        DEFINITION: Unique values are considered the ones that appear **exactly** once inside the window. For example, in
+        [a, a, b] the only unique value is 'b'. Distinct values are considered the ones that appear **at least** once
+        inside the window. For example, in [a, a, b] the distinct values are 'a' and 'b'.
+        :param column_name: the column name of pw.this table to apply the reducer on
+        :param precision: the number of decimal points to include in the fraction result. Defaults to 3.
+        :return: a pathway pw.apply statement ready for use as a column
+        """
+
+        def get_fraction_of_unique_over_distinct_values(elements: list):
+            from utils.utils import calculate_number_of_unique_values
+
+            fraction = calculate_number_of_unique_values(elements) / len(set(elements))
+            return round(fraction, precision)
+
+        return pw.apply(get_fraction_of_unique_over_distinct_values, pw.reducers.tuple(pw.this[column_name]))
+
+    @staticmethod
     def get_std_dev_reducer(column_name: str, precision: int = 3) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the standard deviation of the values in the window.
