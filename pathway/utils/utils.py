@@ -14,6 +14,6 @@ def calculate_fraction(numerator: float, denominator: float, precision: int) -> 
     return round(numerator / denominator, precision)
 
 
-def calculate_median(elements: list):
+def calculate_median(elements: tuple):
     from statistics import median
     return median(elements)
