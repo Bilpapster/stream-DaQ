@@ -30,6 +30,7 @@ data = data.windowby(
     # mean=daq.get_mean_reducer('interaction_events'),
     # median=daq.get_median_reducer('interaction_events'),
     most_frequent=daq.get_most_frequent_reducer('interaction_events'),
+    frequent_items_approx=daq.get_approx_frequent_items_reducer('interaction_events'),
     constancy=daq.get_constancy_reducer('interaction_events'),
     count=daq.get_count_reducer('interaction_events'),
     ndarray=daq.get_ndarray_reducer('interaction_events'),
