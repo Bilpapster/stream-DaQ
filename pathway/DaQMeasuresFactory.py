@@ -56,6 +56,40 @@ class DaQMeasuresFactory:
         return pw.apply(calculate_median, pw.reducers.tuple(pw.this[column_name]))
 
     @staticmethod
+    def get_most_frequent_reducer(column_name: str) -> pw.internals.expression.ColumnExpression:
+        """
+        Static getter to retrieve a most-frequent-element reducer, applied on current table (pw.this) and in the column
+        specified by column name argument.
+        :param column_name: the column name of @code{pw.this} table to apply the reducer on
+        :return: a pathway @code{pw.apply} statement ready for use as a column
+        """
+
+        def get_most_frequent_element(elements: tuple):
+            from utils.utils import find_most_frequent_element
+
+            (most_frequent_element, max_frequency) = find_most_frequent_element(elements)
+            return most_frequent_element
+
+        return pw.apply(get_most_frequent_element, pw.reducers.tuple(pw.this[column_name]))
+
+    @staticmethod
+    def get_constancy_reducer(column_name: str) -> pw.internals.expression.ColumnExpression:
+        """
+        Static getter to retrieve a constancy reducer, applied on current table (pw.this) and in the column
+        specified by column name argument. Constancy is defined as the frequency of the most frequent element.
+        :param column_name: the column name of @code{pw.this} table to apply the reducer on
+        :return: a pathway @code{pw.apply} statement ready for use as a column
+        """
+
+        def get_constancy(elements: tuple):
+            from utils.utils import find_most_frequent_element
+
+            (most_frequent_element, max_frequency) = find_most_frequent_element(elements)
+            return max_frequency
+
+        return pw.apply(get_constancy, pw.reducers.tuple(pw.this[column_name]))
+
+    @staticmethod
     def get_window_duration_reducer() -> datetime:
         """
         Static getter to retrieve the duration of the window. Semantically meaningful only on session- or count-based
