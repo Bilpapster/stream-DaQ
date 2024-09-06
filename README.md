@@ -93,16 +93,28 @@ cd bytewax
 # all the commands from now on should be executed in this directory
 ```
 
-1. Run the `statistical_manager` file with the help of the Bytewax module. Specify that the name of the 
+1. Run the `statistics_manager` file with the help of the Bytewax module. Specify that the name of the 
 dataflow that is to be run is `flow`.
-    ```bash
-    python -m bytewax.run statistics_manager:flow
-    ```
+ ```bash
+ python -m bytewax.run statistics_manager:flow
+ ```
    
 1. (Optionally) Visualize the live results!
 ```bash
 python live_plotter.py
 ```
+
+### Pathway
+1. Starting from the root folder of the project, go to the `pathway` directory.
+```bash
+cd pathway
+# all the commands from now on should be executed in this directory
+```
+
+1. Run the `statistics_manager` file
+ ```bash
+ python statistics_manager.py
+ ```
 
 ## Acknowledgements
 
