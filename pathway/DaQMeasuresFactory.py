@@ -56,6 +56,18 @@ class DaQMeasuresFactory:
         return pw.apply(calculate_median, pw.reducers.tuple(pw.this[column_name]))
 
     @staticmethod
+    def get_all_values_same_reducer(column_name: str) -> pw.internals.expression.ColumnExpression:
+        """
+        Static getter to retrieve a custom reducer that computes whether all the values inside the window are the same
+        or not. The result is a boolean variable (True/False).
+        :param column_name: the column name of pw.this table to apply the reducer on
+        :return: a pw.ColumnExpression that corresponds to the application of the custom reducer on the specified column
+        """
+        from _custom_reducers.CustomReducers import all_values_the_same_reducer
+
+        return all_values_the_same_reducer(pw.this[column_name])
+
+    @staticmethod
     def get_most_frequent_reducer(column_name: str) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a most-frequent-element reducer, applied on current table (pw.this) and in the column

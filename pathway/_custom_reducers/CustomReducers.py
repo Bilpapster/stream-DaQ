@@ -86,3 +86,31 @@ class ApproxMostFrequentItemsReducer(pw.BaseCustomAccumulator):
 
 
 approx_most_frequent_items_reducer = pw.reducers.udf_reducer(ApproxMostFrequentItemsReducer)
+
+
+class AllValuesTheSameReducer(pw.BaseCustomAccumulator):
+
+    def __init__(self, element: str):
+        # self.hpp_sketch = HyperLogLogPlusPlus()
+        # self.hpp_sketch.update(element.encode('utf-8'))
+
+        self.all_same_so_far = True
+        self.element = element
+
+    @classmethod
+    def from_row(cls, row):
+        [value] = row
+        return cls(str(value))
+
+    def update(self, other):
+        if self.all_same_so_far and other.all_same_so_far and self.element == other.element:
+            return
+
+        self.all_same_so_far = False
+        other.all_same_so_far = False  # setting other.all_same_so_far could be redundant, in case always self is updated, needs to be double checked todo
+
+    def compute_result(self) -> bool:
+        return self.all_same_so_far
+
+
+all_values_the_same_reducer = pw.reducers.udf_reducer(AllValuesTheSameReducer)
