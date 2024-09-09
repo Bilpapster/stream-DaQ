@@ -68,6 +68,26 @@ class DaQMeasuresFactory:
         return all_values_the_same_reducer(pw.this[column_name])
 
     @staticmethod
+    def get_ordering_check_reducer(time_column: str, column_name: str,
+                                   time_format: str, ordering: str) -> pw.internals.expression.ColumnExpression:
+        """
+        Static getter to retrieve a median pathway reducer, applied on current table (pw.this) and in the column specified
+        by column name
+        :param column_name: the column name of pw.this table to apply the median reducer on.
+        :return: a pathway median reducer
+        """
+
+        def get_ordering_check(timestamps: list, elements: list, time_format: str,
+                               ordering: str) -> bool:
+            from utils.utils import check_ordering, sort_by_timestamp
+
+            sorted_timestamps, sorted_elements = sort_by_timestamp(timestamps, elements, time_format)
+            return check_ordering(sorted_elements, ordering)
+
+        return pw.apply(get_ordering_check, pw.reducers.tuple(pw.this[time_column]),
+                        pw.reducers.tuple(pw.this[column_name]), time_format, ordering)
+
+    @staticmethod
     def get_most_frequent_reducer(column_name: str) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a most-frequent-element reducer, applied on current table (pw.this) and in the column
@@ -162,7 +182,6 @@ class DaQMeasuresFactory:
         :param time_format:
         :return: a pathway sorted_tuple reducer
         """
-        from utils.utils import sort_by_timestamp
 
         def get_sorted_elements_by_time(timestamps, elements, fmt):
             from utils.utils import sort_by_timestamp
@@ -172,7 +191,6 @@ class DaQMeasuresFactory:
 
         return pw.apply(get_sorted_elements_by_time, pw.reducers.tuple(pw.this[time_column]),
                         pw.reducers.tuple(pw.this[column_name]), time_format)
-        # return pw.reducers.sorted_tuple(pw.this[column_name])
 
     @staticmethod
     def get_number_of_values_above_mean_reducer(column_name: str) -> pw.internals.expression.ColumnExpression:
