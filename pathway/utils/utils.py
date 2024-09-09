@@ -71,3 +71,39 @@ def sort_by_timestamp(timestamps: list, elements: list[int | float | str], time_
     sorted_indices = np.argsort(timestamps_int)
     timestamps_sorted, elements_sorted_by_timestamp = timestamps[sorted_indices], elements[sorted_indices]
     return timestamps_sorted, elements_sorted_by_timestamp
+
+
+def check_ordering(sorted_elements_by_time: tuple, ordering="ASC"):
+    """
+    Checks whether the elements in the provided tuple conform to the specified ordering. The result is True/False.
+    :param sorted_elements_by_time: the elements to check. Note that no sorting is performed and ordering is checked
+    on the tuple as is.
+    :param ordering: the ordering of the elements to check for. Available options are "ASC" (strictly ascending),
+    "DESC" (strictly descending), "ASC_EQ" (ascending or equal), "DESC_EQ" (descending or equal). Defaults to "ASC".
+    :return:
+    """
+
+    def get_compare_function(type_literal: str):
+        # match-case enabled in python, starting from version 3.10
+        match type_literal:
+            case "ASC":
+                function = lambda a, b: a < b
+            case "DESC":
+                function = lambda a, b: a > b
+            case "ASC_EQ":
+                function = lambda a, b: a <= b
+            case "DESC_EQ":
+                function = lambda a, b: a >= b
+            case _:
+                function = lambda a, b: a < b  # if a wrong ordering is passed, use ASC
+
+        return function
+
+    compare_function = get_compare_function(ordering)
+    previous = sorted_elements_by_time[0]
+    sorted_elements_by_time = sorted_elements_by_time[1:]
+    for element in sorted_elements_by_time:
+        if not compare_function(previous, element):
+            return False
+        previous = element
+    return True
