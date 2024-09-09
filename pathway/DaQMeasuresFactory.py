@@ -152,6 +152,29 @@ class DaQMeasuresFactory:
         return pw.reducers.sorted_tuple(pw.this[column_name])
 
     @staticmethod
+    def get_sorted_by_time_reducer(time_column: str, column_name: str,
+                                   time_format: str) -> pw.internals.expression.ReducerExpression:
+        """
+        Static getter to retrieve a reducer that sorts elements by timestamp, applied on current table (pw.this)
+        and in the column specified by column name
+        :param time_column: the column name of pw.this table
+        :param column_name: the column name of pw.this table to apply the sorted_tuple reducer on.
+        :param time_format:
+        :return: a pathway sorted_tuple reducer
+        """
+        from utils.utils import sort_by_timestamp
+
+        def get_sorted_elements_by_time(timestamps, elements, fmt):
+            from utils.utils import sort_by_timestamp
+
+            sorted_timestamps, sorted_elements = sort_by_timestamp(timestamps, elements, fmt)
+            return sorted_elements
+
+        return pw.apply(get_sorted_elements_by_time, pw.reducers.tuple(pw.this[time_column]),
+                        pw.reducers.tuple(pw.this[column_name]), time_format)
+        # return pw.reducers.sorted_tuple(pw.this[column_name])
+
+    @staticmethod
     def get_number_of_values_above_mean_reducer(column_name: str) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the number of elements in the window that are greater
