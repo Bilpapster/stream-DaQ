@@ -34,6 +34,11 @@ def calculate_number_of_range_conformance(elements: tuple, low: float, high: flo
 
 
 def calculate_number_of_set_conformance(elements: tuple, allowed_values: set):
+    try:
+        iter(elements)
+    except TypeError:
+        elements = [elements]
+
     return sum(element in allowed_values for element in elements)
 
 
