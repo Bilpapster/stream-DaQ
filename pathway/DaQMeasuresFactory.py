@@ -71,10 +71,20 @@ class DaQMeasuresFactory:
     def get_ordering_check_reducer(time_column: str, column_name: str,
                                    time_format: str, ordering: str) -> pw.internals.expression.ColumnExpression:
         """
-        Static getter to retrieve a median pathway reducer, applied on current table (pw.this) and in the column specified
-        by column name
+        Static getter to retrieve a custom reducer that checks conformance of the values to the specified ordering,
+        applied on the specified column of the current table (pw.this). The elements are first sorted in chronological
+        order, so the name of the column that contains timestamps is required, as well as the time format these values
+        have. The ordering can be one of the following options and refer to the ordering of values **after being sorted
+        in chronological order**: \n
+        - ``"ASC"``: values are in strictly ascending order \n
+        - ``"ASC_EQ"``: values are in ascending order (every next element is greater **or equal** to the previous one) \n
+        - ``"DESC"``: values are in strictly descending order \n
+        - ``"DESC_EQ"``: values are in descending order (every next element is smaller **or equal** to the previous one) \n
+        :param time_column: the column name of pw.this table that contains timestamps
         :param column_name: the column name of pw.this table to apply the median reducer on.
-        :return: a pathway median reducer
+        :param time_format: the format of the timestamps in ``time_column``
+        :param ordering: the ordering to check for. Available options ``"ASC"``, ``"ASC_EQ"``, ``"DESC"``, ``"DESC_EQ"``.
+        :return: a pathway custom reducer that checks conformance of the values to the specified ordering
         """
 
         def get_ordering_check(timestamps: list, elements: list, time_format: str,

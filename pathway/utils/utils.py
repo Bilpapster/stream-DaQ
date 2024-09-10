@@ -55,7 +55,7 @@ def find_most_frequent_element(elements: tuple):
 
 def sort_by_timestamp(timestamps: list, elements: list[int | float | str], time_format: str) -> tuple:
     """
-    Sorts timestamps and items in parallel, based on timestamps.
+    Sorts timestamps and items in parallel, based on timestamps (chronological order).
     :param timestamps: a list of timestamps as floats
     :param elements: a list of items as floats, corresponding to the timestamps
     :param time_format: the time format in which the string values of the timestamp column are provided
@@ -77,25 +77,39 @@ def check_ordering(sorted_elements_by_time: tuple, ordering="ASC"):
     """
     Checks whether the elements in the provided tuple conform to the specified ordering. The result is True/False.
     :param sorted_elements_by_time: the elements to check. Note that no sorting is performed and ordering is checked
-    on the tuple as is.
+    on the tuple as is. That means you may wish to first sort the elements in chronological order, before passing them
+    as argument to this function.
     :param ordering: the ordering of the elements to check for. Available options are "ASC" (strictly ascending),
     "DESC" (strictly descending), "ASC_EQ" (ascending or equal), "DESC_EQ" (descending or equal). Defaults to "ASC".
     :return:
     """
 
     def get_compare_function(type_literal: str):
+        """
+        A higher-order auxiliary function that returns a comparison function, based on the type_literal argument.
+        Available options for the type literal are the following: \n
+        - "ASC": first element strictly smaller than the second \n
+        - "ASC_EQ": first element smaller or equal to the second \n
+        - "DESC": first element strictly greater than the second \n
+        - "DESC_EQ": first element greater or equal to the second \n
+        :param type_literal: a string to specify the comparison function to be returned. Accepted options are "ASC",
+        "ASC_EQ", "DESC", "DESC_EQ". In case the provided string is not one of the accepted options, "ASC" comparison
+        function is returned by default. For details about the comparison function returned in each of the options, see
+        above.
+        :return: a comparison function between two elements
+        """
         # match-case enabled in python, starting from version 3.10
         match type_literal:
             case "ASC":
-                function = lambda a, b: a < b
+                function = lambda first, second: first < second
             case "DESC":
-                function = lambda a, b: a > b
+                function = lambda first, second: first > second
             case "ASC_EQ":
-                function = lambda a, b: a <= b
+                function = lambda first, second: first <= second
             case "DESC_EQ":
-                function = lambda a, b: a >= b
+                function = lambda first, second: first >= second
             case _:
-                function = lambda a, b: a < b  # if a wrong ordering is passed, use ASC
+                function = lambda first, second: first < second  # if a wrong ordering is passed, do the same as "ASC"
 
         return function
 
