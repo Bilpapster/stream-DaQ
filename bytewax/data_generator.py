@@ -30,7 +30,7 @@ def create_input():
                 "session_id": str(row['Session_ID']),
                 "device_id": str(row['Device_ID']),
                 "video_id": str(row['Video_ID']),
-                "duration_watched": float(row['Duration_Watched (minutes)']),
+                "duration_watched": float(row['Duration_Watched']),
                 "genre": str(row['Genre']),
                 "country": str(row['Country']),
                 "age": int(row['Age']),

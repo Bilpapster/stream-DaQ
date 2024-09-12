@@ -7,8 +7,8 @@ def get_subplot(dataframe: pd.DataFrame, y_dataframe_column: str, legend_label: 
     plt.cla()
     plt.xticks(rotation=75)
     plt.grid(visible=True, alpha=0.3)
-    plt.plot(dataframe['timestamp'], dataframe[y_dataframe_column], label=legend_label, color=color,
-             linestyle='--', marker='o', linewidth=0.5)
+    plt.plot(dataframe['timestamp'], dataframe[y_dataframe_column], label=legend_label, color=color, linestyle='--', linewidth=0.5)
+    plt.fill_between(dataframe['timestamp'], dataframe[y_dataframe_column], color=color, alpha=0.2, interpolate=True)
     plt.legend(loc='lower left')
 
 
