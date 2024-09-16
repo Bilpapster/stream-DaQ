@@ -61,9 +61,10 @@ data = data.windowby(
     # most_frequent_set_conformance=daq.get_number_of_most_frequent_set_conformance_reducer('interaction_events', ALLOWED_VALUES),
     # set_conformance_frac=daq.get_fraction_of_set_conformance_reducer('interaction_events', ALLOWED_VALUES),
     # most_frequent_set_conformance_frac=daq.get_fraction_of_most_frequent_set_conformance_reducer('interaction_events', ALLOWED_VALUES),
-    tuple_lang=daq.get_tuple_reducer('languages'),
-    regex= daq.get_number_of_regex_conformance_reducer('languages', r'.*ish'),
-    regex_frac= daq.get_fraction_of_regex_conformance_reducer('languages', r'.*ish'),
+    # tuple_lang=daq.get_tuple_reducer('languages'),
+    # regex= daq.get_number_of_regex_conformance_reducer('languages', r'.*ish'),
+    # regex_frac= daq.get_fraction_of_regex_conformance_reducer('languages', r'.*ish'),
+    first_digit_frequencies = daq.get_first_digit_frequencies_reducer('interaction_events'),
 )
 pw.debug.compute_and_print(data, include_id=False)
 # pw.io.csv.write(data, SINK_FILE_NAME)

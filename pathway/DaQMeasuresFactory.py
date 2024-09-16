@@ -471,14 +471,25 @@ class DaQMeasuresFactory:
         percentiles are given, all percentile values are rounded to the same number of decimal points.
         :return: a pw.ColumnExpression that corresponds to the application of the custom reducer on the specified column
         """
-
-        def get_percentiles(elements: list):
-            import numpy as np
-            result = np.percentile(elements, percentiles, overwrite_input=True)
-            result = np.round(result, precision)
-            return {percentile: value for percentile, value in zip(percentiles, result)}
+        from utils.utils import get_percentiles
 
         return pw.apply(get_percentiles, pw.reducers.ndarray(pw.this[column_name]))
+
+    @staticmethod
+    def get_first_digit_frequencies_reducer(column_name: str,
+                                            precision: int = 3) -> pw.internals.expression.ColumnExpression:
+        """
+        Static getter to retrieve a custom reducer that computes the specified percentiles of the values in the window.
+        :param column_name: the column name of pw.this table to apply the reducer on
+        :param percentiles: a single (int) or multiple percentiles (list of int) to compute
+        :param precision: the number of decimal points to include in the result. Defaults to 3. In case multiple
+        percentiles are given, all percentile values are rounded to the same number of decimal points.
+        :return: a pw.ColumnExpression that corresponds to the application of the custom reducer on the specified column
+        """
+
+        from utils.utils import get_first_digit_frequencies
+
+        return pw.apply(get_first_digit_frequencies, pw.reducers.ndarray(pw.this[column_name]), precision)
 
     @staticmethod
     def get_number_of_most_frequent_range_conformance_reducer(column_name: str, low: float,
@@ -571,9 +582,9 @@ class DaQMeasuresFactory:
         return pw.apply(get_fraction_of_most_frequent_set_conformance,
                         DaQMeasuresFactory.get_most_frequent_reducer(column_name))
 
-
     @staticmethod
-    def get_number_of_regex_conformance_reducer(column_name: str, regex: str) -> pw.internals.expression.ColumnExpression:
+    def get_number_of_regex_conformance_reducer(column_name: str,
+                                                regex: str) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the number of values in the window that match the
         specified regex argument. The provided ``regex`` argument has to comply with the built-in python library ``re``.
