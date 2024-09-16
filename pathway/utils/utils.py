@@ -42,6 +42,19 @@ def calculate_number_of_set_conformance(elements: tuple, allowed_values: set):
     return sum(element in allowed_values for element in elements)
 
 
+def calculate_number_of_regex_conformance(elements: tuple[str], regex: str):
+    """
+    Computes the number of elements in the tuple that match the given regex, at least once. Uses internally the Python's
+    built-in library ``re``.
+    :param elements: The elements to check.
+    :param regex: The regex to check.
+    :return: The number of elements that match the regex.
+    """
+    import re
+
+    return sum(re.match(regex, element) is not None for element in elements)
+
+
 def find_most_frequent_element(elements: tuple):
     frequency_dict = create_frequency_dict(elements)
     items = tuple(frequency_dict.items())
