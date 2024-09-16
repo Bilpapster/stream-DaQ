@@ -96,7 +96,7 @@ def extract_first_digit(numbers: list[int]) -> list[int]:
     # extracting the first digit via transforming the number to string and then back to number
     # seems to be the most performant method, according to
     # https://stackoverflow.com/questions/41271299/how-can-i-get-the-first-two-digits-of-a-number
-    return [int(str(number)[0]) for number in numbers]
+    return [int(str(abs(number))[0]) for number in numbers]
 
 
 def get_first_digit_frequencies(numbers: list[int], precision: int) -> dict:
