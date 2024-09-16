@@ -570,3 +570,39 @@ class DaQMeasuresFactory:
 
         return pw.apply(get_fraction_of_most_frequent_set_conformance,
                         DaQMeasuresFactory.get_most_frequent_reducer(column_name))
+
+
+    @staticmethod
+    def get_number_of_regex_conformance_reducer(column_name: str, regex: str) -> pw.internals.expression.ColumnExpression:
+        """
+        Static getter to retrieve a custom reducer that computes the number of values in the window that match the
+        specified regex argument. The provided ``regex`` argument has to comply with the built-in python library ``re``.
+        (https://docs.python.org/3/library/re.html).
+        :param column_name: the column name of pw.this table to apply the reducer on
+        :param regex: the regex to check the values for matching. Has to comply with the built-in python library ``re``.
+        :return: a pw.ColumnExpression that corresponds to the application of the custom reducer on the specified column
+        """
+        from utils.utils import calculate_number_of_regex_conformance
+
+        return pw.apply(calculate_number_of_regex_conformance, pw.reducers.tuple(pw.this[column_name]), regex)
+
+    @staticmethod
+    def get_fraction_of_regex_conformance_reducer(column_name: str, regex: str,
+                                                  precision: int = 3) -> pw.internals.expression.ColumnExpression:
+        """
+        Static getter to retrieve a custom reducer that computes the fraction of values in the window that match the
+        specified regex argument. The provided ``regex`` argument has to comply with the built-in python library ``re``.
+        (https://docs.python.org/3/library/re.html). The fraction is a float number in range [0, 1].
+        :param column_name: the column name of pw.this table to apply the reducer on
+        :param regex: the regex to check the values for matching. Has to comply with the built-in python library ``re``.
+        :param precision: the number of decimal points to include in the fraction result. Defaults to 3.
+        :return: a pw.ColumnExpression that corresponds to the application of the custom reducer on the specified column
+        """
+
+        def get_fraction_of_regex_conformance(elements: tuple):
+            from utils.utils import calculate_number_of_regex_conformance
+
+            fraction = calculate_number_of_regex_conformance(elements, regex) / len(elements)
+            return round(fraction, precision)
+
+        return pw.apply(get_fraction_of_regex_conformance, pw.reducers.tuple(pw.this[column_name]))
