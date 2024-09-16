@@ -71,6 +71,54 @@ def find_most_frequent_element(elements: tuple):
     return current_max  # a tuple in the form (most_frequent_element, current_max_frequency)
 
 
+def get_percentiles(elements: list, percentiles: int | list, precision: int) -> dict:
+    """
+    Computes the specified percentile(s) on the given elements. ``percentiles`` argument can either be a single integer
+    value or a list of integers. The result is a dictionary in the form {percentile: value} for all ``percentiles``
+    :param elements: the elements to compute the percentiles on
+    :param percentiles: the percentiles to compute. Can be either a single integer value or a list of integers.
+    :param precision: the number of decimal points to include in the percentile values
+    :return: a percentiles dictionary in the form {percentile: value} for all ``percentiles``.
+    """
+    import numpy as np
+    result = np.percentile(elements, percentiles, overwrite_input=True)
+    result = np.round(result, precision)
+    return {percentile: value for percentile, value in zip(percentiles, result)}
+
+
+def extract_first_digit(numbers: list[int]) -> list[int]:
+    """
+    Extracts the first digit of every number in the provided list and returns the result as a list of digits (integers).
+    :param numbers: the numbers to extract the first digit from.
+    :return: a list of digits (integers) where each element is the first digit of the respective element of the initial
+    list.
+    """
+    # extracting the first digit via transforming the number to string and then back to number
+    # seems to be the most performant method, according to
+    # https://stackoverflow.com/questions/41271299/how-can-i-get-the-first-two-digits-of-a-number
+    return [int(str(number)[0]) for number in numbers]
+
+
+def get_first_digit_frequencies(numbers: list[int], precision: int) -> dict:
+    """
+    Calculates and returns the frequency of the first digits of the provided list of numbers. Uses ``extract_first_digit``
+    internally. Returns a dictionary in the form {digit: [``abs_freq``, ``rel_freq``]} for all digits from 0-9. ``abs_freq`` stands
+    for the absolute frequency, i.e., the actual number of appearances of that specific digit in the list. ``rel_freq``
+    stands for the relative frequency, i.e. the fraction of appearances divided by the length of the list. ``abs_freq`` is
+    in range [0, ``len(numbers)``], while ``rel_freq`` is in range [0, 1].
+    :param numbers: the numbers to calculate the first digits' frequencies from.
+    :param precision: the number of decimal points to include in the relative frequency values.
+    :return:
+    """
+    first_digits = extract_first_digit(numbers)
+    frequencies = [0] * 10  # [0 appearances] * 10_different_digits, creates a list with 10 zeros [0, 0, ..., 0]
+    for digit in first_digits:
+        frequencies[digit] += 1
+
+    length = len(first_digits)
+    return {digit: [frequency, round(frequency / length, precision)] for digit, frequency in enumerate(frequencies)}
+
+
 def sort_by_timestamp(timestamps: list, elements: list[int | float | str], time_format: str) -> tuple:
     """
     Sorts timestamps and items in parallel, based on timestamps (chronological order).
