@@ -41,7 +41,7 @@ class DaQMeasuresFactory:
         return pw.reducers.count(pw.this[column_name])
 
     @staticmethod
-    def get_availability_reducer(column_name: str) -> pw.internals.expression.ReducerExpression:
+    def get_availability_reducer(column_name: str) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a count pathway reducer, applied on current table (pw.this) and in the column specified
         by column name
@@ -52,7 +52,7 @@ class DaQMeasuresFactory:
         def get_availability(count: int) -> bool:
             return count > 0
 
-        return pw.apply(get_availability, pw.reducers.count(pw.this[column_name]))
+        return pw.apply_with_type(get_availability, bool, pw.reducers.count(pw.this[column_name]))
         # return pw.reducers.count(pw.this[column_name])
 
     @staticmethod
