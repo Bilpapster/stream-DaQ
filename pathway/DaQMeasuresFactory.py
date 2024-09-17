@@ -45,7 +45,7 @@ class DaQMeasuresFactory:
         """
         Static getter to retrieve a count pathway reducer, applied on current table (pw.this) and in the column specified
         by column name
-        :param column_name: the column name of pw.this table to apply the count reducer on.
+        :param column_name: the column name of pw.this table to apply the availability reducer on.
         :return: a pathway count reducer
         """
 
@@ -53,7 +53,6 @@ class DaQMeasuresFactory:
             return count > 0
 
         return pw.apply_with_type(get_availability, bool, pw.reducers.count(pw.this[column_name]))
-        # return pw.reducers.count(pw.this[column_name])
 
     @staticmethod
     def get_mean_reducer(column_name: str, precision: int = 3) -> pw.internals.expression.ColumnExpression:
@@ -631,3 +630,20 @@ class DaQMeasuresFactory:
             return round(fraction, precision)
 
         return pw.apply(get_fraction_of_regex_conformance, pw.reducers.tuple(pw.this[column_name]))
+
+    @staticmethod
+    def get_pearson_correlation_reducer(first_column_name: str, second_column_name: str,
+                                        precision: int = 3) -> pw.internals.expression.ColumnExpression:
+        """
+        Static getter to retriece a custom reducer that computes the Pearson Correlation of the values between two
+        different columns on the window.
+        :param first_column_name: The name of the first (x) column.
+        :param second_column_name: The name of the second (y) column.
+        :param precision: the number of decimal points to include in the fraction result. Defaults to 3.
+        :return: a pw.ColumnExpression that corresponds to the application of the custom reducer on the specified columns.
+        """
+        from utils.utils import calculate_pearson_correlation
+
+        x = pw.reducers.ndarray(pw.this[first_column_name])
+        y = pw.reducers.ndarray(pw.this[second_column_name])
+        return pw.apply(calculate_pearson_correlation, x, y, precision)

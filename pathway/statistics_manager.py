@@ -38,7 +38,7 @@ data = data.windowby(
     # frequent_items_approx=daq.get_approx_frequent_items_reducer('interaction_events'),
     # constancy=daq.get_constancy_reducer('interaction_events'),
     # count=daq.get_count_reducer('interaction_events'),
-    availability=daq.get_availability_reducer('interaction_events'),
+    # availability=daq.get_availability_reducer('interaction_events'),
     # ndarray=daq.get_ndarray_reducer('interaction_events'),
     tuple=daq.get_tuple_reducer('interaction_events'),
     # sorted_tuple=daq.get_sorted_tuple_reducer('interaction_events'),
@@ -66,6 +66,7 @@ data = data.windowby(
     # regex= daq.get_number_of_regex_conformance_reducer('languages', r'.*ish'),
     # regex_frac= daq.get_fraction_of_regex_conformance_reducer('languages', r'.*ish'),
     # first_digit_frequencies = daq.get_first_digit_frequencies_reducer('interaction_events'),
+    pearson=daq.get_pearson_correlation_reducer('interaction_events', 'duration_watched'),
 )
 pw.debug.compute_and_print(data, include_id=False)
 # pw.io.csv.write(data, SINK_FILE_NAME)
