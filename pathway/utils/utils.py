@@ -187,3 +187,19 @@ def check_ordering(sorted_elements_by_time: tuple, ordering="ASC"):
             return False
         previous = element
     return True
+
+
+def calculate_pearson_correlation(x, y, precision: int) -> float:
+    """
+    Computes the Pearson correlation between x and y, rounded to the specified precision. Leverages internally
+    the relative implementation from scipy:
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.pearsonr.html
+    :param x: the x array_like values
+    :param y: the y array_like values
+    :param precision: the number of decimal places to include in the result
+    :return: the Pearson correlation coefficient
+    """
+    from scipy.stats import pearsonr
+    result = pearsonr(x, y)
+    return round(result.statistic, precision)
+    # return round(result.statistic, precision), round(result.pvalue, precision)
