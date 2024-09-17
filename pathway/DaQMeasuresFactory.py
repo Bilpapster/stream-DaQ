@@ -481,7 +481,6 @@ class DaQMeasuresFactory:
         """
         Static getter to retrieve a custom reducer that computes the specified percentiles of the values in the window.
         :param column_name: the column name of pw.this table to apply the reducer on
-        :param percentiles: a single (int) or multiple percentiles (list of int) to compute
         :param precision: the number of decimal points to include in the result. Defaults to 3. In case multiple
         percentiles are given, all percentile values are rounded to the same number of decimal points.
         :return: a pw.ColumnExpression that corresponds to the application of the custom reducer on the specified column
