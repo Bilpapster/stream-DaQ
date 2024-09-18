@@ -61,7 +61,7 @@ def generate_artificial_random_viewership_data_stream(number_of_rows:int = 50, i
         'session_id': lambda _: str(random.randint(1, 1000000)),
         'device_id': lambda _: str(random.randint(1, 1000000)),
         'video_id': lambda _: str(random.randint(1, 1000000)),
-        'duration_watched': lambda _: random.random() * random.randint(1, 100),
+        'duration_watched': lambda _: random.random() * random.randint(1, 1000000),
         'genre': lambda _: random.choice(["Action", "Romance", "Mystery", "Thriller", "Documentary"]),
         'country': lambda _: random.choice(["Greece", "Albania", "Costa Rica", "Netherlands"]),
         'age': lambda _: random.randint(1, 100),
