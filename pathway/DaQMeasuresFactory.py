@@ -79,6 +79,77 @@ class DaQMeasuresFactory:
         return pw.apply(calculate_median, pw.reducers.tuple(pw.this[column_name]))
 
     @staticmethod
+    def get_min_length_reducer(column_name: str) -> ColumnExpression:
+        """
+        Static getter to retrieve a min length pathway reducer, applied on current table (pw.this) and in
+        the column specified by column name.
+        :param column_name: the column name of pw.this table to apply the min reducer on.
+        :return: a pathway min reducer
+        """
+
+        def get_min_length(elements):
+            from utils.utils import map_to_length
+
+            lengths = map_to_length(elements)
+            return min(lengths)
+
+        return pw.apply_with_type(get_min_length, int, pw.reducers.tuple(pw.this[column_name]))
+
+    @staticmethod
+    def get_max_length_reducer(column_name: str) -> ColumnExpression:
+        """
+        Static getter to retrieve a max length pathway reducer, applied on current table (pw.this) and in
+        the column specified by column name.
+        :param column_name: the column name of pw.this table to apply the max reducer on.
+        :return: a pathway max integer part length reducer
+        """
+
+        def get_max_length(elements):
+            from utils.utils import map_to_length
+
+            lengths = map_to_length(elements)
+            return max(lengths)
+
+        return pw.apply_with_type(get_max_length, int, pw.reducers.tuple(pw.this[column_name]))
+
+    @staticmethod
+    def get_mean_length_reducer(column_name: str,
+                                             precision: int = 3) -> pw.internals.expression.ColumnExpression:
+        """
+        Static getter to retrieve a mean length pathway reducer, applied on current table (pw.this) and in
+        the column specified by column name.
+        :param column_name: the column name of pw.this table to apply the mean reducer on.
+        :param precision: the number of decimal points to include in the result. Defaults to 3.
+        :return: a pathway mean length reducer
+        """
+
+        def get_mean_length(elements):
+            from utils.utils import map_to_length, calculate_fraction
+
+            lengths = map_to_length(elements)
+            return calculate_fraction(sum(lengths), len(lengths), precision)
+
+        return pw.apply_with_type(get_mean_length, float, pw.reducers.tuple(pw.this[column_name]))
+
+    @staticmethod
+    def get_median_length_reducer(column_name: str) -> pw.internals.expression.ColumnExpression:
+        """
+        Static getter to retrieve a median length pathway reducer, applied on current table (pw.this) and
+        in the column specified by column name.
+        :param column_name: the column name of pw.this table to apply the median reducer on.
+        :return: a pathway median length reducer
+        """
+
+        def get_median_length(elements):
+            from utils.utils import map_to_length, calculate_median
+
+            lengths = map_to_length(elements)
+            return calculate_median(lengths)
+
+        return pw.apply_with_type(get_median_length, float, pw.reducers.tuple(pw.this[column_name]))
+
+
+    @staticmethod
     def get_min_integer_part_length_reducer(column_name: str) -> ColumnExpression:
         """
         Static getter to retrieve a min integer part length pathway reducer, applied on current table (pw.this) and in
