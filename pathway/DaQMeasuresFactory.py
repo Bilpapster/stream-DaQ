@@ -149,6 +149,76 @@ class DaQMeasuresFactory:
         return pw.apply_with_type(get_median_integer_part_length, float, pw.reducers.tuple(pw.this[column_name]))
 
     @staticmethod
+    def get_min_fractional_part_length_reducer(column_name: str) -> ColumnExpression:
+        """
+        Static getter to retrieve a min fractional part length pathway reducer, applied on current table (pw.this) and in
+        the column specified by column name.
+        :param column_name: the column name of pw.this table to apply the min reducer on.
+        :return: a pathway min reducer
+        """
+
+        def get_min_fractional_part_length(numbers):
+            from utils.utils import compute_number_of_digits_in_fractional_parts
+
+            fractional_part_lengths = compute_number_of_digits_in_fractional_parts(numbers)
+            return min(fractional_part_lengths)
+
+        return pw.apply_with_type(get_min_fractional_part_length, int, pw.reducers.tuple(pw.this[column_name]))
+
+    @staticmethod
+    def get_max_fractional_part_length_reducer(column_name: str) -> ColumnExpression:
+        """
+        Static getter to retrieve a max fractional part length pathway reducer, applied on current table (pw.this) and in
+        the column specified by column name.
+        :param column_name: the column name of pw.this table to apply the max reducer on.
+        :return: a pathway max fractional part length reducer
+        """
+
+        def get_max_fractional_part_length(numbers):
+            from utils.utils import compute_number_of_digits_in_fractional_parts
+
+            fractional_part_lengths = compute_number_of_digits_in_fractional_parts(numbers)
+            return max(fractional_part_lengths)
+
+        return pw.apply_with_type(get_max_fractional_part_length, int, pw.reducers.tuple(pw.this[column_name]))
+
+    @staticmethod
+    def get_mean_fractional_part_length_reducer(column_name: str,
+                                             precision: int = 3) -> pw.internals.expression.ColumnExpression:
+        """
+        Static getter to retrieve a mean fractional part length pathway reducer, applied on current table (pw.this) and in
+        the column specified by column name.
+        :param column_name: the column name of pw.this table to apply the mean reducer on.
+        :param precision: the number of decimal points to include in the result. Defaults to 3.
+        :return: a pathway mean fractional part length reducer
+        """
+
+        def get_mean_fractional_part_length(numbers):
+            from utils.utils import compute_number_of_digits_in_fractional_parts, calculate_fraction
+
+            fractional_part_lengths = compute_number_of_digits_in_fractional_parts(numbers)
+            return calculate_fraction(sum(fractional_part_lengths), len(fractional_part_lengths), precision)
+
+        return pw.apply_with_type(get_mean_fractional_part_length, float, pw.reducers.tuple(pw.this[column_name]))
+
+    @staticmethod
+    def get_median_fractional_part_length_reducer(column_name: str) -> pw.internals.expression.ColumnExpression:
+        """
+        Static getter to retrieve a median fractional part length pathway reducer, applied on current table (pw.this) and
+        in the column specified by column name.
+        :param column_name: the column name of pw.this table to apply the median reducer on.
+        :return: a pathway median fractional part length reducer
+        """
+
+        def get_median_fractional_part_length(numbers):
+            from utils.utils import compute_number_of_digits_in_fractional_parts, calculate_median
+
+            fractional_part_lengths = compute_number_of_digits_in_fractional_parts(numbers)
+            return calculate_median(fractional_part_lengths)
+
+        return pw.apply_with_type(get_median_fractional_part_length, float, pw.reducers.tuple(pw.this[column_name]))
+
+    @staticmethod
     def get_all_values_same_reducer(column_name: str) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes whether all the values inside the window are the same
