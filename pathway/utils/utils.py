@@ -99,6 +99,61 @@ def extract_first_digit(numbers: list[int]) -> list[int]:
     return [int(str(abs(number))[0]) for number in numbers]
 
 
+def extract_integer_part(numbers: list[float]) -> list[int]:
+    """
+    Extracts the integer part of every number in the provided list and returns the result as a list of integer parts.
+    :param numbers: the numbers to extract the integer part from.
+    :return: a list of integer parts (integers) where each element is the integer part of the respective element of
+    the initial list.
+    """
+    # Converts each number to a string, splits in two substrings using '.' and returns the first (integer) part.
+    # example: 1234.567 -> '1234.567' -> ['1234', '567'] -> '1234' -> 1234
+    return [int(str(abs(number)).split('.')[0]) for number in numbers]
+
+
+def extract_fractional_part(numbers: list[float]) -> list[int]:
+    """
+    Extracts the fractional part of every number in the provided list and returns the result as a list of integer parts.
+    :param numbers: the numbers to extract the fractional part from.
+    :return: a list of fractional parts (integers) where each element is the fractional part of the respective element
+    of the initial list.
+    """
+    # Converts each number to a string, splits in two substrings using '.' and returns the second (fractional) part.
+    # example: 1234.567 -> '1234.567' -> ['1234', '567'] -> '567' -> 567
+    return [int(str(abs(number)).split('.')[1]) for number in numbers]
+
+
+def map_to_number_of_digits(numbers: list[int]) -> list[int]:
+    """
+    Transforms a list of integer numbers into a list of (their) lengths, i.e. number of digits. In other words, the
+    function maps each number in the given list to its length. For example, the list [1, 23, 456, 7890] is
+    transformed to [1, 2, 3, 4].
+    :param numbers: the numbers to transform.
+    :return: a list of integers, corresponding to the number of digits of each number in the initial list.
+    """
+    return [len(str(number)) for number in numbers]
+
+
+def compute_number_of_digits_in_integer_parts(numbers: list[float]) -> list[int]:
+    """
+    Computes and returns the number of digits in the integer parts of the provided list. The result is a list of lengths.
+    :param numbers: the floating point numbers to operate on.
+    :return: a list of integers, corresponding to the number of digits of each given number in the initial list.
+    """
+    integer_parts = extract_integer_part(numbers)
+    return map_to_number_of_digits(integer_parts)
+
+
+def compute_number_of_digits_in_fractional_parts(numbers: list[float]) -> list[int]:
+    """
+    Computes and returns the number of digits in the fractional parts of the provided list. The result is a list of lengths.
+    :param numbers: the floating point numbers to operate on.
+    :return: a list of integers, corresponding to the number of digits of each given number in the initial list.
+    """
+    fractional_parts = extract_fractional_part(numbers)
+    return map_to_number_of_digits(fractional_parts)
+
+
 def get_first_digit_frequencies(numbers: list[int], precision: int) -> dict:
     """
     Calculates and returns the frequency of the first digits of the provided list of numbers. Uses ``extract_first_digit``
