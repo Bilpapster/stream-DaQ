@@ -133,6 +133,16 @@ def map_to_number_of_digits(numbers: list[int]) -> list[int]:
     """
     return [len(str(number)) for number in numbers]
 
+def map_to_length(elements: list[str]) -> list[int]:
+    """
+    Transforms a list of string elements into a list of (their) lengths. In other words, the
+    function maps each element in the given list to its length. For example, the list ['S', 'tr', 'eam', 'DaQ!'] is
+    transformed to [1, 2, 3, 4].
+    :param elements: the elements to transform.
+    :return: a list of integers, corresponding to the length of each string element in the initial list.
+    """
+    return [len(element) for element in elements]
+
 
 def compute_number_of_digits_in_integer_parts(numbers: list[float]) -> list[int]:
     """
