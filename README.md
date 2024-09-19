@@ -10,6 +10,8 @@ Remember the joy of bath time with those trusty rubber ducks, keeping us company
 
 **Stream DaQ** is originally developed in Python, leveraging internally the [Pathway](https://github.com/pathwaycom/pathway) stream processing library, which is an open source project, as well. Previous versions of the project were featuring more Python stream processing libraries, namely [Faust](https://faust-streaming.github.io/faust/) and [Bytewax](https://bytewax.io/). You can find source code using these frameworks in the `faust-vs-bytewax` branch of the repository. Comparisons between the two libraries are also available there. Our immediate plans is to extend the functionality of Stream DaQ primarily in Pathway. The latest advancements of the tool will always be available in the `main` branch (you are here).
 
+The project is developed by the Data Engineering Team (DELAB) of [Datalab AUTh](https://datalab.csd.auth.gr/), under the supervision of [Prof. Anastasios Gounaris](https://datalab-old.csd.auth.gr/~gounaris/).
+
 ### Key functionality
 
 **Stream DaQ** keeps an eye on your data stream, letting you know when travelling data are not as expected. In **real time**. So that you can take actions. There are several key aspects of the tool making it a powerful option for data quality monitoring on data streams:
