@@ -3,17 +3,10 @@ from datetime import datetime
 
 from pathway import ColumnExpression
 
-# todo: Change static method names as following:
-''' 
-- remove get from the beginning of the name
-- remove reducer from the end of the name
-- use the metric that is computed more clearly, e.g., from ``get_min_reducer()`` to ``min_value()``
-'''
-
 
 class DaQMeasuresFactory:
     @staticmethod
-    def get_min_reducer(column_name: str) -> pw.internals.expression.ReducerExpression:
+    def min(column_name: str) -> pw.internals.expression.ReducerExpression:
         """
         Static getter to retrieve a min pathway reducer, applied on current table (pw.this) and in the column specified
         by column name
@@ -23,7 +16,7 @@ class DaQMeasuresFactory:
         return pw.reducers.min(pw.this[column_name])
 
     @staticmethod
-    def get_max_reducer(column_name: str) -> pw.internals.expression.ReducerExpression:
+    def max(column_name: str) -> pw.internals.expression.ReducerExpression:
         """
         Static getter to retrieve a max pathway reducer, applied on current table (pw.this) and in the column specified
         by column name
@@ -33,7 +26,7 @@ class DaQMeasuresFactory:
         return pw.reducers.max(pw.this[column_name])
 
     @staticmethod
-    def get_count_reducer(column_name: str) -> pw.internals.expression.ReducerExpression:
+    def count(column_name: str) -> pw.internals.expression.ReducerExpression:
         """
         Static getter to retrieve a count pathway reducer, applied on current table (pw.this) and in the column specified
         by column name
@@ -43,7 +36,7 @@ class DaQMeasuresFactory:
         return pw.reducers.count(pw.this[column_name])
 
     @staticmethod
-    def get_availability_reducer(column_name: str) -> pw.internals.expression.ColumnExpression:
+    def availability(column_name: str) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a count pathway reducer, applied on current table (pw.this) and in the column specified
         by column name
@@ -57,7 +50,7 @@ class DaQMeasuresFactory:
         return pw.apply_with_type(get_availability, bool, pw.reducers.count(pw.this[column_name]))
 
     @staticmethod
-    def get_mean_reducer(column_name: str, precision: int = 3) -> pw.internals.expression.ColumnExpression:
+    def mean(column_name: str, precision: int = 3) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve an mean pathway reducer, applied on current table (pw.this) and in the column specified
         by column name
@@ -68,7 +61,7 @@ class DaQMeasuresFactory:
         return pw.apply(round, pw.reducers.avg(pw.this[column_name]), precision)
 
     @staticmethod
-    def get_median_reducer(column_name: str) -> pw.internals.expression.ColumnExpression:
+    def median(column_name: str) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a median pathway reducer, applied on current table (pw.this) and in the column specified
         by column name
@@ -79,7 +72,7 @@ class DaQMeasuresFactory:
         return pw.apply(calculate_median, pw.reducers.tuple(pw.this[column_name]))
 
     @staticmethod
-    def get_min_length_reducer(column_name: str) -> ColumnExpression:
+    def min_length(column_name: str) -> ColumnExpression:
         """
         Static getter to retrieve a min length pathway reducer, applied on current table (pw.this) and in
         the column specified by column name.
@@ -96,7 +89,7 @@ class DaQMeasuresFactory:
         return pw.apply_with_type(get_min_length, int, pw.reducers.tuple(pw.this[column_name]))
 
     @staticmethod
-    def get_max_length_reducer(column_name: str) -> ColumnExpression:
+    def max_length(column_name: str) -> ColumnExpression:
         """
         Static getter to retrieve a max length pathway reducer, applied on current table (pw.this) and in
         the column specified by column name.
@@ -113,8 +106,7 @@ class DaQMeasuresFactory:
         return pw.apply_with_type(get_max_length, int, pw.reducers.tuple(pw.this[column_name]))
 
     @staticmethod
-    def get_mean_length_reducer(column_name: str,
-                                             precision: int = 3) -> pw.internals.expression.ColumnExpression:
+    def mean_length(column_name: str, precision: int = 3) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a mean length pathway reducer, applied on current table (pw.this) and in
         the column specified by column name.
@@ -132,7 +124,7 @@ class DaQMeasuresFactory:
         return pw.apply_with_type(get_mean_length, float, pw.reducers.tuple(pw.this[column_name]))
 
     @staticmethod
-    def get_median_length_reducer(column_name: str) -> pw.internals.expression.ColumnExpression:
+    def median_length(column_name: str) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a median length pathway reducer, applied on current table (pw.this) and
         in the column specified by column name.
@@ -148,9 +140,8 @@ class DaQMeasuresFactory:
 
         return pw.apply_with_type(get_median_length, float, pw.reducers.tuple(pw.this[column_name]))
 
-
     @staticmethod
-    def get_min_integer_part_length_reducer(column_name: str) -> ColumnExpression:
+    def min_integer_part_length(column_name: str) -> ColumnExpression:
         """
         Static getter to retrieve a min integer part length pathway reducer, applied on current table (pw.this) and in
         the column specified by column name.
@@ -167,7 +158,7 @@ class DaQMeasuresFactory:
         return pw.apply_with_type(get_min_integer_part_length, int, pw.reducers.tuple(pw.this[column_name]))
 
     @staticmethod
-    def get_max_integer_part_length_reducer(column_name: str) -> ColumnExpression:
+    def max_integer_part_length(column_name: str) -> ColumnExpression:
         """
         Static getter to retrieve a max integer part length pathway reducer, applied on current table (pw.this) and in
         the column specified by column name.
@@ -184,8 +175,7 @@ class DaQMeasuresFactory:
         return pw.apply_with_type(get_max_integer_part_length, int, pw.reducers.tuple(pw.this[column_name]))
 
     @staticmethod
-    def get_mean_integer_part_length_reducer(column_name: str,
-                                             precision: int = 3) -> pw.internals.expression.ColumnExpression:
+    def mean_integer_part_length(column_name: str, precision: int = 3) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a mean integer part length pathway reducer, applied on current table (pw.this) and in
         the column specified by column name.
@@ -203,7 +193,7 @@ class DaQMeasuresFactory:
         return pw.apply_with_type(get_mean_integer_part_length, float, pw.reducers.tuple(pw.this[column_name]))
 
     @staticmethod
-    def get_median_integer_part_length_reducer(column_name: str) -> pw.internals.expression.ColumnExpression:
+    def median_integer_part_length(column_name: str) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a median integer part length pathway reducer, applied on current table (pw.this) and
         in the column specified by column name.
@@ -220,7 +210,7 @@ class DaQMeasuresFactory:
         return pw.apply_with_type(get_median_integer_part_length, float, pw.reducers.tuple(pw.this[column_name]))
 
     @staticmethod
-    def get_min_fractional_part_length_reducer(column_name: str) -> ColumnExpression:
+    def min_fractional_part_length(column_name: str) -> ColumnExpression:
         """
         Static getter to retrieve a min fractional part length pathway reducer, applied on current table (pw.this) and in
         the column specified by column name.
@@ -237,7 +227,7 @@ class DaQMeasuresFactory:
         return pw.apply_with_type(get_min_fractional_part_length, int, pw.reducers.tuple(pw.this[column_name]))
 
     @staticmethod
-    def get_max_fractional_part_length_reducer(column_name: str) -> ColumnExpression:
+    def max_fractional_part_length(column_name: str) -> ColumnExpression:
         """
         Static getter to retrieve a max fractional part length pathway reducer, applied on current table (pw.this) and in
         the column specified by column name.
@@ -254,8 +244,7 @@ class DaQMeasuresFactory:
         return pw.apply_with_type(get_max_fractional_part_length, int, pw.reducers.tuple(pw.this[column_name]))
 
     @staticmethod
-    def get_mean_fractional_part_length_reducer(column_name: str,
-                                             precision: int = 3) -> pw.internals.expression.ColumnExpression:
+    def mean_fractional_part_length(column_name: str, precision: int = 3) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a mean fractional part length pathway reducer, applied on current table (pw.this) and in
         the column specified by column name.
@@ -273,7 +262,7 @@ class DaQMeasuresFactory:
         return pw.apply_with_type(get_mean_fractional_part_length, float, pw.reducers.tuple(pw.this[column_name]))
 
     @staticmethod
-    def get_median_fractional_part_length_reducer(column_name: str) -> pw.internals.expression.ColumnExpression:
+    def median_fractional_part_length(column_name: str) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a median fractional part length pathway reducer, applied on current table (pw.this) and
         in the column specified by column name.
@@ -290,7 +279,7 @@ class DaQMeasuresFactory:
         return pw.apply_with_type(get_median_fractional_part_length, float, pw.reducers.tuple(pw.this[column_name]))
 
     @staticmethod
-    def get_all_values_same_reducer(column_name: str) -> pw.internals.expression.ColumnExpression:
+    def same_values(column_name: str) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes whether all the values inside the window are the same
         or not. The result is a boolean variable (True/False).
@@ -302,8 +291,8 @@ class DaQMeasuresFactory:
         return all_values_the_same_reducer(pw.this[column_name])
 
     @staticmethod
-    def get_ordering_check_reducer(time_column: str, column_name: str,
-                                   time_format: str, ordering: str) -> pw.internals.expression.ColumnExpression:
+    def ordering(time_column: str, column_name: str, time_format: str,
+                 ordering: str) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that checks conformance of the values to the specified ordering,
         applied on the specified column of the current table (pw.this). The elements are first sorted in chronological
@@ -321,18 +310,18 @@ class DaQMeasuresFactory:
         :return: a pathway custom reducer that checks conformance of the values to the specified ordering
         """
 
-        def get_ordering_check(timestamps: list, elements: list, time_format: str,
-                               ordering: str) -> bool:
+        def check_ordering(timestamps: list, elements: list, time_format: str,
+                           ordering: str) -> bool:
             from utils.utils import check_ordering, sort_by_timestamp
 
             sorted_timestamps, sorted_elements = sort_by_timestamp(timestamps, elements, time_format)
             return check_ordering(sorted_elements, ordering)
 
-        return pw.apply(get_ordering_check, pw.reducers.tuple(pw.this[time_column]),
+        return pw.apply(check_ordering, pw.reducers.tuple(pw.this[time_column]),
                         pw.reducers.tuple(pw.this[column_name]), time_format, ordering)
 
     @staticmethod
-    def get_most_frequent_reducer(column_name: str) -> pw.internals.expression.ColumnExpression:
+    def most_frequent(column_name: str) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a most-frequent-element reducer, applied on current table (pw.this) and in the column
         specified by column name argument.
@@ -349,10 +338,12 @@ class DaQMeasuresFactory:
         return pw.apply(get_most_frequent_element, pw.reducers.tuple(pw.this[column_name]))
 
     @staticmethod
-    def get_constancy_reducer(column_name: str) -> pw.internals.expression.ColumnExpression:
+    def constancy(column_name: str) -> pw.internals.expression.ColumnExpression:
         """
+        **Constancy is the frequency of the most frequent element.**
+
         Static getter to retrieve a constancy reducer, applied on current table (pw.this) and in the column
-        specified by column name argument. Constancy is defined as the frequency of the most frequent element.
+        specified by column name argument.
         :param column_name: the column name of @code{pw.this} table to apply the reducer on
         :return: a pathway @code{pw.apply} statement ready for use as a column
         """
@@ -366,7 +357,7 @@ class DaQMeasuresFactory:
         return pw.apply(get_constancy, pw.reducers.tuple(pw.this[column_name]))
 
     @staticmethod
-    def get_approx_frequent_items_reducer(column_name: str) -> pw.internals.expression.ColumnExpression:
+    def most_frequent_approx(column_name: str) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the standard deviation of the values in the window.
         :param column_name: the column name of pw.this table to apply the reducer on
@@ -377,7 +368,7 @@ class DaQMeasuresFactory:
         return approx_most_frequent_items_reducer(pw.this[column_name])
 
     @staticmethod
-    def get_window_duration_reducer() -> datetime:
+    def window_duration() -> datetime:
         """
         Static getter to retrieve the duration of the window. Semantically meaningful only on session- or count-based
         windows.
@@ -386,17 +377,19 @@ class DaQMeasuresFactory:
         return pw.this._pw_window_end - pw.this._pw_window_start
 
     @staticmethod
-    def get_ndarray_reducer(column_name: str) -> pw.internals.expression.ColumnExpression:
+    def ndarray(column_name: str) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve an ndarray pathway reducer, applied on current table (pw.this) and in the column specified
-        by column name
+        by column name. **There is no guarantee that the items in the array will be ordered in chronological event time
+        order.** In case your application requires ensured chronological ordering, please consider using
+        ``tuple_sorted_by_time`` measure.
         :param column_name: the column name of pw.this table to apply the ndarray reducer on.
         :return: a pathway ndarray reducer
         """
         return pw.reducers.ndarray(pw.this[column_name])
 
     @staticmethod
-    def get_tuple_reducer(column_name: str) -> pw.internals.expression.ReducerExpression:
+    def tuple(column_name: str) -> pw.internals.expression.ReducerExpression:
         """
         Static getter to retrieve a tuple pathway reducer, applied on current table (pw.this) and in the column specified
         by column name
@@ -406,7 +399,7 @@ class DaQMeasuresFactory:
         return pw.reducers.tuple(pw.this[column_name])
 
     @staticmethod
-    def get_sorted_tuple_reducer(column_name: str) -> pw.internals.expression.ReducerExpression:
+    def tuple_sorted(column_name: str) -> pw.internals.expression.ReducerExpression:
         """
         Static getter to retrieve a sorted_tuple pathway reducer, applied on current table (pw.this) and in the column specified
         by column name
@@ -416,8 +409,8 @@ class DaQMeasuresFactory:
         return pw.reducers.sorted_tuple(pw.this[column_name])
 
     @staticmethod
-    def get_sorted_by_time_reducer(time_column: str, column_name: str,
-                                   time_format: str) -> pw.internals.expression.ReducerExpression:
+    def tuple_sorted_by_time(time_column: str, column_name: str,
+                             time_format: str) -> pw.internals.expression.ReducerExpression:
         """
         Static getter to retrieve a reducer that sorts elements by timestamp, applied on current table (pw.this)
         and in the column specified by column name
@@ -437,7 +430,7 @@ class DaQMeasuresFactory:
                         pw.reducers.tuple(pw.this[column_name]), time_format)
 
     @staticmethod
-    def get_number_of_values_above_mean_reducer(column_name: str) -> pw.internals.expression.ColumnExpression:
+    def number_above_mean(column_name: str) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the number of elements in the window that are greater
         than the mean value of the window.
@@ -453,8 +446,7 @@ class DaQMeasuresFactory:
         return pw.apply(get_number_of_values_above_mean, pw.reducers.ndarray(pw.this[column_name]))
 
     @staticmethod
-    def get_fraction_of_values_above_mean_reducer(column_name: str,
-                                                  precision: int = 3) -> pw.internals.expression.ColumnExpression:
+    def fraction_above_mean(column_name: str, precision: int = 3) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the fraction of elements in the window that are greater
         than the mean value of the window. The fraction is in range [0, 1]
@@ -472,7 +464,7 @@ class DaQMeasuresFactory:
         return pw.apply(get_fraction_of_values_above_mean, pw.reducers.ndarray(pw.this[column_name]))
 
     @staticmethod
-    def get_number_of_distinct_values_reducer(column_name: str) -> pw.internals.expression.ColumnExpression:
+    def number_of_distinct(column_name: str) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the number of distinct elements in the window.
         The fraction is in range [0, 1]
@@ -486,8 +478,7 @@ class DaQMeasuresFactory:
         return pw.apply(get_number_of_distinct_values, pw.reducers.tuple(pw.this[column_name]))
 
     @staticmethod
-    def get_fraction_of_distinct_values_reducer(column_name: str,
-                                                precision: int = 3) -> pw.internals.expression.ColumnExpression:
+    def fraction_of_distinct(column_name: str, precision: int = 3) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the fraction of distinct elements in the window.
         The fraction is in range [0, 1]
@@ -503,8 +494,7 @@ class DaQMeasuresFactory:
         return pw.apply(get_fraction_of_distinct_values, pw.reducers.tuple(pw.this[column_name]))
 
     @staticmethod
-    def get_approx_number_of_distinct_values_reducer(column_name: str,
-                                                     precision: int = 0) -> pw.internals.expression.ColumnExpression:
+    def number_of_distinct_approx(column_name: str, precision: int = 0) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the approximate number of distinct elements in the
         window, using the HyperLogLog++ sketch. The fraction is in range [0, 1]
@@ -517,8 +507,8 @@ class DaQMeasuresFactory:
         return pw.apply(round, approx_distinct_count_reducer(pw.this[column_name]), precision)
 
     @staticmethod
-    def get_approx_fraction_of_distinct_values_reducer(column_name: str,
-                                                       precision: int = 3) -> pw.internals.expression.ColumnExpression:
+    def fraction_of_distinct_approx(column_name: str,
+                                    precision: int = 3) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the approximate fraction of distinct elements in the
         window, using the HyperLogLog++ sketch. The fraction is in range [0, 1]
@@ -537,7 +527,7 @@ class DaQMeasuresFactory:
                         pw.reducers.count(pw.this[column_name]))
 
     @staticmethod
-    def get_number_of_unique_values_reducer(column_name: str) -> pw.internals.expression.ColumnExpression:
+    def number_of_unique(column_name: str) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the number of unique elements in the window.
         The fraction is in range [0, 1].
@@ -555,8 +545,7 @@ class DaQMeasuresFactory:
         return pw.apply(get_number_of_unique_values, pw.reducers.tuple(pw.this[column_name]))
 
     @staticmethod
-    def get_fraction_of_unique_values_reducer(column_name: str,
-                                              precision: int = 3) -> pw.internals.expression.ColumnExpression:
+    def fraction_of_unique(column_name: str, precision: int = 3) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the fraction of unique elements in the window.
         The fraction is in range [0, 1].
@@ -577,8 +566,8 @@ class DaQMeasuresFactory:
         return pw.apply(get_fraction_of_unique_values, pw.reducers.tuple(pw.this[column_name]))
 
     @staticmethod
-    def get_fraction_of_unique_over_distinct_values_reducer(column_name: str,
-                                                            precision: int = 3) -> pw.internals.expression.ColumnExpression:
+    def fraction_of_unique_over_distinct(column_name: str,
+                                         precision: int = 3) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the fraction of unique elements over distinct ones
         in the window. The fraction is in range [0, 1], since #unique <= # distinct elements and the equality holds only
@@ -592,18 +581,25 @@ class DaQMeasuresFactory:
         """
 
         def get_fraction_of_unique_over_distinct_values(elements: list):
-            from utils.utils import calculate_number_of_unique_values
+            from utils.utils import calculate_number_of_unique_values, calculate_fraction
 
-            fraction = calculate_number_of_unique_values(elements) / len(set(elements))
-            return round(fraction, precision)
+            return calculate_fraction(
+                calculate_number_of_unique_values(elements),
+                len(set(elements)),
+                precision
+            )
+
+            # fraction = calculate_number_of_unique_values(elements) / len(set(elements))
+            # return round(fraction, precision)
 
         return pw.apply(get_fraction_of_unique_over_distinct_values, pw.reducers.tuple(pw.this[column_name]))
 
     @staticmethod
-    def get_std_dev_reducer(column_name: str, precision: int = 3) -> pw.internals.expression.ColumnExpression:
+    def std_dev(column_name: str, precision: int = 3) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the standard deviation of the values in the window.
         :param column_name: the column name of pw.this table to apply the reducer on
+        :param precision: the number of decimal points to include in the fraction result. Defaults to 3.
         :return: a pw.ColumnExpression that corresponds to the application of the custom reducer on the specified column
         """
         from _custom_reducers.CustomReducers import std_dev_reducer
@@ -611,9 +607,8 @@ class DaQMeasuresFactory:
         return pw.apply(round, std_dev_reducer(pw.this[column_name]), precision)
 
     @staticmethod
-    def get_number_of_range_conformance_reducer(column_name: str, low: float,
-                                                high: float,
-                                                inclusive=True) -> pw.internals.expression.ColumnExpression:
+    def number_of_range_conformance(column_name: str, low: float, high: float,
+                                    inclusive=True) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the number of values in the window that fall
         within the range specified by low and high arguments. If the inclusive argument is set to True, the range
@@ -630,8 +625,8 @@ class DaQMeasuresFactory:
                         inclusive)
 
     @staticmethod
-    def get_fraction_of_range_conformance_reducer(column_name: str, low: float, high: float, inclusive=True,
-                                                  precision: int = 3) -> pw.internals.expression.ColumnExpression:
+    def fraction_of_range_conformance(column_name: str, low: float, high: float, inclusive=True,
+                                      precision: int = 3) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the fraction of values in the window that fall
         within the range specified by low and high arguments. If the inclusive argument is set to True, the range
@@ -654,8 +649,7 @@ class DaQMeasuresFactory:
         return pw.apply(get_fraction_of_range_conformance, pw.reducers.tuple(pw.this[column_name]))
 
     @staticmethod
-    def get_number_of_set_conformance_reducer(column_name: str,
-                                              allowed_values: set) -> pw.internals.expression.ColumnExpression:
+    def number_of_set_conformance(column_name: str, allowed_values: set) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the number of values in the window that are contained
         in the specified set of allowed values.
@@ -668,8 +662,8 @@ class DaQMeasuresFactory:
         return pw.apply(calculate_number_of_set_conformance, pw.reducers.tuple(pw.this[column_name]), allowed_values)
 
     @staticmethod
-    def get_fraction_of_set_conformance_reducer(column_name: str, allowed_values: set,
-                                                precision: int = 3) -> pw.internals.expression.ColumnExpression:
+    def fraction_of_set_conformance(column_name: str, allowed_values: set,
+                                    precision: int = 3) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the fraction of values in the window that are contained
         in the specified set of allowed values. The fraction is a float number in range [0, 1].
@@ -688,8 +682,9 @@ class DaQMeasuresFactory:
         return pw.apply(get_fraction_of_set_conformance, pw.reducers.tuple(pw.this[column_name]))
 
     @staticmethod
-    def get_percentiles_reducer(column_name: str, percentiles: int | list,
-                                precision: int = 3) -> pw.internals.expression.ColumnExpression:
+    def percentiles(column_name: str, percentiles: int | list,
+                    precision: int = 3) -> pw.internals.expression.ColumnExpression:
+        # todo Thodoris suggested to add a quartiles reducer as well
         """
         Static getter to retrieve a custom reducer that computes the specified percentiles of the values in the window.
         :param column_name: the column name of pw.this table to apply the reducer on
@@ -726,9 +721,8 @@ class DaQMeasuresFactory:
         return pw.apply(get_first_digit_frequencies, pw.reducers.ndarray(pw.this[column_name]), precision)
 
     @staticmethod
-    def get_number_of_most_frequent_range_conformance_reducer(column_name: str, low: float,
-                                                              high: float,
-                                                              inclusive=True) -> pw.internals.expression.ColumnExpression:
+    def number_of_most_frequent_range_conformance(column_name: str, low: float, high: float,
+                                                  inclusive=True) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the number of **the most frequent elements** in the
         window that fall within the range specified by low and high arguments. If the inclusive argument is set to True,
@@ -742,13 +736,12 @@ class DaQMeasuresFactory:
         from utils.utils import calculate_number_of_range_conformance
 
         return pw.apply(calculate_number_of_range_conformance,
-                        DaQMeasuresFactory.get_most_frequent_reducer(column_name), low, high,
+                        DaQMeasuresFactory.most_frequent(column_name), low, high,
                         inclusive)
 
     @staticmethod
-    def get_fraction_of_most_frequent_range_conformance_reducer(column_name: str, low: float, high: float,
-                                                                inclusive=True,
-                                                                precision: int = 3) -> pw.internals.expression.ColumnExpression:
+    def fraction_of_most_frequent_range_conformance(column_name: str, low: float, high: float, inclusive=True,
+                                                    precision: int = 3) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the fraction of **the most frequent elements** in the
         window that fall within the range specified by low and high arguments. If the inclusive argument is set to True,
@@ -773,11 +766,11 @@ class DaQMeasuresFactory:
             return round(fraction, precision)
 
         return pw.apply(get_fraction_of_most_frequent_range_conformance,
-                        DaQMeasuresFactory.get_most_frequent_reducer(column_name))
+                        DaQMeasuresFactory.most_frequent(column_name))
 
     @staticmethod
-    def get_number_of_most_frequent_set_conformance_reducer(column_name: str,
-                                                            allowed_values: set) -> pw.internals.expression.ColumnExpression:
+    def number_of_most_frequent_set_conformance(column_name: str,
+                                                allowed_values: set) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the number of **the most frequent elements** in the
         window that are contained in the specified set of allowed values.
@@ -787,12 +780,12 @@ class DaQMeasuresFactory:
         """
         from utils.utils import calculate_number_of_set_conformance
 
-        return pw.apply(calculate_number_of_set_conformance, DaQMeasuresFactory.get_most_frequent_reducer(column_name),
+        return pw.apply(calculate_number_of_set_conformance, DaQMeasuresFactory.most_frequent(column_name),
                         allowed_values)
 
     @staticmethod
-    def get_fraction_of_most_frequent_set_conformance_reducer(column_name: str, allowed_values: set,
-                                                              precision: int = 3) -> pw.internals.expression.ColumnExpression:
+    def fraction_of_most_frequent_set_conformance(column_name: str, allowed_values: set,
+                                                  precision: int = 3) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the fraction of **the most frequent elements** in the
         window that are contained in the specified set of allowed values. The fraction is a float number in range [0, 1].
@@ -814,11 +807,10 @@ class DaQMeasuresFactory:
             return round(fraction, precision)
 
         return pw.apply(get_fraction_of_most_frequent_set_conformance,
-                        DaQMeasuresFactory.get_most_frequent_reducer(column_name))
+                        DaQMeasuresFactory.most_frequent(column_name))
 
     @staticmethod
-    def get_number_of_regex_conformance_reducer(column_name: str,
-                                                regex: str) -> pw.internals.expression.ColumnExpression:
+    def number_of_regex_conformance(column_name: str, regex: str) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the number of values in the window that match the
         specified regex argument. The provided ``regex`` argument has to comply with the built-in python library ``re``.
@@ -832,8 +824,8 @@ class DaQMeasuresFactory:
         return pw.apply(calculate_number_of_regex_conformance, pw.reducers.tuple(pw.this[column_name]), regex)
 
     @staticmethod
-    def get_fraction_of_regex_conformance_reducer(column_name: str, regex: str,
-                                                  precision: int = 3) -> pw.internals.expression.ColumnExpression:
+    def fraction_of_regex_conformance(column_name: str, regex: str,
+                                      precision: int = 3) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the fraction of values in the window that match the
         specified regex argument. The provided ``regex`` argument has to comply with the built-in python library ``re``.
@@ -853,10 +845,10 @@ class DaQMeasuresFactory:
         return pw.apply(get_fraction_of_regex_conformance, pw.reducers.tuple(pw.this[column_name]))
 
     @staticmethod
-    def get_pearson_correlation_reducer(first_column_name: str, second_column_name: str,
-                                        precision: int = 3) -> pw.internals.expression.ColumnExpression:
+    def pearson(first_column_name: str, second_column_name: str,
+                precision: int = 3) -> pw.internals.expression.ColumnExpression:
         """
-        Static getter to retriece a custom reducer that computes the Pearson Correlation of the values between two
+        Static getter to retrieve a custom reducer that computes the Pearson Correlation of the values between two
         different columns on the window.
         :param first_column_name: The name of the first (x) column.
         :param second_column_name: The name of the second (y) column.
