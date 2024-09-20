@@ -700,7 +700,15 @@ class DaQMeasuresFactory:
         """
         from utils.utils import get_percentiles
 
-        return pw.apply(get_percentiles, pw.reducers.ndarray(pw.this[column_name]))
+        '''
+        IMPORTANT: percentiles argument has to be passed to pw.apply either as a tuple or a numpy.ndarray. Tuple was
+        preferred in this case due to performance reasons, since importing numpy and using an ndarray would be a clear
+        overkill. 
+        The argument cannot be passed as a normal python list, since pathway has a predefined set of datatypes that
+        can be passed as arguments to the pw.apply function. Python list is not included in that list. numpy.ndarrays
+        and tuples are both included, among others. 
+        '''
+        return pw.apply(get_percentiles, pw.reducers.ndarray(pw.this[column_name]), tuple(percentiles), precision)
 
     @staticmethod
     def get_first_digit_frequencies_reducer(column_name: str,
