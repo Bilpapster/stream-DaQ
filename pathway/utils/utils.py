@@ -265,6 +265,9 @@ def calculate_pearson_correlation(x, y, precision: int) -> float:
     :return: the Pearson correlation coefficient
     """
     from scipy.stats import pearsonr
-    result = pearsonr(x, y)
+    try:
+        result = pearsonr(x, y)
+    except:
+        return float("nan")
     return round(result.statistic, precision)
     # return round(result.statistic, precision), round(result.pvalue, precision)
