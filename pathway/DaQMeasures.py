@@ -4,7 +4,7 @@ from datetime import datetime
 from pathway import ColumnExpression
 
 
-class DaQMeasuresFactory:
+class DaQMeasures:
     @staticmethod
     def min(column_name: str) -> pw.internals.expression.ReducerExpression:
         """
@@ -736,7 +736,7 @@ class DaQMeasuresFactory:
         from utils.utils import calculate_number_of_range_conformance
 
         return pw.apply(calculate_number_of_range_conformance,
-                        DaQMeasuresFactory.most_frequent(column_name), low, high,
+                        DaQMeasures.most_frequent(column_name), low, high,
                         inclusive)
 
     @staticmethod
@@ -766,7 +766,7 @@ class DaQMeasuresFactory:
             return round(fraction, precision)
 
         return pw.apply(get_fraction_of_most_frequent_range_conformance,
-                        DaQMeasuresFactory.most_frequent(column_name))
+                        DaQMeasures.most_frequent(column_name))
 
     @staticmethod
     def number_of_most_frequent_set_conformance(column_name: str,
@@ -780,7 +780,7 @@ class DaQMeasuresFactory:
         """
         from utils.utils import calculate_number_of_set_conformance
 
-        return pw.apply(calculate_number_of_set_conformance, DaQMeasuresFactory.most_frequent(column_name),
+        return pw.apply(calculate_number_of_set_conformance, DaQMeasures.most_frequent(column_name),
                         allowed_values)
 
     @staticmethod
@@ -807,7 +807,7 @@ class DaQMeasuresFactory:
             return round(fraction, precision)
 
         return pw.apply(get_fraction_of_most_frequent_set_conformance,
-                        DaQMeasuresFactory.most_frequent(column_name))
+                        DaQMeasures.most_frequent(column_name))
 
     @staticmethod
     def number_of_regex_conformance(column_name: str, regex: str) -> pw.internals.expression.ColumnExpression:

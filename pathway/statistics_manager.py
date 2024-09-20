@@ -1,8 +1,8 @@
 import pathway as pw
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 import artificial_stream_generators
-from DaQMeasuresFactory import DaQMeasuresFactory as measures
+from DaQMeasures import DaQMeasures as measures
 
 TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 WINDOW_DURATION_SEC = 22
