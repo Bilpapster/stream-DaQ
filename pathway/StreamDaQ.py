@@ -3,16 +3,35 @@ from datetime import timedelta
 from typing import Self
 
 from pathway.internals import ReducerExpression
+from pathway.stdlib.temporal import Window
 
 import artificial_stream_generators
-from DaQMeasures import DaQMeasures as measures
+from DaQMeasures import DaQMeasures as dqm
 
 
 class StreamDaQ:
     def __init__(self):
         self.measures = {}
+        self.window = None
+        self.instance = None
+        self.wait_for_late = None
+        self.time_format = None
+        self.show_window_start = True
+        self.show_window_end = True
 
-    def add(self, measure:pw.ColumnExpression | ReducerExpression, name:str) -> Self:
+    def configure(self, window: Window, instance: str, wait_for_late: int | float | timedelta | None = None,
+                  time_format: str = '%Y-%m-%d %H:%M:%S',
+                  show_window_start: bool = True, show_window_end
+                  : bool = True) -> Self:
+        self.window = window
+        self.instance = instance
+        self.wait_for_late = wait_for_late
+        self.time_format = time_format
+        self.show_window_start = show_window_start
+        self.show_window_end = show_window_end
+        return self
+
+    def add(self, measure: pw.ColumnExpression | ReducerExpression, name: str) -> Self:
         self.measures[name] = measure
         return self
 
@@ -38,11 +57,11 @@ class StreamDaQ:
             window_start=pw.this._pw_window_start,
             window_end=pw.this._pw_window_end,
             # duration=measures.window_duration(),
-            count=measures.count('interaction_events'),
-            min=measures.min('interaction_events'),
+            count=dqm.count('interaction_events'),
+            min=dqm.min('interaction_events'),
             # max=measures.max('interaction_events'),
             # mean=measures.mean('interaction_events'),
-            median=measures.median('interaction_events'),
+            median=dqm.median('interaction_events'),
             # min_len=measures.min_length('languages'),
             # max_len=measures.max_length('languages'),
             # mean_len=measures.mean_length('languages'),
@@ -60,7 +79,7 @@ class StreamDaQ:
             # asc_eq=measures.ordering('date_and_time', 'interaction_events', TIME_FORMAT, "ASC_EQ"),
             # desc=measures.ordering('date_and_time', 'interaction_events', TIME_FORMAT, "DESC"),
             # desc_eq=measures.ordering('date_and_time', 'interaction_events', TIME_FORMAT, "DESC_EQ"),
-            most_frequent=measures.most_frequent('interaction_events'),
+            most_frequent=dqm.most_frequent('interaction_events'),
             # frequent_items_approx=measures.most_frequent_approx('interaction_events'),
             # constancy=measures.constancy('interaction_events'),
             # availability=measures.availability('interaction_events'),
@@ -70,7 +89,7 @@ class StreamDaQ:
             # sorted_by_time=measures.tuple_sorted_by_time('date_and_time', 'interaction_events', TIME_FORMAT),
             # above_mean=measures.number_above_mean('interaction_events'),
             # above_mean_frac=measures.fraction_above_mean('interaction_events'),
-            distinct=measures.number_of_distinct('interaction_events'),
+            distinct=dqm.number_of_distinct('interaction_events'),
             # distinct_approx=measures.number_of_distinct_approx('interaction_events'),
             # distinct_frac=measures.fraction_of_distinct('interaction_events'),
             # distinct_frac_approx=measures.fraction_of_distinct_approx('interaction_events'),
