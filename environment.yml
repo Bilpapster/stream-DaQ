@@ -4,5 +4,5 @@ channels:
 - defaults
 dependencies:
 - python>=3.10.*
-- pip=24.*
-- certifi=2024.*
+- pip
+- certifi
