@@ -10,11 +10,11 @@ daq = StreamDaQ().configure(
     time_format="%H:%M:%S"
 )
 
-daq.add(dqm.count('items'), "count") \
-    .add(dqm.min('items'), "min") \
-    .add(dqm.max('items'), "max") \
-    .add(dqm.median('items'), "std") \
-    .add(dqm.most_frequent('items'), "max") \
-    .add(dqm.number_of_distinct('items'), "distinct")
+daq.add(dqm.count('interaction_events'), "count") \
+    .add(dqm.min('interaction_events'), "min") \
+    .add(dqm.max('interaction_events'), "max") \
+    .add(dqm.median('interaction_events'), "std") \
+    .add(dqm.most_frequent('interaction_events'), "max") \
+    .add(dqm.number_of_distinct('interaction_events'), "distinct")
 
 daq.watch_out()
