@@ -3,6 +3,7 @@ from DaQMeasures import DaQMeasures as dqm
 from Windows import tumbling
 from datetime import timedelta
 
+# Step 1: Configure monitoring parameters
 daq = StreamDaQ().configure(
     window=tumbling(timedelta(seconds=20)),
     instance="user_id",
@@ -11,6 +12,7 @@ daq = StreamDaQ().configure(
     time_format='%Y-%m-%d %H:%M:%S'
 )
 
+# Step 2: Define what Data Quality means for you
 daq.add(dqm.count('interaction_events'), "count") \
     .add(dqm.min('interaction_events'), "min") \
     .add(dqm.max('interaction_events'), "max") \
@@ -19,4 +21,5 @@ daq.add(dqm.count('interaction_events'), "count") \
     .add(dqm.number_of_distinct_approx('interaction_events'), "distinct_approx") \
     .add(dqm.number_of_distinct('interaction_events'), "distinct")
 
+# Step 3: Kick-off monitoring and let Stream DaQ do the work while you focus on the important
 daq.watch_out()

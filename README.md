@@ -52,18 +52,21 @@ from DaQMeasures import DaQMeasures as dqm
 from Windows import tumbling
 from datetime import timedelta
 
+# Step 1: Configure monitoring parameters
 daq = StreamDaQ().configure(
     window=tumbling(duration=timedelta(hours=1)),
     wait_for_late=timedelta(seconds=10),
     time_format="%H:%M:%S"
 )
 
+# Step 2: Define what data quality means for your unique use-case
 daq.add(dqm.count('items'), "count") \
     .add(dqm.min('items'), "min") \
     .add(dqm.median('items'), "std") \
     .add(dqm.most_frequent('items'), "most_frequent") \
     .add(dqm.number_of_distinct('items'), "distinct")
 
+# Step 3: Kick-off DQ monitoring
 daq.watch_out()
 ```
 
