@@ -12,14 +12,23 @@ class CheckResult(ABC):
 
 
 class Check(ABC):
-    def __init__(self, measurement, name):
-        self.__measurement = measurement
+    def __init__(self, measure, name):
+        self.__measure = measure
         self.__name: str = name
         self.__thresholds: list[Threshold] = list()
         self.__evaluationResults: list[CheckResult] = list()
 
     def add_threshold(self, threshold: Threshold):
         self.__thresholds.append(threshold)
+
+    def get_all_thresholds(self):
+        return self.__thresholds.copy()
+
+    def get_measure(self):
+        return self.__measure
+
+    def get_name(self):
+        return self.__name
 
     def execute(self):
         for threshold in self.__thresholds:
