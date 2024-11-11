@@ -39,6 +39,21 @@ quality monitoring on data streams:
     <img align="middle" src="dq_dashboard/dq_dashboard.gif" alt="Stream Data Quality dashboard animation"/>
 </p>
 
+## Current Suite of Measurements
+The following list provides a brief overview of the current Suite of Measurements supported by **Stream DaQ**. Note that for all the functionalities below, **Stream DaQ** comes with a wide range of _implementation variations_, in order to cover a broad and heterogeneous spectrum of DQ needs, depending on the domain, the task and the system at hand. For all these functionalities, **Stream DaQ** lets room for extensive customization via custom thresholding and variation selection with only a couple lines of code. Stay tuned, since new functionalities are on their way to be incorporated into **Stream DaQ**! Since then, Hapy Qua(ck)litying!
+
+- **Descriptive statistics**: min, max, mean, median, std, number/fraction above mean
+- **Availability**: at least a value in a window
+- **Frozen stream detection**: all/most values are the same in a window
+- **Range/Set validation**: values fall within a range or set of accepted values
+- **Regex validation**: values comply with a privded regex
+- **Unordered stream detection**: elements violate (time) ordering
+- **Volume & Cardinalities**: count, distinct, unique, most_frequent, heavy hitters (approx)
+- **Distribution percentiles**
+- **Correlation analysis** between fields
+- **Value Lengths**: {min, max, mean, median} length (_String-specific_)
+- **Integer - Fractional parts**: {min, max, mean, median} integer or fractional part (_Float-specific_)
+
 ## Example code
 
 Data quality monitoring is a highly case-specific task. We feel you! That's why we have tried to make it easier than
