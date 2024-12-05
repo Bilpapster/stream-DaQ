@@ -1,5 +1,5 @@
 pandas==2.2.3
-pathway==0.15.0
+pathway==0.16.0
 pillow==10.4.0
 python-dateutil==2.9.0.post0
 redis==5.0.8
