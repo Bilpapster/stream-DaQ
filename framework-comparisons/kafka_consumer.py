@@ -1,7 +1,6 @@
 from configurations import get_kafka_topic, get_chance_of_missing_value, get_number_of_elements_to_send
 from kafka import KafkaConsumer
 import json
-import sys
 
 consumer = KafkaConsumer(
     get_kafka_topic(),
@@ -12,5 +11,6 @@ consumer = KafkaConsumer(
 )
 
 for message in consumer:
-    print(message.value)
-
+    print("%s:%d:%d: key=%s value=%s" % (message.topic, message.partition,
+                                         message.offset, message.key,
+                                         message.value))
