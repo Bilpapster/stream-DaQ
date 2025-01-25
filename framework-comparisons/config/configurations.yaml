@@ -1,0 +1,24 @@
+# kafka configurations
+kafka_topic: test_topic
+kafka_server: 'localhost:9092' # change to '<container_name>:9092' if using docker
+
+# stream configurations
+number_of_elements_to_send: 1e4
+chance_of_missing_value: 0.1
+sleep_seconds_between_messages: 1e-10
+min_stream_value: 0
+max_stream_value: 100
+
+# data quality checks configurations
+low_threshold: 10
+high_threshold: 90
+
+# results sink configuration
+directory_base_name: './results/'
+pathway_directory: 'pathway/'
+faust_directory: 'faust/'
+bytewax_directory: 'bytewax/'
+quix_directory: 'quix/'
+missing_values_file_name: 'missing_values.csv'
+out_of_range_values_file_name: 'out_of_range_values.csv'
+
