@@ -1,0 +1,4 @@
+kafka_topic: test_topic
+number_of_elements_to_send: 1e10
+chance_of_missing_value: 0.1
+sleep_seconds_between_messages: 1e-10
