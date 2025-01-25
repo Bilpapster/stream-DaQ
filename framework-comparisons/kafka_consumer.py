@@ -1,11 +1,13 @@
-from configurations import get_kafka_topic, get_chance_of_missing_value, get_number_of_elements_to_send
 from kafka import KafkaConsumer
-import json
+from configurations import kafka_topic
+
+api_version = (0, 10, 2)
 
 consumer = KafkaConsumer(
-    get_kafka_topic(),
-    bootstrap_servers='localhost:9092',
-    value_deserializer=lambda x: json.loads(x.decode('utf-8')),
+    kafka_topic,
+    bootstrap_servers=['localhost:9092'],
+    security_protocol='PLAINTEXT',
+    api_version=api_version,
     auto_offset_reset='earliest',
     enable_auto_commit=False
 )
