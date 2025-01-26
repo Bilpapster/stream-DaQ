@@ -6,3 +6,4 @@ results/
 
 # Faust-generated directories, based on the application name
 *-data/
+*state*/
