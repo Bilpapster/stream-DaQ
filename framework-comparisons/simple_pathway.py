@@ -1,10 +1,11 @@
+import time
 import pathway as pw
 from config.configurations import (
     kafka_topic, kafka_server,
     directory_base_name, pathway_directory,
     missing_values_file_name, out_of_range_values_file_name
 )
-from utils import is_out_of_range, set_up_output_path
+from utils import is_out_of_range, set_up_output_path, standardize_timestamp_to_nanoseconds
 
 
 def main():
@@ -39,28 +40,19 @@ def main():
         autocommit_duration_ms=1,
     )
 
-    # Add columns to identify missing and out-of-range values
-    input_table = (input_table
-    .with_columns(
-        # Check for missing values (only None is considered missing for simplicity)
-        is_missing=input_table.value.is_none(),
-        # Check for out-of-range values with custom function.
-        is_out_of_range=pw.apply_with_type(is_out_of_range, bool, pw.this.value),
-    ))
-
     # Count the number of missing values
-    missing_values_count_table = input_table.filter(input_table.is_missing).reduce(
-        result=pw.reducers.count()
-    )
+    missing_values_count = (input_table
+                            .filter(input_table.value.is_none())
+                            .reduce(result=pw.reducers.count()))
 
-    # Count the number of out-of-range values
-    out_of_range_count_table = input_table.filter(input_table.is_out_of_range).reduce(
-        total_out_of_range=pw.reducers.count()
-    )
+    # Count the number of out of range values
+    out_of_range_values_count = (input_table
+                                 .filter(pw.apply_with_type(is_out_of_range, bool, pw.this.value))
+                                 .reduce(result=pw.reducers.count()))
 
     # Write the results to two separate files
-    pw.io.csv.write(missing_values_count_table, MISSING_VALUES_OUTPUT_FILE)
-    pw.io.csv.write(out_of_range_count_table, OUT_OF_RANGE_OUTPUT_FILE)
+    pw.io.csv.write(missing_values_count, MISSING_VALUES_OUTPUT_FILE)
+    pw.io.csv.write(out_of_range_values_count, OUT_OF_RANGE_OUTPUT_FILE)
 
     # Kick-off execution (Spark-like lazy evaluation)
     pw.run()
