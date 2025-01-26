@@ -8,11 +8,13 @@ from utils import is_out_of_range, set_up_output_path
 
 
 def main():
+    # Prepares the output directories and files. Missing and out of range values are written to separate files.
     MISSING_VALUES_OUTPUT_FILE = directory_base_name + pathway_directory + missing_values_file_name
     set_up_output_path(MISSING_VALUES_OUTPUT_FILE)
     OUT_OF_RANGE_OUTPUT_FILE = directory_base_name + pathway_directory + out_of_range_values_file_name
     set_up_output_path(OUT_OF_RANGE_OUTPUT_FILE)
 
+    # Kafka settings to read from the input stream.
     rdkafka_settings = {
         "bootstrap.servers": kafka_server,
         "security.protocol": "plaintext",
@@ -21,12 +23,14 @@ def main():
         "auto.offset.reset": "earliest",
     }
 
-    # We define a schema for the table
-    # It set all the columns and their types
     class InputSchema(pw.Schema):
+        """
+        Schema for the input stream elements that are read from the Kafka topic.
+        To keep it simple, we assume that each element is just an int (nullable) value.
+        """
         value: int | None
 
-    # Create a sample input table using pw.debug.table_from_markdown()
+    # Create a sample input table from the data read from the Kafka topic.
     input_table = pw.io.kafka.read(
         rdkafka_settings,
         topic=kafka_topic,
@@ -35,12 +39,12 @@ def main():
         autocommit_duration_ms=1,
     )
 
-    # Add columns to identify missing and out-of-range values using with_columns()
+    # Add columns to identify missing and out-of-range values
     input_table = (input_table
     .with_columns(
-        # Check for missing values (only None are considered missing for simplicity)
+        # Check for missing values (only None is considered missing for simplicity)
         is_missing=input_table.value.is_none(),
-        # Check for out-of-range values with custom function
+        # Check for out-of-range values with custom function.
         is_out_of_range=pw.apply_with_type(is_out_of_range, bool, pw.this.value),
     ))
 
