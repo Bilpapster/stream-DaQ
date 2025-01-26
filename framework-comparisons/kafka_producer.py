@@ -6,9 +6,10 @@ from config.configurations import (
     kafka_topic, kafka_server,
     number_of_elements_to_send, chance_of_missing_value,
     max_stream_value, min_stream_value,
-    sleep_seconds_between_messages
+    sleep_seconds_between_messages,
+    directory_base_name
 )
-from utils import is_out_of_range
+from utils import is_out_of_range, standardize_timestamp_to_nanoseconds
 
 api_version = (0, 10, 2)
 
@@ -19,6 +20,7 @@ producer = KafkaProducer(
 )
 
 total_missing_values = total_out_of_range = 0 # counters to keep track of the missing and out of range elements sent
+starting_timestamp = standardize_timestamp_to_nanoseconds(time.time())
 for _ in range(number_of_elements_to_send):
     value = random.randint(min_stream_value, max_stream_value) # generate a random number in the configured range
     coin_flip_for_missing_value = random.uniform(0, 1) <= chance_of_missing_value # determine whether the value will be 'missing'
@@ -35,5 +37,16 @@ for _ in range(number_of_elements_to_send):
 
 # Inform user about the missing and out of range values sent
 print(f"Finished sending {number_of_elements_to_send} values")
+print(f"Start timestamp     : {starting_timestamp} UNIX timestamp")
 print(f"Total missing values: {total_missing_values} ({total_missing_values/number_of_elements_to_send*100:.2f}%)")
 print(f"Total out of range  : {total_out_of_range} ({total_out_of_range/number_of_elements_to_send*100:.2f}%)")
+
+# Write results to json file
+import json
+with open(directory_base_name + 'kafka_stream_report.json', 'w') as report_json_file:
+    json.dump({
+        'start': starting_timestamp,
+        'elements': number_of_elements_to_send,
+        'missing': total_missing_values,
+        'outOfRange': total_out_of_range,
+    }, report_json_file)
