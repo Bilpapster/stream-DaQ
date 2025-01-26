@@ -37,9 +37,9 @@ def count_elements_in_stream(running_count, _item):
     if running_count is None:
         running_count = 0
     running_count += 1
-    finish_processing_timestamp = time.time()
-    finish_processing_timestamp = standardize_timestamp_to_nanoseconds(finish_processing_timestamp)
-    return running_count, f"{running_count},{finish_processing_timestamp}"
+    processing_timestamp = time.time()
+    processing_timestamp = standardize_timestamp_to_nanoseconds(processing_timestamp)
+    return running_count, f"{running_count},{processing_timestamp}"
 
 
 # set up a dataflow and configure kafka input stream
