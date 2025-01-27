@@ -61,7 +61,7 @@ result_out_of_range = op.stateful_map("count_out_of_range_values", out_of_range_
 
 # write results to separate files
 op.output("write-missing-values", result_missing, FileSink(MISSING_VALUES_OUTPUT_FILE))
-op.output("write-out-of-range-values", result_missing, FileSink(OUT_OF_RANGE_OUTPUT_FILE))
+op.output("write-out-of-range-values", result_out_of_range, FileSink(OUT_OF_RANGE_OUTPUT_FILE))
 
 # print results to console (ONLY FOR DEBUGGING)
 # op.inspect("missing", result_missing)
