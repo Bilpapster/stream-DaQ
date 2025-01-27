@@ -31,8 +31,8 @@ async def write_to_csv(stream_of_timestamps):
     :param stream_of_timestamps: a stream of timestamps representing when either the number of missing values, the
      number of values out of range, or both have changed.
     """
-    with open(RESULTS_OUTPUT_FILE, 'a') as csvfile:
-        async for timestamp in stream_of_timestamps:
+    async for timestamp in stream_of_timestamps:
+        with open(RESULTS_OUTPUT_FILE, 'a') as csvfile:
             csvfile.write(
                 f'{results[MISSING_KEYWORD]},'  # current number of missing values
                 f'{results[OUT_OF_RANGE_KEYWORD]},'  # current number of values out of range
