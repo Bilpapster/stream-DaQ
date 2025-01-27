@@ -31,7 +31,7 @@ app = Application(
     broker_address=kafka_server,
     consumer_group="0",
     auto_offset_reset="earliest",
-    commit_interval=0.5
+    commit_every=1
 )
 
 # Define a topic with messages in JSON format
@@ -41,14 +41,12 @@ input_topic = app.topic(name=kafka_topic, value_deserializer="json")
 sdf = app.dataframe(input_topic).apply(lambda message: message["value"])
 
 # compute the number of missing values and send it to a csv file
-(sdf.filter(lambda value: value is None)
- .apply(count_elements, stateful=True)
- .sink(CSVSink(MISSING_VALUES_OUTPUT_FILE)))
+missing_values = sdf.filter(lambda value: value is None).apply(count_elements, stateful=True)
+missing_values.sink(CSVSink(MISSING_VALUES_OUTPUT_FILE))
 
 # compute the number of values out of range and send it to a csv file
-(sdf.filter(lambda value: is_out_of_range(value))
- .apply(count_elements, stateful=True)
- .sink(CSVSink(OUT_OF_RANGE_OUTPUT_FILE)))
+out_of_range_values = sdf.filter(lambda value: is_out_of_range(value)).apply(count_elements, stateful=True)
+out_of_range_values.sink(CSVSink(OUT_OF_RANGE_OUTPUT_FILE))
 
 # Run the application
 if __name__ == "__main__":
