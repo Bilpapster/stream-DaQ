@@ -18,4 +18,4 @@ RUN apt-get update && apt-get install -y \
 COPY kafka/ .
 
 # Default command to run the producer
-CMD ["python", "producer.py"]
+CMD ["python", "kafka_producer.py"]
