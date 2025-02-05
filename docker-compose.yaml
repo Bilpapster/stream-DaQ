@@ -15,7 +15,9 @@ services:
       - data-quality-network
 
   kafka:
-    image: confluentinc/cp-kafka:latest
+    build:
+      context: .
+      dockerfile: dockerfiles/kafka.Dockerfile
     container_name: kafka
     depends_on:
       - zookeeper
@@ -34,13 +36,14 @@ services:
       - data-quality-network
     volumes:
       - ./experiments-configurations.yaml:/config/experiments.yaml
-#    command:
+#    command: (why is this not working???)
 #      - kafka-topics --bootstrap-server localhost:9092 --create --topic $INPUT_TOPIC --config retention.ms=600000
 
   python-producer:
     build:
       context: .
       dockerfile: dockerfiles/kafka-producer.Dockerfile
+    container_name: stream
     depends_on:
       - kafka
     networks:
@@ -53,6 +56,7 @@ services:
     build:
       context: ./deequExperiments
       dockerfile: Dockerfile
+    container_name: deequ
     depends_on:
       - kafka
     networks:
@@ -65,6 +69,7 @@ services:
     build:
       context: ./pathway
       dockerfile: Dockerfile
+    container_name: streamdaq
     depends_on:
       - kafka
     networks:

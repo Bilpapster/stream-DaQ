@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# Wait for Kafka to be ready
+echo "Waiting for Kafka to get ready ..."
+#cub command is part of Confluent's utilities to ensure Kafka is running before proceeding
+cub kafka-ready -b kafka:29092 1 20
+
+#Create topics for input and output
+kafka-topics --bootstrap-server kafka:29092 --create --topic $INPUT_TOPIC --partitions 1 --replication-factor 1 --config retention.ms=600000
+kafka-topics --bootstrap-server kafka:29092 --create --topic OUTPUT_TOPIC --partitions 1 --replication-factor 1 --config retention.ms=600000
+
+exec /etc/confluent/docker/run
