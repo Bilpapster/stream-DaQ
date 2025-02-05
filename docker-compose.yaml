@@ -42,7 +42,7 @@ services:
   python-producer:
     build:
       context: .
-      dockerfile: dockerfiles/kafka-producer.Dockerfile
+      dockerfile: dockerfiles/stream.Dockerfile
     container_name: stream
     depends_on:
       - kafka
