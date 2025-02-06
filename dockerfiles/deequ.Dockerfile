@@ -34,4 +34,4 @@ COPY --from=builder /app/target/skataDeequ-1.0-SNAPSHOT.jar /app/app.jar
 
 EXPOSE 4040
 
-ENTRYPOINT spark-submit --class experiment.StreamingDeequWindows --master local[*] --packages org.apache.spark:spark-sql-kafka-0-10_${SCALA_VERSION}:${SPARK_VERSION} /app/app.jar
+ENTRYPOINT spark-submit --class experiment.StreamingDeequWindows --master ${SPARK_MASTER}[${SPARK_NUM_CORES}] --packages org.apache.spark:spark-sql-kafka-0-10_${SCALA_VERSION}:${SPARK_VERSION} /app/app.jar

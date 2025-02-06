@@ -29,15 +29,20 @@ object WindowType {
 object StreamingDeequWindows {
 
   // Define case class for metrics including window information
-  case class MetricRecordWithWindow(
+  case class PerformanceMetrics(
                                      batchId: Long,
+                                     windowType: String,
+                                     windowDuration: String,
+                                     numCores: String,
                                      windowStart: String,
                                      windowEnd: String,
                                      timestamp: String,
                                      batchSize: Long,
-                                     numChecks: Int,
-                                     executionTimeMs: Long,
+                                     dataRetrievalTimeMs: Long,
+                                     windowingTimeMs: Long,
                                      checkingTimeMs: Long,
+                                     numFailedChecks: Int,
+                                     totalExecutionTimeMs: Long
                                    )
 
   def createWindowedStream(
@@ -94,9 +99,9 @@ object StreamingDeequWindows {
     println(s"Slide Duration: $slideDuration")
     println(s"Gap Duration: $gapDuration")
 
+// spark master and number of cores are configured from the environment variables in the dockerfile(s)
     val spark = SparkSession.builder()
       .appName("Streaming Deequ Example with Windowing")
-      .master(s"$sparkMaster[$sparkNumCores]") // Use all available cores for local testing
       .getOrCreate()
 
     // Set log level to WARN to reduce verbosity
@@ -118,10 +123,8 @@ object StreamingDeequWindows {
       StructField("eventTime", TimestampType, nullable = true)
     ))
 
-    println("Here we are inside the container!")
-
     // Create an empty Dataset[MetricRecordWithWindow] to store metrics
-    var metricsDF = spark.emptyDataset[MetricRecordWithWindow]
+    var metricsDF = spark.emptyDataset[PerformanceMetrics]
     metricsDF.cache()
 
     // Parse WindowType from string
@@ -159,6 +162,7 @@ object StreamingDeequWindows {
     // Process each windowed batch and apply Deequ checks
     val query = windowedStream.writeStream
       .foreachBatch { (batchDF: DataFrame, batchId: Long) =>
+        val batchStartTime = System.currentTimeMillis()
 
         // Ensure the batch data is cached to prevent multiple computations
         batchDF.cache()
@@ -167,7 +171,7 @@ object StreamingDeequWindows {
           val startTime = System.currentTimeMillis()
           // Collect the windowed data
           val windowedData = batchDF.collect()
-
+          val dataRetrievalTime = batchStartTime - startTime // If startTime is when data reading started
           // Process each window separately
           windowedData.foreach { row =>
             val window = row.getAs[Row]("window")
@@ -177,14 +181,12 @@ object StreamingDeequWindows {
 
             // Convert records back to DataFrame
             val windowDF = spark.createDataFrame(records.asJava, parsedMessagesDF.schema)
-            //            windowDF.show()
-
             val batchSize = windowDF.count()
-            //            println(s"Window [$windowStart - $windowEnd], Batch size: $batchSize")
 
             if (batchSize > 0) {
               // Record the start time
               val windowingFinishTime = System.currentTimeMillis()
+              val windowingTime = windowingFinishTime - batchStartTime
 
               // Define the data quality checks
               val check = Check(CheckLevel.Error, "Integrity checks")
@@ -194,13 +196,15 @@ object StreamingDeequWindows {
                 .isContainedIn("priority", Array("high", "medium", "low"))
                 .isNonNegative("numViews")
 
+              val checkingStartTime = System.currentTimeMillis()
               val verificationResult: VerificationResult = VerificationSuite()
                 .onData(windowDF)
                 .addCheck(check)
                 .run()
 
               // Record the end time
-              val endTime = System.currentTimeMillis()
+              val checkingEndTime = System.currentTimeMillis()
+
 
               val numFailedChecks = verificationResult.checkResults
                 .flatMap { case (_, checkResult) => checkResult.constraintResults }
@@ -209,42 +213,47 @@ object StreamingDeequWindows {
                 }
 
               // Calculate total execution time and time required only for data quality checks
-              val executionTime = endTime - startTime
-              val checkingTime = endTime - windowingFinishTime
-
-              // Get the number of checks executed
-              val numChecks = numFailedChecks // change according to the experiment
+              val checkingTime = checkingEndTime - checkingStartTime
+              val totalExecutionTime = checkingEndTime - batchStartTime
 
               // Get current timestamp as a string
               val timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))
 
               // Create a MetricRecord
-              val metricRecord = MetricRecordWithWindow(
+              val performanceMetrics = PerformanceMetrics(
                 batchId,
+                windowTypeStr,
+                windowDuration,
+                sparkNumCores,
                 windowStart.toString,
                 windowEnd.toString,
+                numFailedChecks,
                 timestamp,
                 batchSize,
-                numChecks,
-                executionTime,
-                checkingTime
+                dataRetrievalTime,
+                windowingTime,
+                checkingTime,
+                totalExecutionTime,
               )
 
               // Convert MetricRecord to Dataset
-              val metricDS = Seq(metricRecord).toDS()
+              val metricDS = Seq(performanceMetrics).toDS()
 
               // Append to metrics Dataset
               metricsDF = metricsDF.union(metricDS)
 
-              // Optionally write metrics to a CSV file after each batch
-              metricsDF.coalesce(1) // Optional: write to a single file
+              // Write metrics to a CSV file after each batch
+              metricsDF
                 .write
-                .mode("overwrite")
+                .mode("append")
                 .option("header", "true")
-                .csv("data/metrics.csv")
+                .csv("executionData")
 
-              println(s"batch $batchId: $executionTime ms in total (${batchSize.toDouble / executionTime} elem/sec)")
-              println(s"batch $batchId: $checkingTime ms for windowing (${checkingTime.toDouble / executionTime * 100}% of execution time)")
+              println(s"Batch $batchId [$windowTypeStr window]: $batchSize records processed in $totalExecutionTime ms using $sparkNumCores cores")
+              println(s"Window Duration: $windowDuration")
+              println(s"Window Start: $windowStart, Window End: $windowEnd")
+              println(s"batch $batchId: $totalExecutionTime ms in total (${batchSize.toDouble / totalExecutionTime} elem/sec)")
+              println(s"batch $batchId: $checkingTime ms for windowing (${(checkingTime.toDouble / totalExecutionTime * 100).round}% of execution time)")
               println(s"batch $batchId: $batchSize elements")
               println
             }
