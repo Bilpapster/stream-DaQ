@@ -1,14 +1,11 @@
-import os
-import json
-import time
-import random
+import os, json, time, random, string
+from datetime import datetime
 from kafka import KafkaProducer
 
 # Get Kafka configuration from environment variables
-KAFKA_TOPIC = os.getenv('INPUT_TOPIC', 'default_input_topic')
+KAFKA_TOPIC = os.getenv('INPUT_TOPIC', 'data_input')
 KAFKA_SERVER = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'kafka:29092')
 SLEEP_SECONDS = float(os.getenv('PRODUCER_SLEEP_SECONDS', '1.0'))
-
 
 def json_serializer(data):
     return json.dumps(data).encode('utf-8')
@@ -37,16 +34,19 @@ def produce_messages():
     try:
         while True:
             data = {
-                "value": random.randint(0, 20),
-                "timestamp": time.time()
+                'productName': f"product{str(random.randint(0, 20))}",
+                'id_': f'id{str(random.randint(0, 100))}',
+                'description': ''.join(random.choices(string.ascii_uppercase + string.digits + ' -', k=random.randint(10, 200))),
+                'priority': random.choice(["low", "normal", "medium", "high"]),
+                'numViews': random.randint(1, 1000),
+                'eventTime': datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3],
             }
 
             producer.send(KAFKA_TOPIC, data)
-            producer.flush()
+            # producer.flush()
+            # print(f"Sent message to topic {KAFKA_TOPIC}: {data}")
 
-            print(f"Sent message to topic {KAFKA_TOPIC}: {data}")
-
-            time.sleep(SLEEP_SECONDS)
+            time.sleep(random.random() / random.randint(1, 10000000000000000))
 
     except KeyboardInterrupt:
         print("Stopping producer...")
