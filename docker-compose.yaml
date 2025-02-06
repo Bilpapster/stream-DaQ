@@ -36,10 +36,8 @@ services:
       - data-quality-network
     volumes:
       - ./experiments-configurations.yaml:/config/experiments.yaml
-#    command: (why is this not working???)
-#      - kafka-topics --bootstrap-server localhost:9092 --create --topic $INPUT_TOPIC --config retention.ms=600000
 
-  python-producer:
+  stream:
     build:
       context: .
       dockerfile: dockerfiles/stream.Dockerfile
@@ -54,8 +52,8 @@ services:
 
   deequ:
     build:
-      context: ./deequExperiments
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: dockerfiles/deequ.Dockerfile
     container_name: deequ
     depends_on:
       - kafka
@@ -64,6 +62,10 @@ services:
     environment:
       - INPUT_TOPIC=${INPUT_TOPIC}
       - OUTPUT_TOPIC=${OUTPUT_TOPIC}
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - KAFKA_TOPIC=data_input
+      - WINDOW_DURATION=20 seconds
+      - SLIDE_DURATION=10 seconds
 
   stream-daq:
     build:
