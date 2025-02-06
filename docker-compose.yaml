@@ -36,6 +36,8 @@ services:
       - data-quality-network
     volumes:
       - ./experiments-configurations.yaml:/config/experiments.yaml
+    env_file:
+      - .env
 
   stream:
     build:
@@ -49,6 +51,8 @@ services:
     environment:
       - INPUT_TOPIC=${INPUT_TOPIC}
       - OUTPUT_TOPIC=${OUTPUT_TOPIC}
+    env_file:
+      - .env
 
   deequ:
     build:
@@ -59,13 +63,8 @@ services:
       - kafka
     networks:
       - data-quality-network
-    environment:
-      - INPUT_TOPIC=${INPUT_TOPIC}
-      - OUTPUT_TOPIC=${OUTPUT_TOPIC}
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
-      - KAFKA_TOPIC=data_input
-      - WINDOW_DURATION=20 seconds
-      - SLIDE_DURATION=10 seconds
+    env_file:
+      - .env
 
   stream-daq:
     build:
@@ -79,3 +78,5 @@ services:
     environment:
       - INPUT_TOPIC=${INPUT_TOPIC}
       - OUTPUT_TOPIC=${OUTPUT_TOPIC}
+    env_file:
+      - .env

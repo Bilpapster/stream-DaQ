@@ -1,13 +1,30 @@
-import org.apache.spark.sql.{DataFrame, Row, SparkSession}
+package experiment
+
+import com.amazon.deequ.checks.{Check, CheckLevel}
+import com.amazon.deequ.constraints.ConstraintStatus
+import com.amazon.deequ.{VerificationResult, VerificationSuite}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
-import com.amazon.deequ.{VerificationResult, VerificationSuite}
-import com.amazon.deequ.checks.{Check, CheckLevel, CheckStatus}
-import com.amazon.deequ.constraints.ConstraintStatus
+import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 
 import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+
+sealed trait WindowType
+
+object WindowType {
+  case object Tumbling extends WindowType
+  case object Sliding extends WindowType
+  case object Session extends WindowType
+
+  def fromString(s: String): WindowType = s.toLowerCase match {
+    case "tumbling" => Tumbling
+    case "sliding"  => Sliding
+    case "session"  => Session
+    case _ => throw new IllegalArgumentException(s"Invalid window type: $s")
+  }
+}
 
 object StreamingDeequWindows {
 
@@ -23,10 +40,63 @@ object StreamingDeequWindows {
                                      checkingTimeMs: Long,
                                    )
 
+  def createWindowedStream(
+                            df: DataFrame,
+                            windowType: WindowType,
+                            windowDuration: String,
+                            slideDuration: Option[String],
+                            gapDuration: Option[String]
+                          ): DataFrame = {
+    windowType match {
+      case WindowType.Tumbling =>
+        df.withWatermark("eventTime", "0 seconds")
+          .groupBy(window(col("eventTime"), windowDuration))
+          .agg(collect_list(struct(df.columns.map(col): _*)).alias("records"))
+
+      case WindowType.Sliding =>
+        val slide = slideDuration.getOrElse(
+          throw new IllegalArgumentException("Slide duration must be provided for sliding windows")
+        )
+        df.withWatermark("eventTime", "0 seconds")
+          .groupBy(window(col("eventTime"), windowDuration, slide))
+          .agg(collect_list(struct(df.columns.map(col): _*)).alias("records"))
+
+      case WindowType.Session =>
+        val gap = gapDuration.getOrElse(
+          throw new IllegalArgumentException("Gap duration must be provided for session windows")
+        )
+        df.withWatermark("eventTime", "0 seconds")
+          .groupBy(session_window(col("eventTime"), gap))
+          .agg(collect_list(struct(df.columns.map(col): _*)).alias("records"))
+    }
+  }
+
   def main(args: Array[String]): Unit = {
+
+    // Read environment variables with defaults
+    val kafkaBootstrapServers = sys.env.getOrElse("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
+    val kafkaTopic = sys.env.getOrElse("INPUT_TOPIC", "data_input")
+    val sparkMaster = sys.env.getOrElse("SPARK_MASTER", "local")
+    val sparkNumCores = sys.env.getOrElse("SPARK_NUM_CORES", "*")
+    val windowTypeStr = sys.env.getOrElse("WINDOW_TYPE", "tumbling").toLowerCase()
+    val windowDuration = sys.env.getOrElse("WINDOW_DURATION", "10 seconds")
+    val slideDuration = sys.env.getOrElse("SLIDE_DURATION", "5 seconds")
+    val gapDuration = sys.env.getOrElse("GAP_DURATION", "5 seconds")
+
+
+    // Log the configurations
+    println(s"Kafka Bootstrap Servers: $kafkaBootstrapServers")
+    println(s"Kafka Topic: $kafkaTopic")
+    println(s"Spark Master: $sparkMaster")
+    println(s"Spark Num Cores: $sparkNumCores")
+    println(s"Window Type: $windowTypeStr")
+    println(s"Window Duration: $windowDuration")
+    println(s"Slide Duration: $slideDuration")
+    println(s"Gap Duration: $gapDuration")
+
     val spark = SparkSession.builder()
       .appName("Streaming Deequ Example with Windowing")
-      .master("local[*]") // Use all available cores for local testing
+      .master(s"$sparkMaster[$sparkNumCores]") // Use all available cores for local testing
       .getOrCreate()
 
     // Set log level to WARN to reduce verbosity
@@ -48,13 +118,18 @@ object StreamingDeequWindows {
       StructField("eventTime", TimestampType, nullable = true)
     ))
 
-    // Kafka configuration
-    val kafkaBootstrapServers = "localhost:9092" // Replace with your Kafka servers
-    val kafkaTopic = "test_topic" // Replace with your Kafka topic
+    println("Here we are inside the container!")
 
     // Create an empty Dataset[MetricRecordWithWindow] to store metrics
     var metricsDF = spark.emptyDataset[MetricRecordWithWindow]
     metricsDF.cache()
+
+    // Parse WindowType from string
+    val windowType = WindowType.fromString(windowTypeStr)
+
+    // Prepare optional durations
+    val slideDurationOpt = if (slideDuration.nonEmpty) Some(slideDuration) else None
+    val gapDurationOpt = if (gapDuration.nonEmpty) Some(gapDuration) else None
 
     // Read streaming data from Kafka
     val kafkaDF = spark.readStream
@@ -73,11 +148,13 @@ object StreamingDeequWindows {
       // If eventTime is a StringType, parse it to TimestampType
       .withColumn("eventTime", to_timestamp(col("eventTime"), "yyyy-MM-dd HH:mm:ss.SSS")) // Use appropriate format if needed
 
-    // Apply watermark and windowing
-    val windowedStream = parsedMessagesDF
-      .withWatermark("eventTime", "0 seconds") // Adjust watermark duration as needed
-      .groupBy(window(col("eventTime"), windowDuration = "20 seconds", slideDuration = "10 seconds")) // Adjust window duration as needed
-      .agg(collect_list(struct(parsedMessagesDF.columns.map(col): _*)).alias("records"))
+    val windowedStream = createWindowedStream(
+      parsedMessagesDF,
+      windowType,
+      windowDuration,
+      slideDurationOpt,
+      gapDurationOpt
+    )
 
     // Process each windowed batch and apply Deequ checks
     val query = windowedStream.writeStream
