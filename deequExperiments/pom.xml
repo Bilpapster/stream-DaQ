@@ -30,12 +30,14 @@
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-core_2.12</artifactId>
             <version>${spark.version}</version>
+            <scope>provided</scope>
         </dependency>
         <!--   Spark Core     -->
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-sql_2.12</artifactId>
             <version>${spark.version}</version>
+            <scope>provided</scope>
         </dependency>
         <!--   Spark MLlib (if needed)     -->
         <dependency>
@@ -48,6 +50,7 @@
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-streaming_2.12</artifactId>
             <version>${spark.version}</version>
+            <scope>provided</scope>
         </dependency>
         <!-- Spark SQL Kafka Integration -->
         <dependency>
@@ -70,17 +73,17 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
-            <version>${jackson.version}</version> <!-- Replace with the version used by Spark 3.5.0 -->
+            <version>${jackson.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>${jackson.version}</version> <!-- Replace with the version used by Spark 3.5.0 -->
+            <version>${jackson.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.module</groupId>
             <artifactId>jackson-module-scala_2.12</artifactId>
-            <version>${jackson.version}</version> <!-- Replace with the version used by Spark 3.5.0 -->
+            <version>${jackson.version}</version>
         </dependency>
     </dependencies>
 
@@ -157,6 +160,19 @@
                             </transformers>
                             <!-- Ensure dependencies are included -->
                             <minimizeJar>false</minimizeJar>
+                            <!-- Exclude signature files to prevent SecurityException -->
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                        <exclude>META-INF/**/pom.properties</exclude>
+                                        <exclude>META-INF/**/pom.xml</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
                         </configuration>
                     </execution>
                 </executions>
