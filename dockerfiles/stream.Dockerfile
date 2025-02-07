@@ -5,7 +5,7 @@ FROM python:3.12-slim
 WORKDIR /app
 
 # Copy requirements file
-COPY requirements/requirements_kafka_producer.txt ./requirements.txt
+COPY requirements/requirements_stream.txt ./requirements.txt
 
 # Install system dependencies and Python packages
 RUN apt-get update && apt-get install -y \
@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy the kafka producer source code
-COPY kafka/ .
+COPY stream/ .
 
 # Default command to run the producer
-CMD ["python", "kafka_producer.py"]
+CMD ["python", "kafka_stream_generation.py"]

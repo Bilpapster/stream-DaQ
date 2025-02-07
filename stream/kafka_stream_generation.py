@@ -73,6 +73,7 @@ def produce_messages():
 
     try:
         window_count = 0
+        wait_until_next_minute()
         while True:
             messages_per_window = messages_per_window_list[window_count % len(messages_per_window_list)]
             window_count += 1
@@ -113,5 +114,4 @@ def produce_messages():
 
 
 if __name__ == "__main__":
-    wait_until_next_minute()
     produce_messages()
