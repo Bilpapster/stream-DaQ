@@ -115,12 +115,12 @@ object StreamingDeequWindows {
 
     // Define the schema
     val itemSchema = StructType(Array(
-      StructField("id", StringType, nullable = true),
+      StructField("id_", StringType, nullable = true),
       StructField("productName", StringType, nullable = true),
       StructField("description", StringType, nullable = true),
       StructField("priority", StringType, nullable = true),
       StructField("numViews", LongType, nullable = true),
-      StructField("eventTime", TimestampType, nullable = true)
+      StructField("eventTime", LongType, nullable = true)
     ))
 
     // Create an empty Dataset[MetricRecordWithWindow] to store metrics
@@ -145,11 +145,23 @@ object StreamingDeequWindows {
     // Extract and parse the JSON messages
     val messagesDF = kafkaDF.selectExpr("CAST(value AS STRING) as json_str")
 
+    // Define a UDF to handle both string and UNIX timestamp inputs
+    val parseEventTime = udf((eventTime: Any) => eventTime match {
+      case s: String =>
+        // Try to parse the string timestamp
+        val formatter = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS")
+        new java.sql.Timestamp(formatter.parse(s).getTime)
+      case l: Long =>
+        // Convert UNIX timestamp in milliseconds to Timestamp
+        new java.sql.Timestamp(l)
+      case _ => null
+    })
+
     val parsedMessagesDF = messagesDF
       .withColumn("jsonData", from_json(col("json_str"), itemSchema))
       .select("jsonData.*")
       // If eventTime is a StringType, parse it to TimestampType
-      .withColumn("eventTime", to_timestamp(col("eventTime"), "yyyy-MM-dd HH:mm:ss.SSS")) // Use appropriate format if needed
+      .withColumn("eventTime", parseEventTime(col("eventTime")))
 
     val windowedStream = createWindowedStream(
       parsedMessagesDF,
@@ -247,7 +259,7 @@ object StreamingDeequWindows {
                 .write
                 .mode("append")
                 .option("header", "true")
-                .csv("executionData")
+                .csv(s"executionData/${windowTypeStr}_${windowDuration}_${slideDuration}_${gapDuration}")
 
               println(s"Batch $batchId [$windowTypeStr window]: $batchSize records processed in $totalExecutionTime ms using $sparkNumCores cores")
               println(s"Window Duration: $windowDuration")
