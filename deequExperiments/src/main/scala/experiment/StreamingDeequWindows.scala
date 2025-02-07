@@ -36,12 +36,12 @@ object StreamingDeequWindows {
                                      numCores: String,
                                      windowStart: String,
                                      windowEnd: String,
+                                     numFailedChecks: Int,
                                      timestamp: String,
                                      batchSize: Long,
                                      dataRetrievalTimeMs: Long,
                                      windowingTimeMs: Long,
                                      checkingTimeMs: Long,
-                                     numFailedChecks: Int,
                                      totalExecutionTimeMs: Long
                                    )
 
@@ -243,7 +243,7 @@ object StreamingDeequWindows {
               metricsDF = metricsDF.union(metricDS)
 
               // Write metrics to a CSV file after each batch
-              metricsDF
+              metricsDF.coalesce(1)
                 .write
                 .mode("append")
                 .option("header", "true")
