@@ -30,8 +30,6 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      # Dynamic topic creation from config
-      KAFKA_CREATE_TOPICS: "${INPUT_TOPIC}:1:1,${OUTPUT_TOPIC}:1:1"
     networks:
       - data-quality-network
     volumes:
@@ -50,7 +48,9 @@ services:
       - data-quality-network
     environment:
       - INPUT_TOPIC=${INPUT_TOPIC}
-      - OUTPUT_TOPIC=${OUTPUT_TOPIC}
+      - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS}
+      - WINDOW_DURATION=${WINDOW_DURATION}
+      - MESSAGES_PER_WINDOW=${MESSAGES_PER_WINDOW}
     env_file:
       - .env
 
@@ -63,20 +63,27 @@ services:
       - kafka
     networks:
       - data-quality-network
+    environment:
+      - SPARK_MASTER=${SPARK_MASTER}
+      - SPARK_NUM_CORES=${SPARK_NUM_CORES}
     env_file:
       - .env
+    volumes:
+      - ./execution-results/deequ:/app/executionData
 
-  stream-daq:
+  daq:
     build:
-      context: ./pathway
-      dockerfile: Dockerfile
-    container_name: streamdaq
+      context: .
+      dockerfile: dockerfiles/daq.Dockerfile
+    container_name: daq
     depends_on:
       - kafka
     networks:
       - data-quality-network
     environment:
       - INPUT_TOPIC=${INPUT_TOPIC}
-      - OUTPUT_TOPIC=${OUTPUT_TOPIC}
+      - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS}
     env_file:
       - .env
+    volumes:
+      - ./execution-results/stream-daq:/app/data
