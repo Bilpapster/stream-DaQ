@@ -106,6 +106,5 @@ class StreamDaQ:
             behavior=pw.temporal.exactly_once_behavior(shift=self.wait_for_late),
             # todo handle the case int | timedelta
         ).reduce(**self.measures)
-        pw.debug.compute_and_print(data, include_id=False)
         self.sink_operation(data)
         pw.run()
