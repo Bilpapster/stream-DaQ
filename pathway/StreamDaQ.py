@@ -1,6 +1,6 @@
 import pathway as pw
 from datetime import timedelta
-from typing import Self
+from typing import Self, Callable
 
 from pathway.internals import ReducerExpression
 from pathway.stdlib.temporal import Window
@@ -27,24 +27,27 @@ class StreamDaQ:
         from collections import OrderedDict
         self.measures = OrderedDict()
         self.window = None
-        self.instance = None
         self.time_column = None
+        self.instance = None
         self.wait_for_late = None
         self.time_format = None
         self.show_window_start = True
         self.show_window_end = True
+        self.source = None
         self.sink_file_name = None
+        self.sink_operation = None
 
-    def configure(self, window: Window, instance: str, time_column: str,
+    def configure(self, window: Window, time_column: str, instance: str | None = None,
                   wait_for_late: int | float | timedelta | None = None,
                   time_format: str = '%Y-%m-%d %H:%M:%S', show_window_start: bool = True,
-                  show_window_end: bool = True, sink_file_name: str = None) -> Self:
+                  show_window_end: bool = True, source: pw.internals.Table | None = None, sink_file_name: str = None,
+                  sink_operation: Callable[[pw.internals.Table], None] | None = None) -> Self:
         """
         Configures the DQ monitoring parameters. Specifying a window object, the key instance and the time column name
         cannot be omitted. The rest of the arguments are optional and come with rational default values.
         :param window: a window object to use for widowing the source stream.
-        :param instance: the name of the column that contains the key for each incoming element.
         :param time_column: the name of the column that contains the date/time information for every element.
+        :param instance: the name of the column that contains the key for each incoming element.
         :param wait_for_late: the number of seconds to wait after the end timestamp of each window. Late elements that
         arrive more than `wait_for_late` seconds after the window is closed will be ignored.
         :param time_format: the format of the values in the column that contains date/time information
@@ -52,7 +55,9 @@ class StreamDaQ:
         the results
         :param show_window_end: boolean flag to specify whether the window ending timestamp should be included in
         the results
+        :param source: the source to get data from.
         :param sink_file_name: the name of the file to write the output to
+        :param sink_operation: the operation to perform in order to send data out of Stream DaQ, e.g., a Kafka topic.
         :return: a self reference, so that you can use your favorite, Spark-like, functional syntax :)
         """
         self.window = window
@@ -68,9 +73,10 @@ class StreamDaQ:
         if self.show_window_end:
             self.measures['window_end'] = pw.this._pw_window_end
 
+        self.source = source
         self.sink_file_name = sink_file_name
+        self.sink_operation = sink_operation
         return self
-
 
     def add(self, measure: pw.ColumnExpression | ReducerExpression, name: str) -> Self:
         """
@@ -88,15 +94,18 @@ class StreamDaQ:
         nothing of what you have declared before will be executed.
         :return: a self reference, so that you can use your favorite, Spark-like, functional syntax :)
         """
-        data = artificial(number_of_rows=100, input_rate=10) \
-            .with_columns(date_and_time=pw.this.timestamp.dt.strptime(self.time_format))
+        data = self.source
+        if self.source is None:  # if no specific input is specified, then fall back to a default dummy stream
+            data = artificial(number_of_rows=100, input_rate=10) \
+                .with_columns(date_and_time=pw.this.timestamp.dt.strptime(self.time_format))
 
         data = data.windowby(
-            data.date_and_time,
+            data[self.time_column],
             window=self.window,
-            instance=data[self.instance],
-            behavior=pw.temporal.exactly_once_behavior(shift=timedelta(seconds=self.wait_for_late)),
+            instance=data[self.instance] if self.instance is not None else None,
+            behavior=pw.temporal.exactly_once_behavior(shift=self.wait_for_late),
+            # todo handle the case int | timedelta
         ).reduce(**self.measures)
         pw.debug.compute_and_print(data, include_id=False)
-        # pw.io.csv.write(data, self.sink_file_name)
+        self.sink_operation(data)
         pw.run()
