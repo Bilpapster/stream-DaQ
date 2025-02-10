@@ -35,9 +35,9 @@ quality monitoring on data streams:
    results be a stream on their own, as well. This architectural choice enables real time alerts, in case the standards
    or thresholds you have defined are not met!
 
-<p align="center">
-    <img align="middle" src="dq_dashboard/dq_dashboard.gif" alt="Stream Data Quality dashboard animation"/>
-</p>
+## Stream DaQ's architecture
+
+![StreamDaQ architecture animation](https://github.com/user-attachments/assets/df59f529-c74d-425e-a19f-66a95482c716)
 
 ## Current Suite of Measurements
 The following list provides a brief overview of the current Suite of Measurements supported by **Stream DaQ**. Note that for all the functionalities below, **Stream DaQ** comes with a wide range of _implementation variations_, in order to cover a broad and heterogeneous spectrum of DQ needs, depending on the domain, the task and the system at hand. For all these functionalities, **Stream DaQ** lets room for extensive customization via custom thresholding and variation selection with only a couple lines of code. Stay tuned, since new functionalities are on their way to be incorporated into **Stream DaQ**! Since then, Hapy Qua(ck)litying!
