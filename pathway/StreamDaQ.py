@@ -24,7 +24,8 @@ class StreamDaQ:
         """
         Class constructor. Initializes to default/None values or potentially useful class arguments.
         """
-        self.measures = {}
+        from collections import OrderedDict
+        self.measures = OrderedDict()
         self.window = None
         self.instance = None
         self.time_column = None
@@ -60,9 +61,16 @@ class StreamDaQ:
         self.wait_for_late = wait_for_late
         self.time_format = time_format
         self.show_window_start = show_window_start
+
         self.show_window_end = show_window_end
+        if self.show_window_start:
+            self.measures['window_start'] = pw.this._pw_window_start
+        if self.show_window_end:
+            self.measures['window_end'] = pw.this._pw_window_end
+
         self.sink_file_name = sink_file_name
         return self
+
 
     def add(self, measure: pw.ColumnExpression | ReducerExpression, name: str) -> Self:
         """
@@ -80,11 +88,6 @@ class StreamDaQ:
         nothing of what you have declared before will be executed.
         :return: a self reference, so that you can use your favorite, Spark-like, functional syntax :)
         """
-        if self.show_window_start:
-            self.measures['window_start'] = pw.this._pw_window_start
-        if self.show_window_end:
-            self.measures['window_end'] = pw.this._pw_window_end
-
         data = artificial(number_of_rows=100, input_rate=10) \
             .with_columns(date_and_time=pw.this.timestamp.dt.strptime(self.time_format))
 
