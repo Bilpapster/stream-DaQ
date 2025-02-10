@@ -29,6 +29,7 @@ class ViewershipSchema(pw.Schema):
     timestamp: str
     user_id: str
     session_id: str
+    email: str
     device_id: str
     video_id: str
     duration_watched: float
@@ -58,6 +59,7 @@ def generate_artificial_random_viewership_data_stream(number_of_rows:int = 50, i
     value_functions = {
         'timestamp': lambda _: (datetime.now() - timedelta(days=60) + timedelta(seconds=_)).strftime(DATE_TIME_FORMAT),
         'user_id': lambda _: str(random.choice(["UserA", "UserB"])),
+        'email': lambda _: str(random.choice(['invalid', 'bilpapster@gmail.com', 'papster@csd'])),
         'session_id': lambda _: str(random.randint(1, 1000000)),
         'device_id': lambda _: str(random.randint(1, 1000000)),
         'video_id': lambda _: str(random.randint(1, 1000000)),
