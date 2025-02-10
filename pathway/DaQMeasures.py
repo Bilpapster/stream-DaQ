@@ -3,6 +3,7 @@ from datetime import datetime
 
 from pathway import ColumnExpression
 
+from utils.utils import Regex
 
 class DaQMeasures:
     @staticmethod
@@ -58,7 +59,7 @@ class DaQMeasures:
         :param precision: the number of decimal points to include in the result. Defaults to 3.
         :return: a pathway mean reducer
         """
-        return pw.apply(round, pw.reducers.avg(pw.this[column_name]), precision)
+        return pw.apply_with_type(round, float, pw.reducers.avg(pw.this[column_name]), precision)
 
     @staticmethod
     def median(column_name: str) -> pw.internals.expression.ColumnExpression:
@@ -557,13 +558,13 @@ class DaQMeasures:
         :return: a pathway pw.apply statement ready for use as a column
         """
 
-        def get_fraction_of_unique_values(elements: list):
+        def get_fraction_of_unique_values(elements: list) -> float:
             from utils.utils import calculate_number_of_unique_values
 
             fraction = calculate_number_of_unique_values(elements) / len(elements)
             return round(fraction, precision)
 
-        return pw.apply(get_fraction_of_unique_values, pw.reducers.tuple(pw.this[column_name]))
+        return pw.apply_with_type(get_fraction_of_unique_values, float, pw.reducers.tuple(pw.this[column_name]))
 
     @staticmethod
     def fraction_of_unique_over_distinct(column_name: str,
@@ -810,7 +811,7 @@ class DaQMeasures:
                         DaQMeasures.most_frequent(column_name))
 
     @staticmethod
-    def number_of_regex_conformance(column_name: str, regex: str) -> pw.internals.expression.ColumnExpression:
+    def number_of_regex_conformance(column_name: str, regex: str | Regex) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the number of values in the window that match the
         specified regex argument. The provided ``regex`` argument has to comply with the built-in python library ``re``.

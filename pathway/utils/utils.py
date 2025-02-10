@@ -271,3 +271,72 @@ def calculate_pearson_correlation(x, y, precision: int) -> float:
         return float("nan")
     return round(result.statistic, precision)
     # return round(result.statistic, precision), round(result.pvalue, precision)
+
+from enum import Enum
+
+class Regex(Enum):
+    EMAIL = """(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])"""
+    URL = """(https?|ftp)://[^\s/$.?#].[^\s]*"""
+    SOCIAL_SECURITY_NUMBER_US = """((?!219-09-9999|078-05-1120)(?!666|000|9\d{2})\d{3}-(?!00)\d{2}-(?!0{4})\d{4})|((?!219 09 9999|078 05 1120)(?!666|000|9\d{2})\d{3} (?!00)\d{2} (?!0{4})\d{4})|((?!219099999|078051120)(?!666|000|9\d{2})\d{3}(?!00)\d{2}(?!0{4})\d{4})"""
+
+    # Visa, MasterCard, AMEX, Diners Club
+    # http: // www.richardsramblings.com /regex/credit-card-numbers/
+    CREDIT_CARD = """\b(?:3[47]\d{2}([\ \-]?)\d{6}\1\d|(?:(?:4\d|5[1-5]|65)\d{2}|6011)([\ \-]?)\d{4}\2\d{4}\2)\d{4}\b"""
+
+
+import matplotlib.pyplot as plt
+
+def plot_threshold_segments(
+        timestamps,
+        values,
+        max_threshold=None,
+        min_threshold=None,
+        normal_color='blue',
+        violation_color='red'
+):
+    """
+    Plot line segments with color-coded thresholds.
+
+    Parameters:
+    - timestamps: pandas Series of timestamps
+    - values: pandas Series of corresponding values
+    - max_threshold: Optional upper threshold
+    - min_threshold: Optional lower threshold
+    - normal_color: Color for segments within thresholds
+    - violation_color: Color for segments outside thresholds
+    """
+    # If no thresholds are set, plot everything in normal color
+    if max_threshold is None and min_threshold is None:
+        plt.plot(timestamps, values, color=normal_color)
+        return
+
+    # Plot segments with threshold-based coloring
+    for i in range(len(timestamps) - 1):
+        # Determine color based on thresholds
+        current_value = values.iloc[i]
+        next_value = values.iloc[i + 1]
+
+        # Check for violation conditions
+        is_violation = False
+        if max_threshold is not None:
+            is_violation |= (current_value > max_threshold) or (next_value > max_threshold)
+        if min_threshold is not None:
+            is_violation |= (current_value < min_threshold) or (next_value < min_threshold)
+
+        # Plot segment with appropriate color
+        plt.plot(
+            timestamps.iloc[i:i + 2],
+            values.iloc[i:i + 2],
+            color=violation_color if is_violation else normal_color,
+            linestyle='-'
+        )
+
+    # Add threshold lines if they exist
+    if max_threshold is not None:
+        plt.axhline(y=max_threshold, color=violation_color, linestyle='-.',
+                    # label='Max Threshold',
+                    alpha=0.3)
+    if min_threshold is not None:
+        plt.axhline(y=min_threshold, color=violation_color, linestyle='-.',
+                    # label='Min Threshold',
+                    alpha=0.3)
