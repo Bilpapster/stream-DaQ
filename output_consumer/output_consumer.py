@@ -40,7 +40,7 @@ def main():
         auto_offset_reset='earliest',
         enable_auto_commit=True,
         value_deserializer=lambda m: json.loads(m.decode('utf-8')),
-        consumer_timeout_ms=12*60*1000  # Adjust as needed
+        consumer_timeout_ms=20*60*1000  # Adjust as needed
     )
 
     fieldnames = None

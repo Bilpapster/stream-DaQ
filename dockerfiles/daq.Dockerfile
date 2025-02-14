@@ -18,5 +18,5 @@ COPY pathway/ .
 
 CMD mkdir ./data && touch ./data/executionResults.csv
 
-#CMD ["python", "scalability_experiment.py"] # use this for running a single worker
+#CMD ["python", "scalability_experiment.py"]
 CMD  pathway spawn --processes ${SPARK_NUM_CORES} python ./scalability_experiment.py

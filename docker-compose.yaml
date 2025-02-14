@@ -23,6 +23,7 @@ services:
     ports:
       - "29092:29092"
       - "9092:9092"
+      - "9101:9101"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
@@ -32,10 +33,28 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      TOPIC_TIMESTAMP_TYPE: 'CreateTime'
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: localhost
     depends_on:
       - zookeeper
     env_file:
       - .env
+
+  kafdrop:
+    image: obsidiandynamics/kafdrop:4.0.2
+    hostname: kafdrop
+    container_name: kafdrop
+    networks:
+      - data-quality-network
+    ports:
+      - "9007:9000"
+    environment:
+      KAFKA_BROKERCONNECT: "kafka:29092"
+      JVM_OPTS: "-Xms32M -Xmx64M"
+      SERVER_SERVLET_CONTEXTPATH: "/"
+    depends_on:
+      - kafka
 
   stream:
     build:
@@ -70,6 +89,11 @@ services:
       - .env
     volumes:
       - ./execution-results/deequ:/app/executionData
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+          cpus: "4.0"
 
   daq:
     build:
@@ -88,6 +112,11 @@ services:
       - .env
     volumes:
       - ./execution-results/stream-daq:/app/data
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+          cpus: "4.0"
 
   output-consumer:
     build:
