@@ -17,5 +17,14 @@ RUN apt-get update && apt-get install -y \
 # Copy the kafka producer source code
 COPY stream/*.py .
 
-# Default command to run the producer
-CMD ["python", "kafka_stream_generation.py"]
+
+CMD ["/bin/sh", "-c", "\
+    echo The value of STREAM environment variable is: $STREAM; \
+    if [ \"$STREAM\" = \"reddit\" ]; then \
+        echo 'Starting Reddit stream generator script...'; \
+        python kafka_stream_generation_reddit.py; \
+    else \
+        echo 'Starting Products stream generator script...'; \
+        python kafka_stream_generation.py; \
+    fi \
+"]

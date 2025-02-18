@@ -59,24 +59,6 @@ services:
       - MESSAGES_PER_WINDOW=${MESSAGES_PER_WINDOW}
     env_file:
       - .env
-
-  stream-reddit:
-    build:
-      context: .
-      dockerfile: dockerfiles/stream-reddit.Dockerfile
-    container_name: stream-reddit
-    depends_on:
-      - kafka
-    networks:
-      - data-quality-network
-    environment:
-      - INPUT_TOPIC=${INPUT_TOPIC}
-      - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS}
-      - WINDOW_DURATION=${WINDOW_DURATION}
-      - MESSAGES_PER_WINDOW=${MESSAGES_PER_WINDOW}
-      - REDDIT_CSV_FILE=${REDDIT_CSV_FILE}
-    env_file:
-      - .env
     volumes:
       - ./stream/datasets:/app/datasets:ro
     deploy:
