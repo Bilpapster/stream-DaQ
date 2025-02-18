@@ -125,6 +125,7 @@ def write_to_kafka(data: pw.internals.Table) -> None:
 daq = StreamDaQ().configure(
     window=get_window_from_string(WINDOW_TYPE),
     time_column="created_utc",
+    behavior= pw.temporal.common_behavior(delay=0, cutoff=0, keep_results=False),
     wait_for_late=0,
     time_format="%Y-%m-%d %H:%M:%S.%f",
     show_window_start=True,

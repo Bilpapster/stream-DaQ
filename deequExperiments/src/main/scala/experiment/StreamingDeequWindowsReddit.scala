@@ -170,7 +170,7 @@ object StreamingDeequWindowsReddit {
         new java.sql.Timestamp(formatter.parse(s).getTime)
       case l: Long =>
         // Convert UNIX timestamp in milliseconds to Timestamp
-        new java.sql.Timestamp(l)
+        new java.sql.Timestamp(l*1000)
       case _ => null
     })
 
@@ -299,5 +299,14 @@ object StreamingDeequWindowsReddit {
       .start()
 
     query.awaitTermination()
+
+//    val query = messagesDF.writeStream
+//      .outputMode("append")
+//      .format("console")
+//      .option("truncate", "false") // Do not truncate the messages in the console output
+//      .start()
+//
+//    // Wait for the streaming query to finish
+//    query.awaitTermination()
   }
 }

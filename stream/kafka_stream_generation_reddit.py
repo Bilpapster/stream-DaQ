@@ -85,13 +85,14 @@ def produce_records_from_csv():
                     producer.flush()
                     print(f"{count} records sent so far...")
 
-            # Final flush after reading all lines
-            for row in reader:
-                preprocess_and_type_cast_fields(row)
-                row["created_utc"] = int(time.time())
-                producer.send(KAFKA_TOPIC, row)
-                break
+            # Artificially add an "end" event to force push computation of the window
+            # for row in reader:
+            #     preprocess_and_type_cast_fields(row, FIELD_CASTS)
+            #     row["created_utc"] = int(time.time())
+            #     producer.send(KAFKA_TOPIC, row)
+            #     break
 
+            # Final flush after reading all lines
             producer.flush()
             elapsed = time.time() - start_time
             print(f"Done sending {count} records. Elapsed time: {elapsed:.2f} seconds")
@@ -105,4 +106,6 @@ def produce_records_from_csv():
 
 
 if __name__ == "__main__":
+    print(f"Starting stream: {time.time()} UNIX timestamp")
     produce_records_from_csv()
+    print(f"Finished stream: {time.time()} UNIX timestamp")

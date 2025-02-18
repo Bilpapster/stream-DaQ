@@ -27,6 +27,7 @@ class StreamDaQ:
         from collections import OrderedDict
         self.measures = OrderedDict()
         self.window = None
+        self.window_behavior = None
         self.time_column = None
         self.instance = None
         self.wait_for_late = None
@@ -37,7 +38,9 @@ class StreamDaQ:
         self.sink_file_name = None
         self.sink_operation = None
 
-    def configure(self, window: Window, time_column: str, instance: str | None = None,
+    def configure(self, window: Window, time_column: str,
+                  behavior: pw.temporal.CommonBehavior | pw.temporal.ExactlyOnceBehavior | None = None,
+                  instance: str | None = None,
                   wait_for_late: int | float | timedelta | None = None,
                   time_format: str = '%Y-%m-%d %H:%M:%S', show_window_start: bool = True,
                   show_window_end: bool = True, source: pw.internals.Table | None = None, sink_file_name: str = None,
@@ -47,6 +50,7 @@ class StreamDaQ:
         cannot be omitted. The rest of the arguments are optional and come with rational default values.
         :param window: a window object to use for widowing the source stream.
         :param time_column: the name of the column that contains the date/time information for every element.
+        :param behavior: the temporal behavior of the monitoring window; see pathways temporal behaviors for more.
         :param instance: the name of the column that contains the key for each incoming element.
         :param wait_for_late: the number of seconds to wait after the end timestamp of each window. Late elements that
         arrive more than `wait_for_late` seconds after the window is closed will be ignored.
@@ -61,6 +65,7 @@ class StreamDaQ:
         :return: a self reference, so that you can use your favorite, Spark-like, functional syntax :)
         """
         self.window = window
+        self.window_behavior = behavior
         self.instance = instance
         self.time_column = time_column
         self.wait_for_late = wait_for_late
@@ -103,7 +108,7 @@ class StreamDaQ:
             data[self.time_column],
             window=self.window,
             instance=data[self.instance] if self.instance is not None else None,
-            behavior=pw.temporal.exactly_once_behavior(shift=self.wait_for_late),
+            behavior=pw.temporal.exactly_once_behavior(shift=self.wait_for_late) if self.window_behavior is None else self.window_behavior,
             # todo handle the case int | timedelta
         ).reduce(**self.measures)
         self.sink_operation(data)

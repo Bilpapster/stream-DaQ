@@ -7,6 +7,8 @@ RUN mvn dependency:resolve
 
 COPY deequExperiments/src ./src
 
+RUN rm ./src/main/scala/experiment/StreamingDeequWindowsReddit.scala
+
 RUN mvn clean package -DskipTests
 
 FROM openjdk:11-jre-slim

@@ -1,10 +1,7 @@
-# Use Python 3.12 slim image
 FROM python:3.12-slim
 
-# Set working directory
 WORKDIR /app
 
-# Copy requirements file
 COPY requirements/requirements_daq.txt ./requirements.txt
 
 # Install system dependencies and Python packages
@@ -16,7 +13,16 @@ RUN apt-get update && apt-get install -y \
 
 COPY pathway/ .
 
+# Create directory for persisting the results (see also volume in docker-compose.yaml)
 CMD mkdir ./data && touch ./data/executionResults.csv
 
-#CMD ["python", "scalability_experiment.py"]
-CMD  pathway spawn --processes ${SPARK_NUM_CORES} python ./scalability_experiment.py
+CMD ["/bin/sh", "-c", "\
+    echo The value of STREAM environment variable is: $STREAM; \
+    if [ \"$STREAM\" = \"reddit\" ]; then \
+        echo 'Starting Stream DaQ for Reddit stream processing...'; \
+        pathway spawn --processes ${SPARK_NUM_CORES} python ./scalability_experiment_reddit.py; \
+    else \
+        echo 'Starting Stream DaQ for Products stream processing...'; \
+        pathway spawn --processes ${SPARK_NUM_CORES} python ./scalability_experiment.py; \
+    fi \
+"]
