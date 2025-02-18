@@ -172,4 +172,5 @@ output*.csv
 
 # Scalability-experiments-related files
 execution-results/
+stream/datasets/
 
