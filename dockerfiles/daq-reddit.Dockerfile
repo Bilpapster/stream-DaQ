@@ -5,7 +5,7 @@ FROM python:3.12-slim
 WORKDIR /app
 
 # Copy requirements file
-COPY requirements/requirements_stream.txt ./requirements.txt
+COPY requirements/requirements_daq.txt ./requirements.txt
 
 # Install system dependencies and Python packages
 RUN apt-get update && apt-get install -y \
@@ -14,8 +14,9 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy the kafka producer source code
-COPY stream/*.py .
+COPY pathway/ .
 
-# Default command to run the producer
-CMD ["python", "kafka_stream_generation.py"]
+CMD mkdir ./data && touch ./data/executionResults.csv
+
+#CMD ["python", "scalability_experiment.py"]
+CMD  pathway spawn --processes ${SPARK_NUM_CORES} python ./scalability_experiment_reddit.py

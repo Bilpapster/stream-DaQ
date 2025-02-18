@@ -18,4 +18,4 @@ RUN apt-get update && apt-get install -y \
 COPY stream/*.py .
 
 # Default command to run the producer
-CMD ["python", "kafka_stream_generation.py"]
+CMD ["python", "kafka_stream_generation_reddit.py"]
