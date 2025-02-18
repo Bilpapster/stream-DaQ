@@ -5,6 +5,9 @@ from Windows import tumbling, sliding, session
 import os, time
 import pathway as pw
 
+PATHWAY_LICENSE_KEY = os.getenv('PATHWAY_LICENSE_KEY', 'You can get yours for free at https://pathway.com/get-license/')
+pw.set_license_key(PATHWAY_LICENSE_KEY)
+
 
 # Get configuration from environment variables
 INPUT_KAFKA_TOPIC = os.getenv('INPUT_TOPIC', 'data_input')
