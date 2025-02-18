@@ -39,12 +39,11 @@ def main():
         bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
         auto_offset_reset='earliest',
         enable_auto_commit=True,
-        value_deserializer=lambda m: json.loads(m.decode('utf-8')),
-        consumer_timeout_ms=20*60*1000  # Adjust as needed
+        value_deserializer=lambda m: json.loads(m.decode('utf-8'))
     )
 
     fieldnames = None
-    csv_file = open(CSV_OUTPUT_PATH, 'w', newline='')
+    csv_file = open(CSV_OUTPUT_PATH, 'a', newline='')
     csv_writer = None
 
     try:
