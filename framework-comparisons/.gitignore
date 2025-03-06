@@ -1,9 +1,0 @@
-.csv
-txt
-/missing_values_*.csv
-/output_*.csv
-results/
-
-# Faust-generated directories, based on the application name
-*-data/
-*state*/
