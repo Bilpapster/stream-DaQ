@@ -2,10 +2,10 @@ from setuptools import setup, find_packages
 
 setup(
     name='streamdaq',
-    version='0.1.4',
+    version='0.1.5',
     author='DELab Aristotle University of Thessaloniki, Vassilis Papastergios, Apostolos Giannoulidis, Anastasios Gounaris',
     author_email='bilpapster@gmail.com',
-    description='Scalable, real-time stream quality monitoring',
+    description='Plug-and-play real-time quality monitoring for data streams!',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
     url='https://github.com/Bilpapster/stream-DaQ',
