@@ -1,7 +1,5 @@
-pandas==2.2.3
-pathway==0.16.0
-pillow==10.4.0
+pathway==0.21.1
+matplotlib==3.10.1
 python-dateutil==2.9.0.post0
-redis==5.0.8
 datasketch~=1.6.5
 datasketches~=5.1.0
