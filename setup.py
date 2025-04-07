@@ -2,9 +2,9 @@ from setuptools import setup, find_packages
 
 setup(
     name='streamdaq',
-    version='0.1.5',
-    author='DELab Aristotle University of Thessaloniki, Vassilis Papastergios, Apostolos Giannoulidis, Anastasios Gounaris',
-    author_email='bilpapster@gmail.com',
+    version='0.1.6',
+    author='DELab Aristotle University of Thessaloniki: Vassilis Papastergios, Apostolos Giannoulidis, and Anastasios Gounaris',
+    author_email='papster@csd.auth.gr (Vassilis)',
     description='Plug-and-play real-time quality monitoring for data streams!',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
@@ -23,5 +23,5 @@ setup(
         'Operating System :: OS Independent',
     ],
     license="MIT License",
-    python_requires='>=3.10',
+    python_requires='>=3.11',
 )
