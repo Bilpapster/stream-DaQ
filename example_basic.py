@@ -1,5 +1,6 @@
-from streamdaq import StreamDaQ, DaQMeasures as dqm, Windows
+# pip install streamdaq
 
+from streamdaq import StreamDaQ, DaQMeasures as dqm, Windows
 
 daq = StreamDaQ().configure(
     window=Windows.tumbling(20),
