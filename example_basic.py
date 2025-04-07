@@ -19,5 +19,7 @@ daq.add(dqm.count('interaction_events'), "count") \
     .add(dqm.number_of_distinct_approx('interaction_events'), "distinct_approx") \
     .add(dqm.number_of_distinct('interaction_events'), "distinct")
 
+# Complete list of Data Quality Measures (dqm): https://github.com/Bilpapster/stream-DaQ/blob/main/streamdaq/DaQMeasures.py
+
 # Step 3: Kick-off monitoring and let Stream DaQ do the work while you focus on the important
 daq.watch_out()

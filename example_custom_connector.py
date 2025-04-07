@@ -21,7 +21,6 @@ json_data = [
 class FileStreamSubject(pw.io.python.ConnectorSubject):
     def run(self):
         for line in json_data:
-            # data = json.load(line)
             self.next(**line)
             time.sleep(1)
 
@@ -38,20 +37,21 @@ data = pw.io.python.read(
 )
 
 
-def write_to_csv(data: pw.internals.Table) -> None:
+def write_to_jsonlines(data: pw.internals.Table) -> None:
     # replace the code in this function with a suitable sink operation for your use case.
     # A complete list of pathway connectors can be found here: https://pathway.com/developers/api-docs/pathway-io
-    # Here, we just write the output lines to a csv file named 'output.csv'
+    # Here, we just write the output as jsonlines to 'output.jsonlines'.
+    # New quality assessment results are written (appended) to the file on the fly, when window processing is finished.
     pw.io.jsonlines.write(data, "output.jsonlines")
     # pw.debug.compute_and_print(data)
 
 daq = StreamDaQ().configure(
     source=data,
-    window=Windows.sliding(1, 5, origin=0),
+    window=Windows.sliding(hop=1, duration=5, origin=0),
     # instance="genus",
     time_column="timestamp",
     wait_for_late=1,
-    sink_operation=write_to_csv,
+    sink_operation=write_to_jsonlines,
 )
 
 # Step 2: Define what Data Quality means for you
