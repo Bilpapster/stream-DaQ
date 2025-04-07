@@ -3,7 +3,7 @@ from streamdaq import StreamDaQ, DaQMeasures as dqm, Windows
 
 daq = StreamDaQ().configure(
     window=Windows.tumbling(20),
-    instance="user_id",
+    # instance="user_id",
     time_column="timestamp",
     wait_for_late=1,
     time_format='%Y-%m-%d %H:%M:%S'
