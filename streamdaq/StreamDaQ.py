@@ -118,3 +118,4 @@ class StreamDaQ:
             pw.debug.compute_and_print(data)
         else: 
             self.sink_operation(data)
+            pw.run()
