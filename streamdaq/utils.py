@@ -342,45 +342,150 @@ def plot_threshold_segments(
                     # label='Min Threshold',
                     alpha=0.3)
 
+
 import re
 import logging
+from typing import Callable, Union, Optional
 
-logging.basicConfig(level=logging.WARNING)  # Configure logging
+# Configure logging
+logging.basicConfig(level=logging.WARNING)
+logger = logging.getLogger(__name__)
 
-def create_comparison_function(comparison_string):
+
+def parse_comparison_operator(expr: str) -> Optional[tuple[str, float]]:
     """
-    Creates a comparison function from a string.
+    Parse a string containing a comparison operator and a number.
+    Returns tuple of (operator, number) if valid, None otherwise.
 
     Args:
-        comparison_string: A string representing a comparison operation (e.g., ">10", "<=-5", "==0").
+        expr (str): Expression like ">=10" or "<5.5"
 
     Returns:
-        A lambda function that performs the comparison, or a function that always returns True if the input is invalid.
+        Optional[tuple[str, float]]: Tuple of (operator, number) or None if invalid
     """
+    # Define valid operators
+    valid_operators = ['>=', '<=', '==', '>', '<']
+
+    # Try to match the pattern: operator followed by number
+    for op in valid_operators:
+        if op in expr:
+            try:
+                number_str = expr.replace(op, '').strip()
+                number = float(number_str)
+                return op, number
+            except ValueError:
+                return None
+
+    return None
+
+
+def parse_range_expression(expr: str) -> Optional[tuple[str, float, float]]:
+    """
+    Parse a range expression and return the brackets and numbers.
+
+    Args:
+        expr (str): Expression like "[1,5]" or "(2.5,10)"
+
+    Returns:
+        Optional[tuple[str, float, float]]: Tuple of (brackets, lower_bound, upper_bound) or None if invalid
+    """
+    # Regular expression to match range patterns
+    range_pattern = r'^[\(\[]([-+]?\d*\.?\d+)\s*,\s*([-+]?\d*\.?\d+)[\)\]]$'
+
+    match = re.match(range_pattern, expr.strip())
+    if not match:
+        return None
+
     try:
-        match = re.match(r"(>=?|<=?|==|!=)\s*(-?\d+(\.\d+)?)", comparison_string)  #Regular expression to match comparison operators and numbers.  Handles integers and floats.
-        if match:
-            operator, value = match.groups()[0], float(match.groups()[1])
-            if operator == ">":
-                return lambda x: x > value
-            elif operator == ">=":
-                return lambda x: x >= value
-            elif operator == "<":
-                return lambda x: x < value
-            elif operator == "<=":
-                return lambda x: x <= value
-            elif operator == "==":
-                return lambda x: x == value
-            elif operator == "!=":
-                return lambda x: x != value
-            else:
-                logging.warning(f"Unrecognized comparison operator: {operator} in string: {comparison_string}")
-                return lambda x: True #Default to True for unrecognized operators.
+        # Extract brackets
+        brackets = expr[0] + expr[-1]
+        # Extract numbers
+        lower_bound = float(match.group(1))
+        upper_bound = float(match.group(2))
 
-        else:
-            logging.warning(f"Invalid comparison string: {comparison_string}")
-            return lambda x: True #Default to True for invalid strings.
+        if lower_bound >= upper_bound:
+            logger.warning("Invalid range: lower bound must be less than upper bound")
+            return None
 
-    except (ValueError, AttributeError) as e:
-        logging.warning(f"Error parsing comparison string '{comparison_string}': {e}")
+        return brackets, lower_bound, upper_bound
+    except ValueError:
+        return None
+
+
+def create_comparison_lambda(operator: str, threshold: float) -> Callable[[float], bool]:
+    """
+    Create a lambda function for simple comparison operations.
+
+    Args:
+        operator (str): Comparison operator
+        threshold (float): Number to compare against
+
+    Returns:
+        Callable[[float], bool]: Lambda function implementing the comparison
+    """
+    operator_map = {
+        '>=': lambda x: x >= threshold,
+        '<=': lambda x: x <= threshold,
+        '==': lambda x: x == threshold,
+        '>': lambda x: x > threshold,
+        '<': lambda x: x < threshold
+    }
+
+    return operator_map.get(operator, lambda x: True)
+
+
+def create_range_lambda(brackets: str, lower: float, upper: float) -> Callable[[float], bool]:
+    """
+    Create a lambda function for range comparisons.
+
+    Args:
+        brackets (str): String containing the bracket types (e.g., '[]', '()')
+        lower (float): Lower bound
+        upper (float): Upper bound
+
+    Returns:
+        Callable[[float], bool]: Lambda function implementing the range check
+    """
+    left_bracket, right_bracket = brackets[0], brackets[1]
+
+    def range_check(x: float) -> bool:
+        left_compare = x >= lower if left_bracket == '[' else x > lower
+        right_compare = x <= upper if right_bracket == ']' else x < upper
+        return left_compare and right_compare
+
+    return range_check
+
+
+def create_comparison_function(expr: str) -> Callable[[float], bool]:
+    """
+    Main function that creates a comparison function based on the input expression.
+
+    Args:
+        expr (str): Expression string (e.g., ">=10", "[1,5]")
+
+    Returns:
+        Callable[[float], bool]: Lambda function implementing the comparison
+    """
+    # Handle empty or invalid input
+    if not expr or not isinstance(expr, str):
+        logger.warning("Invalid input. Using identity function.")
         return lambda x: True
+
+    # Remove whitespace
+    expr = expr.strip()
+
+    # Try parsing as simple comparison
+    comparison_result = parse_comparison_operator(expr)
+    if comparison_result:
+        operator, number = comparison_result
+        return create_comparison_lambda(operator, number)
+
+    # Try parsing as range expression
+    range_result = parse_range_expression(expr)
+    if range_result:
+        brackets, lower, upper = range_result
+        return create_range_lambda(brackets, lower, upper)
+
+    # If nothing matches, log warning and return identity function
+    logger.warning(f"Unable to parse expression: {expr}. Using identity function.")
+    return lambda x: True
