@@ -341,3 +341,46 @@ def plot_threshold_segments(
         plt.axhline(y=min_threshold, color=violation_color, linestyle='-.',
                     # label='Min Threshold',
                     alpha=0.3)
+
+import re
+import logging
+
+logging.basicConfig(level=logging.WARNING)  # Configure logging
+
+def create_comparison_function(comparison_string):
+    """
+    Creates a comparison function from a string.
+
+    Args:
+        comparison_string: A string representing a comparison operation (e.g., ">10", "<=-5", "==0").
+
+    Returns:
+        A lambda function that performs the comparison, or a function that always returns True if the input is invalid.
+    """
+    try:
+        match = re.match(r"(>=?|<=?|==|!=)\s*(-?\d+(\.\d+)?)", comparison_string)  #Regular expression to match comparison operators and numbers.  Handles integers and floats.
+        if match:
+            operator, value = match.groups()[0], float(match.groups()[1])
+            if operator == ">":
+                return lambda x: x > value
+            elif operator == ">=":
+                return lambda x: x >= value
+            elif operator == "<":
+                return lambda x: x < value
+            elif operator == "<=":
+                return lambda x: x <= value
+            elif operator == "==":
+                return lambda x: x == value
+            elif operator == "!=":
+                return lambda x: x != value
+            else:
+                logging.warning(f"Unrecognized comparison operator: {operator} in string: {comparison_string}")
+                return lambda x: True #Default to True for unrecognized operators.
+
+        else:
+            logging.warning(f"Invalid comparison string: {comparison_string}")
+            return lambda x: True #Default to True for invalid strings.
+
+    except (ValueError, AttributeError) as e:
+        logging.warning(f"Error parsing comparison string '{comparison_string}': {e}")
+        return lambda x: True
