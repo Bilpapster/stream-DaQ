@@ -55,8 +55,8 @@ daq = StreamDaQ().configure(
 )
 
 # Step 2: Define what Data Quality means for you
-daq.add(dqm.count('genus'), "count_genus") \
-    .add(dqm.mean_length("epithet"), "mean_length_epithet")
+daq.add(dqm.count('genus'), assess="==5", name="count_genus") \
+    .add(dqm.mean_length("epithet"), assess="[4.7, 4.8]", name="mean_length_epithet")
 
 # Step 3: Kick-off monitoring and let Stream DaQ do the work while you focus on the important
 daq.watch_out()
