@@ -29,7 +29,6 @@ daq = StreamDaQ().configure(
 
 # Step 2: Define what Data Quality means for you
 daq.add(dqm.count('interaction_events'), assess="(5, 15]", name="count") \
-    .add(dqm.min('interaction_events'), assess="<=6", name="min_interact") \
     .add(dqm.max('interaction_events'), assess=">5.09", name="max_interact") \
     .add(dqm.median('interaction_events'), assess="[3, 8]", name="med_interact") \
     .add(dqm.most_frequent('interaction_events'), assess=seven_is_frequent, name="freq_interact") \
