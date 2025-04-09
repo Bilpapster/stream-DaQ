@@ -6,6 +6,7 @@ from pathway.internals import ReducerExpression
 from pathway.stdlib.temporal import Window
 
 from streamdaq.artificial_stream_generators import generate_artificial_random_viewership_data_stream as artificial
+from streamdaq.utils import create_comparison_function
 
 
 class StreamDaQ:
@@ -26,6 +27,7 @@ class StreamDaQ:
         """
         from collections import OrderedDict
         self.measures = OrderedDict()
+        self.assessments = OrderedDict()
         self.window = None
         self.window_behavior = None
         self.time_column = None
@@ -70,27 +72,41 @@ class StreamDaQ:
         self.time_column = time_column
         self.wait_for_late = wait_for_late
         self.time_format = time_format
-        self.show_window_start = show_window_start
 
+        if self.instance:
+            self.measures[self.instance] = pw.reducers.any(pw.this[self.instance])
+            self.assessments[self.instance] = pw.reducers.any(pw.this[self.instance])
+
+        self.show_window_start = show_window_start
         self.show_window_end = show_window_end
         if self.show_window_start:
             self.measures['window_start'] = pw.this._pw_window_start
+            self.assessments['window_start'] = pw.this._pw_window_start
         if self.show_window_end:
             self.measures['window_end'] = pw.this._pw_window_end
+            self.assessments['window_end'] = pw.this._pw_window_end
 
         self.source = source
         self.sink_file_name = sink_file_name
         self.sink_operation = sink_operation
         return self
 
-    def add(self, measure: pw.ColumnExpression | ReducerExpression, name: str) -> Self:
+
+    def add(self, measure: pw.ColumnExpression | ReducerExpression, assess: str | Callable[[float], bool] | None = None,
+            name: str = None) -> Self:
         """
         Adds a DQ measurement to be monitored within the stream windows.
         :param measure: the measure to be monitored
-        :param name: the name with which the measure will appear in the results
+        :param assess: the assessment mechanism to be applied on the measure
+        :param name: the name with which the measure and assessment result will appear in the output
         :return: a self reference, so that you can use your favorite, Spark-like, functional syntax :)
         """
+        if not name:
+            import random
+            name = f"Unnamed{random.randint(0, int(1e6))}"
+        assessment_function = assess if callable(assess) else create_comparison_function(assess)
         self.measures[name] = measure
+        self.assessments[name] = pw.apply_with_type(assessment_function, bool, measure)
         return self
 
     def watch_out(self):
@@ -102,20 +118,29 @@ class StreamDaQ:
         data = self.source
         if self.source is None:  # if no specific input is specified, then fall back to a default dummy stream
             data = artificial(number_of_rows=100, input_rate=10) \
-                .with_columns(date_and_time=pw.this.timestamp.dt.strptime(self.time_format), timestamp=pw.cast(float, pw.this.timestamp))
+                .with_columns(date_and_time=pw.this.timestamp.dt.strptime(self.time_format),
+                              timestamp=pw.cast(float, pw.this.timestamp))
             print("Data set to artificial")
 
-            print(data.schema)
-
-        data = data.windowby(
+        data_assessment = data.windowby(
             data[self.time_column],
             window=self.window,
             instance=data[self.instance] if self.instance is not None else None,
-            behavior=pw.temporal.exactly_once_behavior(shift=self.wait_for_late) if self.window_behavior is None else self.window_behavior,
+            behavior=pw.temporal.exactly_once_behavior(
+                shift=self.wait_for_late) if self.window_behavior is None else self.window_behavior,
+            # todo handle the case int | timedelta
+        ).reduce(**self.assessments)
+
+        data_measurement = data.windowby(
+            data[self.time_column],
+            window=self.window,
+            instance=data[self.instance] if self.instance is not None else None,
+            behavior=pw.temporal.exactly_once_behavior(
+                shift=self.wait_for_late) if self.window_behavior is None else self.window_behavior,
             # todo handle the case int | timedelta
         ).reduce(**self.measures)
         if self.sink_operation is None:
-            pw.debug.compute_and_print(data)
-        else: 
-            self.sink_operation(data)
+            pw.debug.compute_and_print(data_measurement, data_assessment)
+        else:
+            self.sink_operation(data_measurement)
             pw.run()
