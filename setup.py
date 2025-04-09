@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='streamdaq',
-    version='0.1.6',
+    version='0.1.7',
     author='DELab Aristotle University of Thessaloniki: Vassilis Papastergios, Apostolos Giannoulidis, and Anastasios Gounaris',
     author_email='papster@csd.auth.gr (Vassilis)',
     description='Plug-and-play real-time quality monitoring for data streams!',
