@@ -105,8 +105,8 @@ class StreamDaQ:
             import random
             name = f"Unnamed{random.randint(0, int(1e6))}"
         assessment_function = assess if callable(assess) else create_comparison_function(assess)
-        self.measures[name] = measure
-        self.assessments[name] = pw.apply_with_type(assessment_function, bool, measure)
+        assessment_result = pw.apply_with_type(assessment_function, bool, measure)
+        self.measures[name] = pw.apply_with_type(tuple, tuple, (measure, assessment_result))
         return self
 
     def watch_out(self):
@@ -140,7 +140,7 @@ class StreamDaQ:
             # todo handle the case int | timedelta
         ).reduce(**self.measures)
         if self.sink_operation is None:
-            pw.debug.compute_and_print(data_measurement, data_assessment)
+            pw.debug.compute_and_print(data_measurement)
         else:
             self.sink_operation(data_measurement)
             pw.run()
