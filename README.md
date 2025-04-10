@@ -1,6 +1,8 @@
 # Stream DaQ
 
 ## TL; DR
+Plug-and-play quality monitoring for high-volume and velocity data streams! In Python, of course!
+
 ```python
 # pip install streamdaq
 
@@ -28,15 +30,14 @@ daq.watch_out()
 ```
 More examples can be found in the [examples directory](https://github.com/Bilpapster/stream-DaQ/tree/main/examples) of the project. Even more examples are on their way to be integrated shortly! Thank you for your patience! 
 
+![Stream DaQ logo](https://github.com/user-attachments/assets/ebe3a950-5fbb-49d8-b6b1-f232ca7dc362)
 
+## Motivation
 Remember the joy of bath time with those trusty rubber ducks, keeping us company while floating through the bubbles?
 Well, think of **Stream DaQ** as the duck for your data — keeping your streaming data clean and afloat in a sea of
 information. Just like those bath ducks helped make our playtime fun and carefree, Stream DaQ keeps an eye on your data
 and lets you know the moment things get messy, so you can take action ***in real time***!
 
-<p align="center">
-    <img align="middle" src="Stream%20DaQ%20logo.png" alt="Stream Data Quality logo: a rubber duck and text"/>
-</p>
 
 ## The project
 
@@ -91,86 +92,71 @@ to be monitored and that's it! Sit back, and focus on the important stuff; the *
 reliably handles all the rest for you. See it in a toy example!
 
 ```python
-from StreamDaQ import StreamDaQ
-from DaQMeasures import DaQMeasures as dqm
-from Windows import tumbling
-from datetime import timedelta
+# pip install streamdaq
 
-# Step 1: Configure monitoring parameters
+from streamdaq import StreamDaQ, DaQMeasures as dqm, Windows
+
+
+def is_seven_frequent(most_frequent: int | float | tuple) -> bool:
+    from collections.abc import Iterable
+
+    # if most frequent items are more than one, check for set membership
+    if isinstance(most_frequent, Iterable):
+        return 7 in most_frequent
+
+    # if there is a single most frequent item, check just for equality
+    return most_frequent == 7
+
+
 daq = StreamDaQ().configure(
-    window=tumbling(duration=timedelta(hours=1)),
-    wait_for_late=timedelta(seconds=10),
-    time_format="%H:%M:%S"
+    window=Windows.tumbling(3),
+    instance="user_id",
+    time_column="timestamp",
+    wait_for_late=1,
+    time_format='%Y-%m-%d %H:%M:%S'
 )
 
-# Step 2: Define what data quality means for your unique use-case
-daq.add(dqm.count('items'), "count") \
-    .add(dqm.min('items'), "min") \
-    .add(dqm.median('items'), "std") \
-    .add(dqm.most_frequent('items'), "most_frequent") \
-    .add(dqm.number_of_distinct('items'), "distinct")
+# Step 2: Define what Data Quality means for you
+daq.add(dqm.count('interaction_events'), assess="(5, 15]", name="count") \
+    .add(dqm.most_frequent('interaction_events'), assess=is_seven_frequent, name="freq_interact") \
+    .add(dqm.number_of_distinct_approx('interaction_events'), assess="==9", name="approx_dist_interact")
 
-# Step 3: Kick-off DQ monitoring
+# Step 3: Kick-off monitoring and let Stream DaQ do the work while you focus on the important
 daq.watch_out()
 ```
 
-In this simple example, we define four different measurements:
+In this simple example, we define three different data quality checks:
 
-- the number of elements (`count`)
-- their minimum (`min`)
-- their median (`median`)
-- their standard deviation (`std_dev`)
-- the most frequent values (`most_frequent`)
-- the number of distinct values (`number_of_distinct`)
+- the number of elements (`count`): we expect them to be in the range `(5, 15]`;
+- the most frequent values (`most_frequent`): we expect number 7 to be frequent;
+- the number of distinct values (`number_of_distinct_approx`): we expect the distict values to be exactly 9 (`==9`).
 
-The above data quality measures are monitored and reported in real time for every window of the stream.
-After defining them, Stream DaQ takes over to continuously monitor (`watch_out`) the stream, as new data arrive.
+These checks are monitored in real time for every stream window. Windows can be tumbling, sliding, or session-based and are 
+a fundamental notion of the *Stream DaQ* ecosystem. That's why *Stream DaQ* gives you full control on configuring windows
+that are suitable for your use-case!
+
+Based on your desired window settings, Stream DaQ takes over to continuously monitor (`watch_out`) the stream, as new data arrives.
 The monitoring results are reported in real time, as a meta stream. That is, every row of the result is a new stream
 object itself, as following:
 
 ```markdown
-window_start | count | min | median | most_frequent | distinct
-18:06:40     | 12    | 1   | 5.5    | (9, 1)        | 7
-18:07:00     | 3     | 4   | 7      | (4, 7)        | 3
-18:07:20     | 17    | 1   | 5      | 3             | 10
-18:07:40     | 9     | 1   | 3      | (3, 1)        | 7
-  .             .      .     .           .            .
-  .             .      .     .           .            .
-  .             .      .     .           .            .
+user_id | window_start | window_end   | count       | max_interact | med_interact | freq_interact   
+UserA   | 1744195038.0 | 1744195041.0 | (14, True)  | (10, True)   | (6.5, True)  | (6, False)      
+UserA   | 1744195041.0 | 1744195044.0 | (16, False) | (10, True)   | (5.0, True)  | (7, True)      
+UserB   | 1744195044.0 | 1744195047.0 | (16, False) | (10, True)   | (7.0, True)  | (9, False)      
+UserB   | 1744195047.0 | 1744195050.0 | (8, True)   | (8, True)    | (5.0, True)  | ((2, 7), True)
 ```
 
-The above measurements are just a small subset of the large amount of built-in measurements ready-for-use. A detailed 
-list of all the available measurements will be included shortly.
+The above checks are just a small subset of the large amount of built-in, plug-and-play data quality validations *Stream DaQ* comes with. A detailed 
+list of all the available checks will be included shortly.
 
 ## Execution
 
-The easiest way to run the code in this repository is to create a new conda environment and install the required
-packages. To do so, execute the following commands in a terminal:
+Just install the Python library (Python >= 3.11) and ... happy quacklitying!
 
    ```bash
-   conda env create --file environment.yml
-   conda activate daq
-   pip install -r requirements.txt
+    pip install streamdaq
    ```
-
-The above three commands are required only the *first* time you run the code. For every next run, simply activate
-the conda environment `daq`:
-
-   ```bash
-   conda activate daq
-   ```
-
-and then follow the following steps:
-
-1. Starting from the root folder of the project, go to the `pathway` directory.
-   ```bash
-   cd pathway
-   # all the commands from now on should be executed in this directory
-   ```
-1. Run the `main` file
-    ```bash
-    python main.py
-    ```
 
 ## Work in progress
 
