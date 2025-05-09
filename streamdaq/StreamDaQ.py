@@ -109,11 +109,12 @@ class StreamDaQ:
         self.measures[name] = pw.apply_with_type(tuple, tuple, (measure, assessment_result))
         return self
 
-    def watch_out(self):
+    def watch_out(self, run: bool = True) -> pw.Table | None:
         """
         Kicks-off the monitoring process. Calling this function at the end of your driver program is necessary, or else
         nothing of what you have declared before will be executed.
         :return: a self reference, so that you can use your favorite, Spark-like, functional syntax :)
+        todo: document the `run` parameter with mention to the necessity of calling `pw.run()` when set to False
         """
         data = self.source
         if self.source is None:  # if no specific input is specified, then fall back to a default dummy stream
@@ -121,15 +122,6 @@ class StreamDaQ:
                 .with_columns(date_and_time=pw.this.timestamp.dt.strptime(self.time_format),
                               timestamp=pw.cast(float, pw.this.timestamp))
             print("Data set to artificial")
-
-        data_assessment = data.windowby(
-            data[self.time_column],
-            window=self.window,
-            instance=data[self.instance] if self.instance is not None else None,
-            behavior=pw.temporal.exactly_once_behavior(
-                shift=self.wait_for_late) if self.window_behavior is None else self.window_behavior,
-            # todo handle the case int | timedelta
-        ).reduce(**self.assessments)
 
         data_measurement = data.windowby(
             data[self.time_column],
@@ -139,8 +131,13 @@ class StreamDaQ:
                 shift=self.wait_for_late) if self.window_behavior is None else self.window_behavior,
             # todo handle the case int | timedelta
         ).reduce(**self.measures)
+
+        if not run:
+            return data_measurement
+
         if self.sink_operation is None:
             pw.debug.compute_and_print(data_measurement)
         else:
             self.sink_operation(data_measurement)
             pw.run()
+
