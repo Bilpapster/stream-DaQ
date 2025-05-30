@@ -1,6 +1,6 @@
 import pathway as pw
 from datetime import timedelta
-from typing import Self, Callable
+from typing import Optional, Self, Callable
 
 from pathway.internals import ReducerExpression
 from pathway.stdlib.temporal import Window
@@ -93,7 +93,7 @@ class StreamDaQ:
 
 
     def add(self, measure: pw.ColumnExpression | ReducerExpression, assess: str | Callable[[float], bool] | None = None,
-            name: str = None) -> Self:
+            name: Optional[str] = None) -> Self:
         """
         Adds a DQ measurement to be monitored within the stream windows.
         :param measure: the measure to be monitored
@@ -104,17 +104,20 @@ class StreamDaQ:
         if not name:
             import random
             name = f"Unnamed{random.randint(0, int(1e6))}"
+        if assess is None:
+            self.measures[name] = measure
+            return self
+
         assessment_function = assess if callable(assess) else create_comparison_function(assess)
         assessment_result = pw.apply_with_type(assessment_function, bool, measure)
         self.measures[name] = pw.apply_with_type(tuple, tuple, (measure, assessment_result))
         return self
 
-    def watch_out(self, run: bool = True) -> pw.Table | None:
+    def watch_out(self, start: bool = True) -> Optional[pw.Table]:
         """
         Kicks-off the monitoring process. Calling this function at the end of your driver program is necessary, or else
         nothing of what you have declared before will be executed.
         :return: a self reference, so that you can use your favorite, Spark-like, functional syntax :)
-        todo: document the `run` parameter with mention to the necessity of calling `pw.run()` when set to False
         """
         data = self.source
         if self.source is None:  # if no specific input is specified, then fall back to a default dummy stream
@@ -132,12 +135,12 @@ class StreamDaQ:
             # todo handle the case int | timedelta
         ).reduce(**self.measures)
 
-        if not run:
-            return data_measurement
-
-        if self.sink_operation is None:
-            pw.debug.compute_and_print(data_measurement)
+        if start:
+            if self.sink_operation is None:
+                pw.debug.compute_and_print(data_measurement)
+            else:
+                self.sink_operation(data_measurement)
+                pw.run()
         else:
-            self.sink_operation(data_measurement)
-            pw.run()
+            return data_measurement
 
