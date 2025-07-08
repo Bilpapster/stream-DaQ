@@ -17,8 +17,8 @@ daq.add(dqm.count('interaction_events'), "count") \
     .add(dqm.max('interaction_events'), "max") \
     .add(dqm.median('interaction_events'), "median") \
     .add(dqm.most_frequent('interaction_events'), "frequent") \
-    .add(dqm.number_of_distinct_approx('interaction_events'), "distinct_approx") \
-    .add(dqm.number_of_distinct('interaction_events'), "distinct")
+    .add(dqm.distinct_count_approx('interaction_events'), "distinct_approx") \
+    .add(dqm.distinct_count('interaction_events'), "distinct")
 
 # Step 3: Kick-off monitoring and let Stream DaQ do the work while you focus on the important
 daq.watch_out()

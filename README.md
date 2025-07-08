@@ -18,10 +18,10 @@ daq = StreamDaQ().configure(
 )
 
 # Step 2: Define what Data Quality means for you
-daq.add(dqm.count('interaction_events'), assess="(5, 15]", name="count") \
-    .add(dqm.max('interaction_events'), assess=">5.09", name="max_interact") \
-    .add(dqm.most_frequent('interaction_events'), assess=check_most_frequent_items, name="freq_interact") \
-    .add(dqm.number_of_distinct_approx('interaction_events'), assess="==9", name="approx_dist_interact")
+daq.add(dqm.count('interaction_events'), assess="(5, 15]", name="count")
+    .add(dqm.max('interaction_events'), assess=">5.09", name="max_interact")
+    .add(dqm.most_frequent('interaction_events'), assess=check_most_frequent_items, name="freq_interact")
+    .add(dqm.distinct_count_approx('interaction_events'), assess="==9", name="approx_dist_interact")
 
 # Complete list of Data Quality Measures (dqm): https://github.com/Bilpapster/stream-DaQ/blob/main/streamdaq/DaQMeasures.py
 
@@ -117,9 +117,9 @@ daq = StreamDaQ().configure(
 )
 
 # Step 2: Define what Data Quality means for you
-daq.add(dqm.count('interaction_events'), assess="(5, 15]", name="count") \
-    .add(dqm.most_frequent('interaction_events'), assess=is_seven_frequent, name="freq_interact") \
-    .add(dqm.number_of_distinct_approx('interaction_events'), assess="==9", name="approx_dist_interact")
+daq.add(dqm.count('interaction_events'), assess="(5, 15]", name="count")
+    .add(dqm.most_frequent('interaction_events'), assess=is_seven_frequent, name="freq_interact")
+    .add(dqm.distinct_count_approx('interaction_events'), assess="==9", name="approx_dist_interact")
 
 # Step 3: Kick-off monitoring and let Stream DaQ do the work while you focus on the important
 daq.watch_out()

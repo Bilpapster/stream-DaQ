@@ -32,8 +32,8 @@ daq.add(dqm.count('interaction_events'), assess="(5, 15]", name="count") \
     .add(dqm.max('interaction_events'), assess=">5.09", name="max_interact") \
     .add(dqm.median('interaction_events'), assess="[3, 8]", name="med_interact") \
     .add(dqm.most_frequent('interaction_events'), assess=seven_is_frequent, name="freq_interact") \
-    .add(dqm.number_of_distinct_approx('interaction_events'), assess="==9", name="approx_dist_interact") \
-    .add(dqm.number_of_distinct('interaction_events'), assess="==9", name="dist_interact")
+    .add(dqm.distinct_count_approx('interaction_events'), assess="==9", name="approx_dist_interact") \
+    .add(dqm.distinct_count('interaction_events'), assess="==9", name="dist_interact")
 
 # Complete list of Data Quality Measures (dqm): https://github.com/Bilpapster/stream-DaQ/blob/main/streamdaq/DaQMeasures.py
 # todo add complete list of available assessment function options with both string literals and callback functions
