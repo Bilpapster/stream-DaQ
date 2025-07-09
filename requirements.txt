@@ -1,5 +1,4 @@
-pathway==0.21.1
-matplotlib==3.10.1
-python-dateutil==2.9.0.post0
-datasketch~=1.6.5
-datasketches~=5.1.0
+pathway
+matplotlib
+datasketch
+datasketches
