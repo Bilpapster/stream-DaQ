@@ -24,25 +24,29 @@ def calculate_median(elements: tuple):
     return median(elements)
 
 
-def calculate_number_of_range_conformance(elements: tuple, low: float, high: float, inclusive: bool) -> int:
+def calculate_range_conformance_count(elements: tuple, low: float, high: float, inclusive: bool | tuple[bool]) -> int:
     import numpy as np
 
     low, high = np.float64(low), np.float64(high)
-    low_condition = (elements >= low) if inclusive else (elements > low)
-    high_condition = (elements <= high) if inclusive else (elements < high)
+    inclusive_low, inclusive_high = (inclusive, inclusive) if isinstance(inclusive, bool) else inclusive
+
+    low_condition = (elements >= low) if inclusive_low else (elements > low)
+    high_condition = (elements <= high) if inclusive_high else (elements < high)
     return (low_condition & high_condition).sum()
 
 
-def calculate_number_of_set_conformance(elements: tuple, allowed_values: set):
+def calculate_set_conformance_count(elements: tuple, allowed_values: set):
     try:
+        # first, check if elements is iterable
         iter(elements)
     except TypeError:
+        # if not iterable, convert to a list
         elements = [elements]
 
     return sum(element in allowed_values for element in elements)
 
 
-def calculate_number_of_regex_conformance(elements: tuple[str], regex: str):
+def calculate_regex_conformance_count(elements: tuple[str], regex: str):
     """
     Computes the number of elements in the tuple that match the given regex, at least once. Uses internally the Python's
     built-in library ``re``.
@@ -55,7 +59,7 @@ def calculate_number_of_regex_conformance(elements: tuple[str], regex: str):
     return sum(re.match(regex, element) is not None for element in elements)
 
 
-def find_most_frequent_element(elements: tuple):
+def get_most_frequent_element(elements: tuple):
     frequency_dict = create_frequency_dict(elements)
     items = tuple(frequency_dict.items())
     current_max = list(items[0])
@@ -123,7 +127,7 @@ def extract_fractional_part(numbers: list[float]) -> list[int]:
     return [int(str(abs(number)).split('.')[1]) for number in numbers]
 
 
-def map_to_number_of_digits(numbers: list[int]) -> list[int]:
+def map_to_digit_count(numbers: list[int]) -> list[int]:
     """
     Transforms a list of integer numbers into a list of (their) lengths, i.e. number of digits. In other words, the
     function maps each number in the given list to its length. For example, the list [1, 23, 456, 7890] is
@@ -132,6 +136,7 @@ def map_to_number_of_digits(numbers: list[int]) -> list[int]:
     :return: a list of integers, corresponding to the number of digits of each number in the initial list.
     """
     return [len(str(number)) for number in numbers]
+
 
 def map_to_length(elements: list[str]) -> list[int]:
     """
@@ -144,24 +149,24 @@ def map_to_length(elements: list[str]) -> list[int]:
     return [len(element) for element in elements]
 
 
-def compute_number_of_digits_in_integer_parts(numbers: list[float]) -> list[int]:
+def map_to_digit_count_in_integer_part(numbers: list[float]) -> list[int]:
     """
     Computes and returns the number of digits in the integer parts of the provided list. The result is a list of lengths.
     :param numbers: the floating point numbers to operate on.
     :return: a list of integers, corresponding to the number of digits of each given number in the initial list.
     """
     integer_parts = extract_integer_part(numbers)
-    return map_to_number_of_digits(integer_parts)
+    return map_to_digit_count(integer_parts)
 
 
-def compute_number_of_digits_in_fractional_parts(numbers: list[float]) -> list[int]:
+def map_to_digit_count_in_fractional_part(numbers: list[float]) -> list[int]:
     """
     Computes and returns the number of digits in the fractional parts of the provided list. The result is a list of lengths.
     :param numbers: the floating point numbers to operate on.
     :return: a list of integers, corresponding to the number of digits of each given number in the initial list.
     """
     fractional_parts = extract_fractional_part(numbers)
-    return map_to_number_of_digits(fractional_parts)
+    return map_to_digit_count(fractional_parts)
 
 
 def get_first_digit_frequencies(numbers: list[int], precision: int) -> dict:
@@ -204,7 +209,7 @@ def sort_by_timestamp(timestamps: list, elements: list[int | float | str], time_
     return timestamps_sorted, elements_sorted_by_timestamp
 
 
-def check_ordering(sorted_elements_by_time: tuple, ordering="ASC"):
+def elements_satisfy_ordering(sorted_elements_by_time: tuple, ordering="ASC") -> bool:
     """
     Checks whether the elements in the provided tuple conform to the specified ordering. The result is True/False.
     :param sorted_elements_by_time: the elements to check. Note that no sorting is performed and ordering is checked
@@ -215,7 +220,7 @@ def check_ordering(sorted_elements_by_time: tuple, ordering="ASC"):
     :return:
     """
 
-    def get_compare_function(type_literal: str):
+    def get_compare_function(type_literal: str) -> Callable[[int | float | str, int | float | str], bool]:
         """
         A higher-order auxiliary function that returns a comparison function, based on the type_literal argument.
         Available options for the type literal are the following: \n
@@ -240,7 +245,8 @@ def check_ordering(sorted_elements_by_time: tuple, ordering="ASC"):
             case "DESC_EQ":
                 function = lambda first, second: first >= second
             case _:
-                function = lambda first, second: first < second  # if a wrong ordering is passed, do the same as "ASC"
+                # if a wrong ordering is passed, do the same as "ASC"
+                function = lambda first, second: first < second
 
         return function
 
@@ -272,7 +278,9 @@ def calculate_pearson_correlation(x, y, precision: int) -> float:
     return round(result.statistic, precision)
     # return round(result.statistic, precision), round(result.pvalue, precision)
 
+
 from enum import Enum
+
 
 class Regex(Enum):
     EMAIL = "TODO ADJUST REGEXES COMING FROM SCALA TO PYTHON SYNTAX"
@@ -286,6 +294,7 @@ class Regex(Enum):
 
 
 import matplotlib.pyplot as plt
+
 
 def plot_threshold_segments(
         timestamps,
@@ -345,7 +354,7 @@ def plot_threshold_segments(
 
 import re
 import logging
-from typing import Callable, Union, Optional
+from typing import Callable, Union, Optional, Tuple
 
 # Configure logging
 logging.basicConfig(level=logging.WARNING)

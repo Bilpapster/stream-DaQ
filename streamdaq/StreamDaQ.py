@@ -1,6 +1,6 @@
 import pathway as pw
 from datetime import timedelta
-from typing import Optional, Callable, Any, Self # todo add back Self
+from typing import Optional, Callable, Any, Self
 
 from pathway.internals import ReducerExpression
 from pathway.stdlib.temporal import Window
@@ -104,7 +104,7 @@ class StreamDaQ:
         if not name:
             import random
             name = f"Unnamed{random.randint(0, int(1e6))}"
-        if assess is None:
+        if not assess:
             self.measures[name] = measure
             return self
 
