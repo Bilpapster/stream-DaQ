@@ -1,6 +1,6 @@
 import pathway as pw
 from datetime import timedelta
-from typing import Optional, Callable, Any # todo add back Self
+from typing import Optional, Callable, Any, Self # todo add back Self
 
 from pathway.internals import ReducerExpression
 from pathway.stdlib.temporal import Window
@@ -46,7 +46,7 @@ class StreamDaQ:
                   wait_for_late: int | float | timedelta | None = None,
                   time_format: str = '%Y-%m-%d %H:%M:%S', show_window_start: bool = True,
                   show_window_end: bool = True, source: pw.internals.Table | None = None, sink_file_name: str = None,
-                  sink_operation: Callable[[pw.internals.Table], None] | None = None):
+                  sink_operation: Callable[[pw.internals.Table], None] | None = None) -> Self:
         """
         Configures the DQ monitoring parameters. Specifying a window object, the key instance and the time column name
         cannot be omitted. The rest of the arguments are optional and come with rational default values.
@@ -93,7 +93,7 @@ class StreamDaQ:
 
 
     def add(self, measure: pw.ColumnExpression | ReducerExpression, assess: str | Callable[[Any], bool] | None = None,
-            name: Optional[str] = None):
+            name: Optional[str] = None) -> Self:
         """
         Adds a DQ measurement to be monitored within the stream windows.
         :param measure: the measure to be monitored
