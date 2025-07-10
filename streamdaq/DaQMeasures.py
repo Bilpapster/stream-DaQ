@@ -283,6 +283,51 @@ class DaQMeasures:
         return pw.apply_with_type(get_median_fractional_part_length, float, pw.reducers.tuple(pw.this[column_name]))
 
     @staticmethod
+    def missing_count(column_name: str, disguised: set | None = None) -> pw.internals.expression.ColumnExpression:
+        """
+        Static getter to retrieve a custom reducer that computes the number of missing values in the specified column
+        of the current table (pw.this). The missing values are considered to be either empty strings or None values by
+        default, but you can specify a set of disguised missing values that will also be considered as missing.
+        For example, you may want to treat 9999 or -1 as (disguised) missing values. If so, please provide these values
+        as a set to the ``disguised`` argument.
+        :param column_name: the column name of pw.this table to apply the reducer on.
+        :param disguised: a set of disguised missing values to consider as missing. Defaults to None.
+        :return: a pathway pw.apply statement ready for use as a column.
+        """
+        from streamdaq.utils import calculate_set_conformance_count
+
+        explicit = {'', None}  # explicit missing values are considered empty strings or None values
+        missing_values = explicit if not disguised else explicit.union(disguised)
+
+        return pw.apply(calculate_set_conformance_count, pw.reducers.tuple(pw.this[column_name]), missing_values)
+
+    @staticmethod
+    def missing_fraction(column_name: str, disguised: set | None = None,
+                         precision: int = 3) -> pw.internals.expression.ColumnExpression:
+        """
+        Static getter to retrieve a custom reducer that computes the fraction of missing values in the specified column
+        of the current table (pw.this). The missing values are considered to be either empty strings or None values by
+        default, but you can specify a set of disguised missing values that will also be considered as missing.
+        For example, you may want to treat 9999 or -1 as (disguised) missing values. If so, please provide these values
+        as a set to the ``disguised`` argument. The fraction is in range [0, 1] and is rounded to the specified precision.
+        The precision is the number of decimal points to include in the result. Defaults to 3.
+        :param column_name: the column name of pw.this table to apply the reducer on.
+        :param disguised: the set of disguised missing values to consider as missing. Defaults to None.
+        :param precision: the number of decimal points to include in the fraction result. Defaults to 3.
+        :return: a pathway pw.apply statement ready for use as a column.
+        """
+        explicit = {'', None} # explicit missing values are considered empty strings or None values
+        missing_values = explicit if not disguised else explicit.union(disguised)
+
+        def get_set_conformance_fraction(elements: tuple):
+            from streamdaq.utils import calculate_set_conformance_count
+
+            fraction = calculate_set_conformance_count(elements, missing_values) / len(elements)
+            return round(fraction, precision)
+
+        return pw.apply(get_set_conformance_fraction, pw.reducers.tuple(pw.this[column_name]))
+
+    @staticmethod
     def is_frozen(column_name: str) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes whether all the values inside the window are the same
@@ -315,7 +360,7 @@ class DaQMeasures:
         """
 
         def sort_by_time_and_check_ordering(timestamps: list, elements: list, time_format: str,
-                           ordering: str) -> bool:
+                                            ordering: str) -> bool:
             from streamdaq.utils import elements_satisfy_ordering, sort_by_timestamp
 
             sorted_timestamps, sorted_elements = sort_by_timestamp(timestamps, elements, time_format)
@@ -434,7 +479,7 @@ class DaQMeasures:
                         pw.reducers.tuple(pw.this[column_name]), time_format)
 
     @staticmethod
-    def number_above_mean(column_name: str) -> pw.internals.expression.ColumnExpression:
+    def above_mean_count(column_name: str) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the number of elements in the window that are greater
         than the mean value of the window.
@@ -443,14 +488,14 @@ class DaQMeasures:
         """
         import numpy as np
 
-        def get_number_of_values_above_mean(numbers: list):
+        def get_above_mean_count(numbers: list):
             mean = np.mean(numbers)
             return (numbers > mean).sum()
 
-        return pw.apply(get_number_of_values_above_mean, pw.reducers.ndarray(pw.this[column_name]))
+        return pw.apply(get_above_mean_count, pw.reducers.ndarray(pw.this[column_name]))
 
     @staticmethod
-    def fraction_above_mean(column_name: str, precision: int = 3) -> pw.internals.expression.ColumnExpression:
+    def above_mean_fraction(column_name: str, precision: int = 3) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the fraction of elements in the window that are greater
         than the mean value of the window. The fraction is in range [0, 1]
@@ -460,12 +505,12 @@ class DaQMeasures:
         """
         import numpy as np
 
-        def get_fraction_of_values_above_mean(numbers: list):
+        def get_above_mean_fraction(numbers: list):
             mean = np.mean(numbers)
             fraction_above_mean = float((numbers > mean).sum() / len(numbers))
             return round(fraction_above_mean, precision)
 
-        return pw.apply(get_fraction_of_values_above_mean, pw.reducers.ndarray(pw.this[column_name]))
+        return pw.apply(get_above_mean_fraction, pw.reducers.ndarray(pw.this[column_name]))
 
     @staticmethod
     def distinct_count(column_name: str) -> pw.internals.expression.ColumnExpression:
@@ -519,7 +564,7 @@ class DaQMeasures:
 
     @staticmethod
     def distinct_placeholder_fraction(column_name: str, placeholders: set,
-                                       precision: int = 3) -> pw.internals.expression.ColumnExpression:
+                                      precision: int = 3) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the fraction of distinct placeholder values in the
         specified column of the current table (pw.this). The placeholders are specified as a set of values.
