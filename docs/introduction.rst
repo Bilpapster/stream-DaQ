@@ -1,5 +1,5 @@
-The Stream DaQ Manifesto
-========================
+👋 Our Manifesto
+===========================
 
 .. epigraph::
 
@@ -11,7 +11,7 @@ In fact, not only data, but also **its quality changes**, all the time. What use
 
 The streaming data quality challenge
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Picture this: A frozen sensor keeps sending the same temperature reading over and over again, silently waiting for a reboot or replacement. If you are lucky enough, this frozen reading lies entirely within the accepted range of temperatures. Your super-intelligent machine leaning model relies on this data to predict equipment failures, but everything seems fine, isn't it? *After all, the temperature is stable, right?*
+Picture this: A frozen sensor keeps sending the same temperature reading over and over again, silently waiting for a reboot or replacement. If you are lucky enough, this frozen reading lies entirely within the accepted range of temperatures. Your super-intelligent machine learning model relies on this data to predict equipment failures, but everything seems fine, isn't it? *After all, the temperature is stable, right?*
 
 Then, a network hiccup causes a drop in data volume. Now your super-intelligent model is deprived of the data it needs to do what it knows best: highly accurate predictions. Luckily, the network recovers, enabling old cached values, which lost their way during the outage, to suddenly flood back in, mixing fresh data with stale, potentially duplicate records. *Not exactly what you promised your super-intelligent model, is it?*
 

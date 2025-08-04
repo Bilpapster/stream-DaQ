@@ -2,12 +2,14 @@
 Stream DaQ Documentation
 ================================
 
-**Stream DaQ is a free and open-source Python library** that makes data quality monitoring for streaming data as simple as a few lines of code. Monitor your data streams in real-time, get instant alerts when quality issues arise, and keep your data pipelines running smoothly.
+**Stream DaQ is a free and open-source Python library** that makes data quality monitoring for streaming data as simple as a few lines of code. Monitor your data streams in real time, get instant alerts when quality issues arise, and keep your data pipelines running smoothly.
 
 .. image:: https://github.com/user-attachments/assets/ebe3a950-5fbb-49d8-b6b1-f232ca7dc362
    :alt: Stream DaQ Logo
    :align: center
    :width: 300px
+
+   Quacklity, the Stream DaQ mascot.
 
 .. grid:: 1 2 2 2
     :gutter: 4
@@ -19,7 +21,7 @@ Stream DaQ Documentation
         :link-type: doc
         :class-header: bg-light
 
-        Get the hang of what Stream DaQ is all about
+        Understand what Stream DaQ is all about
 
     .. grid-item-card:: 🚀 Quick Start
         :link: getting-started/quickstart
@@ -177,11 +179,13 @@ We are a small, dedicated team committed to making Stream DaQ the best it can be
 - 🐛 **Report bugs**: `GitHub Issues <https://github.com/bilpapster/stream-DaQ/issues>`_
 - 💬 **Ask questions**: `GitHub Discussions <https://github.com/bilpapster/stream-DaQ/discussions>`_
 - ⭐ **Star the project**: `GitHub Repository <https://github.com/bilpapster/stream-DaQ>`_
-- 📧 **Contact the team**: papster at csd.auth.gr (Vassilis, primary maintainer), gounaria at the same domain (Anastasios, project supervisor).
+- 📧 **Contact the team**:
+    - papster at csd.auth.gr - Vassilis, primary maintainer 👷‍♂️
+    - gounaria at the same domain - Anastasios, project supervisor 🦸
 
 Acknowledgments
 ---------------
 
 Stream DaQ is developed by the Data Engineering (DELAB) Team of `Datalab AUTh <https://datalab.csd.auth.gr/>`_,
-under the supervision of `Prof. Anastasios Gounaris <https://datalab-old.csd.auth.gr/~gounaris/>`_. Special thanks to `Maria Kavouridou <https://www.linkedin.com/in/maria-kavouridou/>`_ for giving birth to Quacklity, the Stream DaQ logo!
+under the supervision of `Prof. Anastasios Gounaris <https://datalab-old.csd.auth.gr/~gounaris/>`_. Special thanks to `Maria Kavouridou <https://www.linkedin.com/in/maria-kavouridou/>`_ for giving birth to Quacklity, the Stream DaQ mascot!
 
