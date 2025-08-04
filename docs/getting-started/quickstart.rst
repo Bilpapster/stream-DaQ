@@ -66,7 +66,7 @@ Create a new Python file called ``my_first_monitor.py`` and add this code:
     print("✅ Monitoring complete! Check the results above.")
 
 Step 3: Run Your Monitor
------------------------
+--------------------------
 
 Run your Python script:
 
@@ -89,7 +89,7 @@ You should see output similar to this:
     ✅ Monitoring complete! Check the results above.
 
 🎉 Congratulations!
-------------------
+---------------------
 
 You just:
 
@@ -99,7 +99,7 @@ You just:
 - ✅ **Handled windowing and late data** automatically
 
 Understanding Your Results
--------------------------
+----------------------------
 
 Each row represents quality metrics for one user in one time window:
 
@@ -127,7 +127,7 @@ Each row represents quality metrics for one user in one time window:
         **Average amount** was 32.1, passed the "(10, 150)" range check ✅
 
 What Just Happened?
-------------------
+-------------------------
 
 1. **Data Streaming**: Stream DaQ processed your data as if it were coming from a real-time stream
 2. **Windowing**: Data was grouped into 10-second tumbling windows per user
@@ -135,7 +135,7 @@ What Just Happened?
 4. **Real-time Results**: You got immediate feedback on data quality as a stream of results
 
 Next Steps
-----------
+-------------
 
 Now that you've seen Stream DaQ in action:
 
