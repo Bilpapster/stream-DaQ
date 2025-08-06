@@ -174,3 +174,4 @@ output*.csv
 execution-results/
 stream/datasets/
 
+*ignore*
