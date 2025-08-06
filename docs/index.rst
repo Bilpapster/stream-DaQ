@@ -4,13 +4,6 @@ Stream DaQ Documentation
 
 **Stream DaQ is a free and open-source Python library** that makes data quality monitoring for streaming data as simple as a few lines of code. Monitor your data streams in real time, get instant alerts when quality issues arise, and keep your data pipelines running smoothly.
 
-.. image:: https://github.com/user-attachments/assets/ebe3a950-5fbb-49d8-b6b1-f232ca7dc362
-   :alt: Stream DaQ Logo
-   :align: center
-   :width: 300px
-
-   Quacklity, the Stream DaQ mascot.
-
 .. grid:: 1 2 2 2
     :gutter: 4
     :padding: 2 2 0 0
