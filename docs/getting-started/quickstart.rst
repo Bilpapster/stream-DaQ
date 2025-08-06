@@ -1,17 +1,17 @@
 ⚡ 5-Minute Quickstart
-=====================
+========================
 
 Let's get Stream DaQ running with a complete example that monitors data quality in real-time. You'll have a working monitoring setup in less than 5 minutes!
 
 Step 1: Install Stream DaQ
---------------------------
+-----------------------------
 
 .. code-block:: bash
 
     pip install streamdaq
 
 Step 2: Create Your First Monitor
----------------------------------
+-------------------------------------
 
 Create a new Python file called ``my_first_monitor.py`` and add this code:
 
@@ -66,7 +66,7 @@ Create a new Python file called ``my_first_monitor.py`` and add this code:
     print("✅ Monitoring complete! Check the results above.")
 
 Step 3: Run Your Monitor
---------------------------
+----------------------------
 
 Run your Python script:
 
@@ -89,7 +89,7 @@ You should see output similar to this:
     ✅ Monitoring complete! Check the results above.
 
 🎉 Congratulations!
----------------------
+------------------------
 
 You just:
 
@@ -99,7 +99,7 @@ You just:
 - ✅ **Handled windowing and late data** automatically
 
 Understanding Your Results
-----------------------------
+---------------------------------
 
 Each row represents quality metrics for one user in one time window:
 
