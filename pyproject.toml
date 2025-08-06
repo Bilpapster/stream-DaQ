@@ -1,0 +1,69 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "streamdaq"
+version = "0.1.8"
+description = "Plug-and-play real-time quality monitoring for data streams!"
+authors = [
+    {name = "Vassilis Papastergios", email = "papster@csd.auth.gr"},
+    {name = "Apostolos Giannoulidis"},
+    {name = "Anastasios Gounaris", email = "gounaria@csd.auth.gr"}
+]
+maintainers = [
+    {name = "Vassilis Papastergios", email = "papster@csd.auth.gr"}
+]
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+]
+keywords = ["data-quality", "streaming", "real-time", "monitoring", "data-engineering"]
+dependencies = [
+    "pathway==0.21.*",
+    "matplotlib==3.10.1",
+    "python-dateutil==2.9.0.post0",
+    "datasketch~=1.6.5",
+    "datasketches~=5.1.0"
+]
+
+[project.urls]
+Homepage = "https://bilpapster.github.io/stream-DaQ/"
+Documentation = "https://bilpapster.github.io/stream-DaQ/"
+Repository = "https://github.com/Bilpapster/stream-DaQ"
+"Bug Tracker" = "https://github.com/Bilpapster/stream-DaQ/issues"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "black>=22.0",
+    "isort>=5.10",
+    "flake8>=5.0",
+    "mypy>=1.0",
+    "pre-commit>=2.20"
+]
+docs = [
+    "sphinx>=8.2.3",
+    "sphinx-design>=0.6.1",
+    "sphinx-book-theme>=1.1.4",
+    "sphinx-rtd-theme>=3.0.2",
+    "sphinxawesome-theme>=5.3.2"
+]
+
+[tool.setuptools]
+packages = ["streamdaq"]
+
+[tool.setuptools.package-dir]
+streamdaq = "streamdaq"

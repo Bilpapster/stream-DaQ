@@ -16,4 +16,4 @@ except PackageNotFoundError:
     __version__ = "0.1.8-dev"
 
 # Make version accessible
-__all__ = ["__version__"]
+__all__ = ["StreamDaQ", "DaQMeasures", "Windows", "__version__"]
