@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "streamdaq"
-version = "0.1.9"
+version = "0.1.10"
 description = "Plug-and-play real-time quality monitoring for data streams!"
 authors = [
     {name = "Vassilis Papastergios", email = "papster@csd.auth.gr"},
