@@ -9,7 +9,7 @@ Stream DaQ Documentation
     :padding: 2 2 0 0
     :class-container: sd-text-center
 
-    .. grid-item-card:: 👋 Our Manifesto
+    .. grid-item-card:: 📜 Our Manifesto
         :link: introduction
         :link-type: doc
         :class-header: bg-light
@@ -156,7 +156,7 @@ Ready to dive in? Here are some suggested paths:
 
 **New to Stream DaQ?** → Start with :doc:`introduction`
 
-**Starving for action?** → Jump straight to the :doc:`getting-started/quickstart`
+**Ready for action?** → Jump straight to the :doc:`getting-started/quickstart`
 
 **Eager to deepen understanding?** → Read :doc:`concepts/index`
 

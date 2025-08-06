@@ -1,4 +1,4 @@
-👋 Our Manifesto
+📜 Our Manifesto
 ===========================
 
 .. epigraph::

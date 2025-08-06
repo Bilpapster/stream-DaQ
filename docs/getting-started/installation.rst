@@ -26,8 +26,13 @@ Test that Stream DaQ is properly installed:
 .. code-block:: python
 
     import streamdaq
-    print(f"Stream DaQ version: {streamdaq.__version__}")
-    print("✅ Installation successful!")
+    python -c "import streamdaq; print(f'Version: {streamdaq.__version__} ✅')"
+
+.. admonition:: Expected Output
+   :class: hint
+
+   You should see the installed version of Stream DaQ, e.g., `Version: 0.1.8 ✅`.
+   If you see an error, check your Python version and ensure pip is installed correctly.
 
 Development Installation
 ------------------------

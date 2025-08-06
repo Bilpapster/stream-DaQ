@@ -1,5 +1,5 @@
-❔  Why Stream DaQ
-========================
+⁉️ To Stream DaQ or not?
+=======================================
 
 
 Probably here we could cover the cases when Stream DaQ is good fit and when it is not.
