@@ -38,9 +38,7 @@ daq.add(dqm.count('interaction_events'), assess="(5, 15]", name="count")
 # Step 3: Kick-off monitoring and let Stream DaQ do the work while you focus on the important
 daq.watch_out()
 ```
-More examples can be found in the [examples directory](https://github.com/Bilpapster/stream-DaQ/tree/main/examples) of the project. Even more examples are on their way to be integrated shortly! Thank you for your patience! 
-
-![Stream DaQ logo](https://github.com/user-attachments/assets/ebe3a950-5fbb-49d8-b6b1-f232ca7dc362)
+More examples can be found in the [examples directory](https://github.com/Bilpapster/stream-DaQ/tree/main/examples) of the project. Even more examples are on their way to be integrated shortly! Thank you for your patience!
 
 ## Motivation
 Remember the joy of bath time with those trusty rubber ducks, keeping us company while floating through the bubbles?
