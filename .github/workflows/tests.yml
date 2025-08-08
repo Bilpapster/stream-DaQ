@@ -1,0 +1,45 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .[dev]
+
+    - name: Lint with flake8
+      run: |
+        pip install flake8
+        flake8 streamdaq --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 streamdaq --count --exit-zero --max-complexity=10 --max-line-length=120 --statistics
+
+    - name: Test package import
+      run: |
+        python -c "import streamdaq; print(f'✅ Stream DaQ {streamdaq.__version__} imported successfully')"
+
+    - name: Run basic functionality test
+      run: |
+        python -c "
+        import streamdaq
+        # Todo: Add actual functionality tests here
+        print('✅ Basic import test passed')
+        "
