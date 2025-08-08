@@ -29,6 +29,7 @@ def calculate_fraction(numerator: float, denominator: float, precision: int) -> 
 
 def calculate_median(elements: tuple):
     from statistics import median
+
     return median(elements)
 
 
@@ -93,6 +94,7 @@ def get_percentiles(elements: list, percentiles: int | list, precision: int) -> 
     :return: a percentiles dictionary in the form {percentile: value} for all ``percentiles``.
     """
     import numpy as np
+
     result = np.percentile(elements, percentiles, overwrite_input=True)
     result = np.round(result, precision)
     return {percentile: value for percentile, value in zip(percentiles, result)}
@@ -120,7 +122,7 @@ def extract_integer_part(numbers: list[float]) -> list[int]:
     """
     # Converts each number to a string, splits in two substrings using '.' and returns the first (integer) part.
     # example: 1234.567 -> '1234.567' -> ['1234', '567'] -> '1234' -> 1234
-    return [int(str(abs(number)).split('.')[0]) for number in numbers]
+    return [int(str(abs(number)).split(".")[0]) for number in numbers]
 
 
 def extract_fractional_part(numbers: list[float]) -> list[int]:
@@ -132,7 +134,7 @@ def extract_fractional_part(numbers: list[float]) -> list[int]:
     """
     # Converts each number to a string, splits in two substrings using '.' and returns the second (fractional) part.
     # example: 1234.567 -> '1234.567' -> ['1234', '567'] -> '567' -> 567
-    return [int(str(abs(number)).split('.')[1]) for number in numbers]
+    return [int(str(abs(number)).split(".")[1]) for number in numbers]
 
 
 def map_to_digit_count(numbers: list[int]) -> list[int]:
@@ -277,6 +279,7 @@ def calculate_pearson_correlation(x, y, precision: int) -> float:
     :return: the Pearson correlation coefficient
     """
     from scipy.stats import pearsonr
+
     try:
         result = pearsonr(x, y)
     except ValueError:
@@ -287,12 +290,7 @@ def calculate_pearson_correlation(x, y, precision: int) -> float:
 
 
 def plot_threshold_segments(
-        timestamps,
-        values,
-        max_threshold=None,
-        min_threshold=None,
-        normal_color='blue',
-        violation_color='red'
+    timestamps, values, max_threshold=None, min_threshold=None, normal_color="blue", violation_color="red"
 ):
     """
     Plot line segments with color-coded thresholds.
@@ -327,21 +325,29 @@ def plot_threshold_segments(
 
         # Plot segment with appropriate color
         plt.plot(
-            timestamps.iloc[i:i + 2],
-            values.iloc[i:i + 2],
+            timestamps.iloc[i : i + 2],
+            values.iloc[i : i + 2],
             color=violation_color if is_violation else normal_color,
-            linestyle='-'
+            linestyle="-",
         )
 
     # Add threshold lines if they exist
     if max_threshold is not None:
-        plt.axhline(y=max_threshold, color=violation_color, linestyle='-.',
-                    # label='Max Threshold',
-                    alpha=0.3)
+        plt.axhline(
+            y=max_threshold,
+            color=violation_color,
+            linestyle="-.",
+            # label='Max Threshold',
+            alpha=0.3,
+        )
     if min_threshold is not None:
-        plt.axhline(y=min_threshold, color=violation_color, linestyle='-.',
-                    # label='Min Threshold',
-                    alpha=0.3)
+        plt.axhline(
+            y=min_threshold,
+            color=violation_color,
+            linestyle="-.",
+            # label='Min Threshold',
+            alpha=0.3,
+        )
 
 
 def parse_comparison_operator(expr: str) -> Optional[tuple[str, float]]:
@@ -356,13 +362,13 @@ def parse_comparison_operator(expr: str) -> Optional[tuple[str, float]]:
         Optional[tuple[str, float]]: Tuple of (operator, number) or None if invalid
     """
     # Define valid operators
-    valid_operators = ['>=', '<=', '==', '>', '<']
+    valid_operators = [">=", "<=", "==", ">", "<"]
 
     # Try to match the pattern: operator followed by number
     for op in valid_operators:
         if op in expr:
             try:
-                number_str = expr.replace(op, '').strip()
+                number_str = expr.replace(op, "").strip()
                 number = float(number_str)
                 return op, number
             except ValueError:
@@ -384,7 +390,7 @@ def parse_range_expression(expr: str) -> Optional[tuple[str, float, float]]:
     import re
 
     # Regular expression to match range patterns
-    range_pattern = r'^[\(\[]([-+]?\d*\.?\d+)\s*,\s*([-+]?\d*\.?\d+)[\)\]]$'
+    range_pattern = r"^[\(\[]([-+]?\d*\.?\d+)\s*,\s*([-+]?\d*\.?\d+)[\)\]]$"
 
     match = re.match(range_pattern, expr.strip())
     if not match:
@@ -418,11 +424,11 @@ def create_comparison_lambda(operator: str, threshold: float) -> Callable[[float
         Callable[[float], bool]: Lambda function implementing the comparison
     """
     operator_map = {
-        '>=': lambda x: x >= threshold,
-        '<=': lambda x: x <= threshold,
-        '==': lambda x: x == threshold,
-        '>': lambda x: x > threshold,
-        '<': lambda x: x < threshold
+        ">=": lambda x: x >= threshold,
+        "<=": lambda x: x <= threshold,
+        "==": lambda x: x == threshold,
+        ">": lambda x: x > threshold,
+        "<": lambda x: x < threshold,
     }
 
     return operator_map.get(operator, lambda x: True)
@@ -443,8 +449,8 @@ def create_range_lambda(brackets: str, lower: float, upper: float) -> Callable[[
     left_bracket, right_bracket = brackets[0], brackets[1]
 
     def range_check(x: float) -> bool:
-        left_compare = x >= lower if left_bracket == '[' else x > lower
-        right_compare = x <= upper if right_bracket == ']' else x < upper
+        left_compare = x >= lower if left_bracket == "[" else x > lower
+        right_compare = x <= upper if right_bracket == "]" else x < upper
         return left_compare and right_compare
 
     return range_check

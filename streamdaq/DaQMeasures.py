@@ -71,6 +71,7 @@ class DaQMeasures:
         :return: a pathway median reducer
         """
         from streamdaq.utils import calculate_median
+
         return pw.apply(calculate_median, pw.reducers.tuple(pw.this[column_name]))
 
     @staticmethod
@@ -294,14 +295,15 @@ class DaQMeasures:
         """
         from streamdaq.utils import calculate_set_conformance_count
 
-        explicit = {'', None}  # explicit missing values are considered empty strings or None values
+        explicit = {"", None}  # explicit missing values are considered empty strings or None values
         missing_values = explicit if not disguised else explicit.union(disguised)
 
         return pw.apply(calculate_set_conformance_count, pw.reducers.tuple(pw.this[column_name]), missing_values)
 
     @staticmethod
-    def missing_fraction(column_name: str, disguised: set | None = None,
-                         precision: int = 3) -> pw.internals.expression.ColumnExpression:
+    def missing_fraction(
+        column_name: str, disguised: set | None = None, precision: int = 3
+    ) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the fraction of missing values in the specified column
         of the current table (pw.this). The missing values are considered to be either empty strings or None values by
@@ -314,7 +316,7 @@ class DaQMeasures:
         :param precision: the number of decimal points to include in the fraction result. Defaults to 3.
         :return: a pathway pw.apply statement ready for use as a column.
         """
-        explicit = {'', None}  # explicit missing values are considered empty strings or None values
+        explicit = {"", None}  # explicit missing values are considered empty strings or None values
         missing_values = explicit if not disguised else explicit.union(disguised)
 
         def get_set_conformance_fraction(elements: tuple):
@@ -338,8 +340,9 @@ class DaQMeasures:
         return all_values_the_same_reducer(pw.this[column_name])
 
     @staticmethod
-    def satisfies_ordering(column_name: str, time_column: str, time_format: str,
-                           ordering: str) -> pw.internals.expression.ColumnExpression:
+    def satisfies_ordering(
+        column_name: str, time_column: str, time_format: str, ordering: str
+    ) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that checks conformance of the values to the specified ordering,
         applied on the specified column of the current table (pw.this). The elements are first sorted in chronological
@@ -360,15 +363,19 @@ class DaQMeasures:
         :return: a pathway custom reducer that checks conformance of the values to the specified ordering
         """
 
-        def sort_by_time_and_check_ordering(timestamps: list, elements: list, time_format: str,
-                                            ordering: str) -> bool:
+        def sort_by_time_and_check_ordering(timestamps: list, elements: list, time_format: str, ordering: str) -> bool:
             from streamdaq.utils import elements_satisfy_ordering, sort_by_timestamp
 
             sorted_timestamps, sorted_elements = sort_by_timestamp(timestamps, elements, time_format)
             return elements_satisfy_ordering(sorted_elements, ordering)
 
-        return pw.apply(sort_by_time_and_check_ordering, pw.reducers.tuple(pw.this[time_column]),
-                        pw.reducers.tuple(pw.this[column_name]), time_format, ordering)
+        return pw.apply(
+            sort_by_time_and_check_ordering,
+            pw.reducers.tuple(pw.this[time_column]),
+            pw.reducers.tuple(pw.this[column_name]),
+            time_format,
+            ordering,
+        )
 
     @staticmethod
     def most_frequent(column_name: str) -> pw.internals.expression.ColumnExpression:
@@ -459,8 +466,9 @@ class DaQMeasures:
         return pw.reducers.sorted_tuple(pw.this[column_name])
 
     @staticmethod
-    def tuple_sorted_by_time(time_column: str, column_name: str,
-                             time_format: str) -> pw.internals.expression.ReducerExpression:
+    def tuple_sorted_by_time(
+        time_column: str, column_name: str, time_format: str
+    ) -> pw.internals.expression.ReducerExpression:
         """
         Static getter to retrieve a reducer that sorts elements by timestamp, applied on current table (pw.this)
         and in the column specified by column name
@@ -476,8 +484,12 @@ class DaQMeasures:
             sorted_timestamps, sorted_elements = sort_by_timestamp(timestamps, elements, fmt)
             return sorted_elements
 
-        return pw.apply(get_sorted_elements_by_time, pw.reducers.tuple(pw.this[time_column]),
-                        pw.reducers.tuple(pw.this[column_name]), time_format)
+        return pw.apply(
+            get_sorted_elements_by_time,
+            pw.reducers.tuple(pw.this[time_column]),
+            pw.reducers.tuple(pw.this[column_name]),
+            time_format,
+        )
 
     @staticmethod
     def above_mean_count(column_name: str) -> pw.internals.expression.ColumnExpression:
@@ -564,8 +576,9 @@ class DaQMeasures:
         return pw.apply(get_distinct_placeholder_count, pw.reducers.tuple(pw.this[column_name]))
 
     @staticmethod
-    def distinct_placeholder_fraction(column_name: str, placeholders: set,
-                                      precision: int = 3) -> pw.internals.expression.ColumnExpression:
+    def distinct_placeholder_fraction(
+        column_name: str, placeholders: set, precision: int = 3
+    ) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the fraction of distinct placeholder values in the
         specified column of the current table (pw.this). The placeholders are specified as a set of values.
@@ -601,8 +614,7 @@ class DaQMeasures:
         return pw.apply(round, approx_distinct_count_reducer(pw.this[column_name]), precision)
 
     @staticmethod
-    def distinct_fraction_approx(column_name: str,
-                                 precision: int = 3) -> pw.internals.expression.ColumnExpression:
+    def distinct_fraction_approx(column_name: str, precision: int = 3) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the approximate fraction of distinct elements in the
         window, using the HyperLogLog++ sketch. The fraction is in range [0, 1]
@@ -617,8 +629,11 @@ class DaQMeasures:
 
             return calculate_fraction(distinct_count, total_count, precision)
 
-        return pw.apply(get_distinct_fraction_approx, approx_distinct_count_reducer(pw.this[column_name]),
-                        pw.reducers.count(pw.this[column_name]))
+        return pw.apply(
+            get_distinct_fraction_approx,
+            approx_distinct_count_reducer(pw.this[column_name]),
+            pw.reducers.count(pw.this[column_name]),
+        )
 
     @staticmethod
     def unique_count(column_name: str) -> pw.internals.expression.ColumnExpression:
@@ -634,6 +649,7 @@ class DaQMeasures:
 
         def get_unique_count(elements: list):
             from streamdaq.utils import calculate_number_of_unique_values
+
             return calculate_number_of_unique_values(elements)
 
         return pw.apply(get_unique_count, pw.reducers.tuple(pw.this[column_name]))
@@ -660,8 +676,7 @@ class DaQMeasures:
         return pw.apply_with_type(get_unique_fraction, float, pw.reducers.tuple(pw.this[column_name]))
 
     @staticmethod
-    def unique_over_distinct_fraction(column_name: str,
-                                      precision: int = 3) -> pw.internals.expression.ColumnExpression:
+    def unique_over_distinct_fraction(column_name: str, precision: int = 3) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the fraction of unique elements over distinct ones
         in the window. The fraction is in range [0, 1], since #unique <= # distinct elements and the equality holds only
@@ -677,11 +692,7 @@ class DaQMeasures:
         def get_unique_over_distinct_fraction(elements: list):
             from streamdaq.utils import calculate_number_of_unique_values, calculate_fraction
 
-            return calculate_fraction(
-                calculate_number_of_unique_values(elements),
-                len(set(elements)),
-                precision
-            )
+            return calculate_fraction(calculate_number_of_unique_values(elements), len(set(elements)), precision)
 
             # fraction = calculate_number_of_unique_values(elements) / len(set(elements))
             # return round(fraction, precision)
@@ -701,8 +712,9 @@ class DaQMeasures:
         return pw.apply(round, std_dev_reducer(pw.this[column_name]), precision)
 
     @staticmethod
-    def range_conformance_count(column_name: str, low: float, high: float,
-                                inclusive: bool | Tuple[bool] = True) -> pw.internals.expression.ColumnExpression:
+    def range_conformance_count(
+        column_name: str, low: float, high: float, inclusive: bool | Tuple[bool] = True
+    ) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the number of values in the window that fall
         within the range specified by low and high arguments. If the inclusive argument is set to True, the range
@@ -718,12 +730,14 @@ class DaQMeasures:
         """
         from streamdaq.utils import calculate_range_conformance_count
 
-        return pw.apply(calculate_range_conformance_count, pw.reducers.tuple(pw.this[column_name]), low, high,
-                        inclusive)
+        return pw.apply(
+            calculate_range_conformance_count, pw.reducers.tuple(pw.this[column_name]), low, high, inclusive
+        )
 
     @staticmethod
-    def range_conformance_fraction(column_name: str, low: float, high: float, inclusive=True,
-                                   precision: int = 3) -> pw.internals.expression.ColumnExpression:
+    def range_conformance_fraction(
+        column_name: str, low: float, high: float, inclusive=True, precision: int = 3
+    ) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the fraction of values in the window that fall
         within the range specified by low and high arguments. If the inclusive argument is set to True, the range
@@ -759,8 +773,9 @@ class DaQMeasures:
         return pw.apply(calculate_set_conformance_count, pw.reducers.tuple(pw.this[column_name]), allowed_values)
 
     @staticmethod
-    def set_conformance_fraction(column_name: str, allowed_values: set,
-                                 precision: int = 3) -> pw.internals.expression.ColumnExpression:
+    def set_conformance_fraction(
+        column_name: str, allowed_values: set, precision: int = 3
+    ) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the fraction of values in the window that are contained
         in the specified set of allowed values. The fraction is a float number in range [0, 1].
@@ -779,8 +794,9 @@ class DaQMeasures:
         return pw.apply(get_set_conformance_fraction, pw.reducers.tuple(pw.this[column_name]))
 
     @staticmethod
-    def percentiles(column_name: str, percentiles: int | list = [25, 50, 75],
-                    precision: int = 3) -> pw.internals.expression.ColumnExpression:
+    def percentiles(
+        column_name: str, percentiles: int | list = [25, 50, 75], precision: int = 3
+    ) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the specified percentiles of the values in the window.
         If no percentiles are specified, the default ones are 25, 50 and 75. The percentiles argument can be a single
@@ -795,19 +811,18 @@ class DaQMeasures:
         """
         from streamdaq.utils import get_percentiles
 
-        '''
+        """
         IMPORTANT: percentiles argument has to be passed to pw.apply either as a tuple or a numpy.ndarray. Tuple was
         preferred in this case due to performance reasons, since importing numpy and using an ndarray would be
         a clear overkill.
         The argument cannot be passed as a normal python list, since pathway has a predefined set of datatypes that
         can be passed as arguments to the pw.apply function. Python list is not included in that list. numpy.ndarrays
         and tuples are both included, among others.
-        '''
+        """
         return pw.apply(get_percentiles, pw.reducers.ndarray(pw.this[column_name]), tuple(percentiles), precision)
 
     @staticmethod
-    def first_digit_frequencies(column_name: str,
-                                precision: int = 3) -> pw.internals.expression.ColumnExpression:
+    def first_digit_frequencies(column_name: str, precision: int = 3) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the specified percentiles of the values in the window.
         :param column_name: the column name of pw.this table to apply the reducer on
@@ -821,8 +836,9 @@ class DaQMeasures:
         return pw.apply(get_first_digit_frequencies, pw.reducers.ndarray(pw.this[column_name]), precision)
 
     @staticmethod
-    def range_conformance_count_only_most_frequent(column_name: str, low: float, high: float,
-                                                   inclusive=True) -> pw.internals.expression.ColumnExpression:
+    def range_conformance_count_only_most_frequent(
+        column_name: str, low: float, high: float, inclusive=True
+    ) -> pw.internals.expression.ColumnExpression:
         # todo: potentially this can be merged (with one more parameter) with range_conformance_count
         """
         Static getter to retrieve a custom reducer that computes the number of **the most frequent elements** in the
@@ -836,13 +852,12 @@ class DaQMeasures:
         """
         from streamdaq.utils import calculate_range_conformance_count
 
-        return pw.apply(calculate_range_conformance_count,
-                        DaQMeasures.most_frequent(column_name), low, high,
-                        inclusive)
+        return pw.apply(calculate_range_conformance_count, DaQMeasures.most_frequent(column_name), low, high, inclusive)
 
     @staticmethod
-    def range_conformance_fraction_only_most_frequent(column_name: str, low: float, high: float, inclusive=True,
-                                                      precision: int = 3) -> pw.internals.expression.ColumnExpression:
+    def range_conformance_fraction_only_most_frequent(
+        column_name: str, low: float, high: float, inclusive=True, precision: int = 3
+    ) -> pw.internals.expression.ColumnExpression:
         # todo: potentially this can be merged (with one more parameter) with range_conformance_fraction
         """
         Static getter to retrieve a custom reducer that computes the fraction of **the most frequent elements** in the
@@ -867,12 +882,12 @@ class DaQMeasures:
             fraction = calculate_range_conformance_count(elements, low, high, inclusive) / length
             return round(fraction, precision)
 
-        return pw.apply(get_fraction_of_most_frequent_range_conformance,
-                        DaQMeasures.most_frequent(column_name))
+        return pw.apply(get_fraction_of_most_frequent_range_conformance, DaQMeasures.most_frequent(column_name))
 
     @staticmethod
-    def set_conformance_count_only_most_frequent(column_name: str,
-                                                 allowed_values: set) -> pw.internals.expression.ColumnExpression:
+    def set_conformance_count_only_most_frequent(
+        column_name: str, allowed_values: set
+    ) -> pw.internals.expression.ColumnExpression:
         # todo: potentially this can be merged (with one more parameter) with set_conformance_count
         """
         Static getter to retrieve a custom reducer that computes the number of **the most frequent elements** in the
@@ -883,12 +898,12 @@ class DaQMeasures:
         """
         from streamdaq.utils import calculate_set_conformance_count
 
-        return pw.apply(calculate_set_conformance_count, DaQMeasures.most_frequent(column_name),
-                        allowed_values)
+        return pw.apply(calculate_set_conformance_count, DaQMeasures.most_frequent(column_name), allowed_values)
 
     @staticmethod
-    def set_conformance_fraction_only_most_frequent(column_name: str, allowed_values: set,
-                                                    precision: int = 3) -> pw.internals.expression.ColumnExpression:
+    def set_conformance_fraction_only_most_frequent(
+        column_name: str, allowed_values: set, precision: int = 3
+    ) -> pw.internals.expression.ColumnExpression:
         # todo: potentially this can be merged (with one more parameter) with set_conformance_fraction
         """
         Static getter to retrieve a custom reducer that computes the fraction of **the most frequent elements** in the
@@ -910,8 +925,7 @@ class DaQMeasures:
             fraction = calculate_set_conformance_count(elements, allowed_values) / len(elements)
             return round(fraction, precision)
 
-        return pw.apply(get_fraction_of_most_frequent_set_conformance,
-                        DaQMeasures.most_frequent(column_name))
+        return pw.apply(get_fraction_of_most_frequent_set_conformance, DaQMeasures.most_frequent(column_name))
 
     @staticmethod
     def regex_conformance_count(column_name: str, regex: str) -> pw.internals.expression.ColumnExpression:
@@ -928,8 +942,9 @@ class DaQMeasures:
         return pw.apply(calculate_regex_conformance_count, pw.reducers.tuple(pw.this[column_name]), regex)
 
     @staticmethod
-    def regex_conformance_fraction(column_name: str, regex: str,
-                                   precision: int = 3) -> pw.internals.expression.ColumnExpression:
+    def regex_conformance_fraction(
+        column_name: str, regex: str, precision: int = 3
+    ) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the fraction of values in the window that match the
         specified regex argument. The provided ``regex`` argument has to comply with the built-in python library ``re``.
@@ -949,8 +964,9 @@ class DaQMeasures:
         return pw.apply(get_regex_conformance_fraction, pw.reducers.tuple(pw.this[column_name]))
 
     @staticmethod
-    def pearson(first_column_name: str, second_column_name: str,
-                precision: int = 3) -> pw.internals.expression.ColumnExpression:
+    def pearson(
+        first_column_name: str, second_column_name: str, precision: int = 3
+    ) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the Pearson Correlation of the values between two
         different columns on the window.

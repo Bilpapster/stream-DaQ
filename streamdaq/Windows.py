@@ -15,8 +15,12 @@ def tumbling(duration: int | float | timedelta, origin: int | float | datetime |
     return pw.temporal.tumbling(duration=duration, origin=origin)
 
 
-def sliding(hop: int | float | timedelta, duration: int | float | timedelta | None = None, ratio: int | None = None,
-            origin: int | float | datetime | None = None) -> Window:
+def sliding(
+    hop: int | float | timedelta,
+    duration: int | float | timedelta | None = None,
+    ratio: int | None = None,
+    origin: int | float | datetime | None = None,
+) -> Window:
     """
     A pathway sliding window generator with the specified hop, duration, ratio and origin.
     :param hop: the frequency of the window.

@@ -26,6 +26,7 @@ class StreamDaQ:
         Class constructor. Initializes to default/None values or potentially useful class arguments.
         """
         from collections import OrderedDict
+
         self.measures = OrderedDict()
         self.assessments = OrderedDict()
         self.window = None
@@ -40,13 +41,20 @@ class StreamDaQ:
         self.sink_file_name = None
         self.sink_operation = None
 
-    def configure(self, window: Window, time_column: str,
-                  behavior: pw.temporal.CommonBehavior | pw.temporal.ExactlyOnceBehavior | None = None,
-                  instance: str | None = None,
-                  wait_for_late: int | float | timedelta | None = None,
-                  time_format: str = '%Y-%m-%d %H:%M:%S', show_window_start: bool = True,
-                  show_window_end: bool = True, source: pw.internals.Table | None = None, sink_file_name: str = None,
-                  sink_operation: Callable[[pw.internals.Table], None] | None = None) -> Self:
+    def configure(
+        self,
+        window: Window,
+        time_column: str,
+        behavior: pw.temporal.CommonBehavior | pw.temporal.ExactlyOnceBehavior | None = None,
+        instance: str | None = None,
+        wait_for_late: int | float | timedelta | None = None,
+        time_format: str = "%Y-%m-%d %H:%M:%S",
+        show_window_start: bool = True,
+        show_window_end: bool = True,
+        source: pw.internals.Table | None = None,
+        sink_file_name: str = None,
+        sink_operation: Callable[[pw.internals.Table], None] | None = None,
+    ) -> Self:
         """
         Configures the DQ monitoring parameters. Specifying a window object, the key instance and the time column name
         cannot be omitted. The rest of the arguments are optional and come with rational default values.
@@ -80,19 +88,23 @@ class StreamDaQ:
         self.show_window_start = show_window_start
         self.show_window_end = show_window_end
         if self.show_window_start:
-            self.measures['window_start'] = pw.this._pw_window_start
-            self.assessments['window_start'] = pw.this._pw_window_start
+            self.measures["window_start"] = pw.this._pw_window_start
+            self.assessments["window_start"] = pw.this._pw_window_start
         if self.show_window_end:
-            self.measures['window_end'] = pw.this._pw_window_end
-            self.assessments['window_end'] = pw.this._pw_window_end
+            self.measures["window_end"] = pw.this._pw_window_end
+            self.assessments["window_end"] = pw.this._pw_window_end
 
         self.source = source
         self.sink_file_name = sink_file_name
         self.sink_operation = sink_operation
         return self
 
-    def add(self, measure: pw.ColumnExpression | ReducerExpression, assess: str | Callable[[Any], bool] | None = None,
-            name: Optional[str] = None) -> Self:
+    def add(
+        self,
+        measure: pw.ColumnExpression | ReducerExpression,
+        assess: str | Callable[[Any], bool] | None = None,
+        name: Optional[str] = None,
+    ) -> Self:
         """
         Adds a DQ measurement to be monitored within the stream windows.
         :param measure: the measure to be monitored
@@ -102,6 +114,7 @@ class StreamDaQ:
         """
         if not name:
             import random
+
             name = f"Unnamed{random.randint(0, int(1e6))}"
         if not assess:
             self.measures[name] = measure
@@ -120,17 +133,21 @@ class StreamDaQ:
         """
         data = self.source
         if self.source is None:  # if no specific input is specified, then fall back to a default dummy stream
-            data = artificial(number_of_rows=100, input_rate=10) \
-                .with_columns(date_and_time=pw.this.timestamp.dt.strptime(self.time_format),
-                              timestamp=pw.cast(float, pw.this.timestamp))
+            data = artificial(number_of_rows=100, input_rate=10).with_columns(
+                date_and_time=pw.this.timestamp.dt.strptime(self.time_format),
+                timestamp=pw.cast(float, pw.this.timestamp),
+            )
             print("Data set to artificial")
 
         data_measurement = data.windowby(
             data[self.time_column],
             window=self.window,
             instance=data[self.instance] if self.instance is not None else None,
-            behavior=pw.temporal.exactly_once_behavior(
-                shift=self.wait_for_late) if self.window_behavior is None else self.window_behavior,
+            behavior=(
+                pw.temporal.exactly_once_behavior(shift=self.wait_for_late)
+                if self.window_behavior is None
+                else self.window_behavior
+            ),
             # todo handle the case int | timedelta
         ).reduce(**self.measures)
 

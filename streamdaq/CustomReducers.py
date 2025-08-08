@@ -1,5 +1,6 @@
 import pathway as pw
 from datasketch import HyperLogLogPlusPlus
+
 # todo check if this implementation of HLL++ sketching is more reliable (Apache)
 #  https://apache.github.io/datasketches-python/5.0.2/distinct_counting/hyper_log_log.html
 from datasketches import frequent_items_error_type, frequent_strings_sketch
@@ -14,7 +15,7 @@ class StdDevReducer(pw.BaseCustomAccumulator):
     @classmethod
     def from_row(cls, row):
         [value] = row
-        return cls(1, value, value ** 2)
+        return cls(1, value, value**2)
 
     def update(self, other):
         self.count += other.count
@@ -24,7 +25,7 @@ class StdDevReducer(pw.BaseCustomAccumulator):
     def compute_result(self) -> float:
         mean = self.sum / self.count
         mean_squares = self.sum_squares / self.count
-        return mean_squares - mean ** 2
+        return mean_squares - mean**2
 
     def retract(self, other):
         self.count -= other.count
@@ -39,7 +40,7 @@ class ApproxDistinctReducer(pw.BaseCustomAccumulator):
 
     def __init__(self, element: str):
         self.hpp_sketch = HyperLogLogPlusPlus()
-        self.hpp_sketch.update(element.encode('utf-8'))
+        self.hpp_sketch.update(element.encode("utf-8"))
 
     @classmethod
     def from_row(cls, row):

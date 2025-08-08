@@ -4,11 +4,7 @@ from streamdaq.Windows import tumbling
 
 # Step 1: Configure monitoring parameters
 daq = StreamDaQ().configure(
-    window=tumbling(20),
-    instance="user_id",
-    time_column="timestamp",
-    wait_for_late=1,
-    time_format='%Y-%m-%d %H:%M:%S'
+    window=tumbling(20), instance="user_id", time_column="timestamp", wait_for_late=1, time_format="%Y-%m-%d %H:%M:%S"
 )
 
 # Step 2: Define what Data Quality means for you
