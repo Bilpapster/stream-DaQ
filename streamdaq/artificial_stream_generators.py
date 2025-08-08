@@ -14,7 +14,7 @@ def generate_artificial_range_stream(number_of_rows: int = 50, offset: int = 10,
     return artificial_range_stream
 
 
-def generate_artificial_noisy_linear_stream(number_of_rows:int = 50, input_rate: float = 1.0):
+def generate_artificial_noisy_linear_stream(number_of_rows: int = 50, input_rate: float = 1.0):
     """
     A utility method to generate an artificial stream of noisy linear points in the x-y plane.
     :param number_of_rows: The number of rows (x-y pairs) to generate. If set to None, the stream will be generated
@@ -24,6 +24,7 @@ def generate_artificial_noisy_linear_stream(number_of_rows:int = 50, input_rate:
     """
     artificial_noisy_linear_stream = pw.demo.noisy_linear_stream(nb_rows=number_of_rows, input_rate=input_rate)
     return artificial_noisy_linear_stream
+
 
 class ViewershipSchema(pw.Schema):
     timestamp: str
@@ -45,7 +46,8 @@ class ViewershipSchema(pw.Schema):
     playback_quality: str
     interaction_events: int
 
-def generate_artificial_random_viewership_data_stream(number_of_rows:int = 50, input_rate: float = 1.0):
+
+def generate_artificial_random_viewership_data_stream(number_of_rows: int = 50, input_rate: float = 1.0):
     """
     A utility method to generate an artificial stream of random viewership data, based on the viewership data schema.
     :param number_of_rows: the number of random data points to generate.
@@ -53,12 +55,11 @@ def generate_artificial_random_viewership_data_stream(number_of_rows:int = 50, i
     :return: An artificial, randomly generated stream of viewership data for testing purposes only.
     """
     import random
-    from datetime import datetime, timedelta
     import time
 
-    DATE_TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+    # DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
     value_functions = {
-        # 'timestamp': lambda _: (datetime.now() - timedelta(days=60) + timedelta(seconds=_)).strftime(DATE_TIME_FORMAT),
+        # 'timestamp': lambda _: (datetime.now() - timedelta(days=60) + timedelta(seconds=_)).strftime(DATETIME_FORMAT),
         'timestamp': lambda _: str(int(time.time())),
         'user_id': lambda _: str(random.choice(["UserA", "UserB"])),
         'email': lambda _: str(random.choice(['invalid', 'bilpapster@gmail.com', 'papster@csd'])),
@@ -79,12 +80,14 @@ def generate_artificial_random_viewership_data_stream(number_of_rows:int = 50, i
         'interaction_events': lambda _: random.randint(1, 10)
     }
 
-    artificial_viewership_stream = pw.demo.generate_custom_stream(value_generators=value_functions, nb_rows=number_of_rows,
-                                                                  schema=ViewershipSchema, input_rate=input_rate)
+    artificial_viewership_stream = pw.demo.generate_custom_stream(
+        value_generators=value_functions, nb_rows=number_of_rows,
+        schema=ViewershipSchema, input_rate=input_rate
+    )
     return artificial_viewership_stream
 
 
-def generate_artificial_actual_viewership_data_stream(path:str, schema: pw.Schema = ViewershipSchema,
+def generate_artificial_actual_viewership_data_stream(path: str, schema: pw.Schema = ViewershipSchema,
                                                       input_rate: float = 1.0):
     artificial_viewership_stream = pw.demo.replay_csv(path, schema=schema, input_rate=input_rate)
     return artificial_viewership_stream

@@ -32,7 +32,7 @@ class DaQMeasures:
     @staticmethod
     def count(column_name: str) -> pw.internals.expression.ReducerExpression:
         """
-        Static getter to retrieve a count pathway reducer, applied on current table (pw.this) and in the column specified
+        Static getter to retrieve a count pathway reducer, applied on current table (pw.this) in the specified column
         by column name
         :param column_name: the column name of pw.this table to apply the count reducer on.
         :return: a pathway count reducer
@@ -42,7 +42,7 @@ class DaQMeasures:
     @staticmethod
     def availability(column_name: str) -> pw.internals.expression.ColumnExpression:
         """
-        Static getter to retrieve a count pathway reducer, applied on current table (pw.this) and in the column specified
+        Static getter to retrieve a count pathway reducer, applied on current table (pw.this) in the specified column
         by column name
         :param column_name: the column name of pw.this table to apply the availability reducer on.
         :return: a pathway count reducer
@@ -56,7 +56,7 @@ class DaQMeasures:
     @staticmethod
     def mean(column_name: str, precision: int = 3) -> pw.internals.expression.ColumnExpression:
         """
-        Static getter to retrieve an mean pathway reducer, applied on current table (pw.this) and in the column specified
+        Static getter to retrieve an mean pathway reducer, applied on current table (pw.this) in the specified column
         by column name
         :param column_name: the column name of pw.this table to apply the mean reducer on.
         :param precision: the number of decimal points to include in the result. Defaults to 3.
@@ -67,7 +67,7 @@ class DaQMeasures:
     @staticmethod
     def median(column_name: str) -> pw.internals.expression.ColumnExpression:
         """
-        Static getter to retrieve a median pathway reducer, applied on current table (pw.this) and in the column specified
+        Static getter to retrieve a median pathway reducer, applied on current table (pw.this) in the specified column
         by column name
         :param column_name: the column name of pw.this table to apply the median reducer on.
         :return: a pathway median reducer
@@ -216,7 +216,7 @@ class DaQMeasures:
     @staticmethod
     def min_fractional_part_length(column_name: str) -> ColumnExpression:
         """
-        Static getter to retrieve a min fractional part length pathway reducer, applied on current table (pw.this) and in
+        Static getter to retrieve a min fractional part length pathway reducer, applied on current table (pw.this) in
         the column specified by column name.
         :param column_name: the column name of pw.this table to apply the min reducer on.
         :return: a pathway min reducer
@@ -233,7 +233,7 @@ class DaQMeasures:
     @staticmethod
     def max_fractional_part_length(column_name: str) -> ColumnExpression:
         """
-        Static getter to retrieve a max fractional part length pathway reducer, applied on current table (pw.this) and in
+        Static getter to retrieve a max fractional part length pathway reducer, applied on current table (pw.this) in
         the column specified by column name.
         :param column_name: the column name of pw.this table to apply the max reducer on.
         :return: a pathway max fractional part length reducer
@@ -250,7 +250,7 @@ class DaQMeasures:
     @staticmethod
     def mean_fractional_part_length(column_name: str, precision: int = 3) -> pw.internals.expression.ColumnExpression:
         """
-        Static getter to retrieve a mean fractional part length pathway reducer, applied on current table (pw.this) and in
+        Static getter to retrieve a mean fractional part length pathway reducer, applied on current table (pw.this) in
         the column specified by column name.
         :param column_name: the column name of pw.this table to apply the mean reducer on.
         :param precision: the number of decimal points to include in the result. Defaults to 3.
@@ -268,7 +268,7 @@ class DaQMeasures:
     @staticmethod
     def median_fractional_part_length(column_name: str) -> pw.internals.expression.ColumnExpression:
         """
-        Static getter to retrieve a median fractional part length pathway reducer, applied on current table (pw.this) and
+        Static getter to retrieve a median fractional part length pathway reducer, applied on current table (pw.this)
         in the column specified by column name.
         :param column_name: the column name of pw.this table to apply the median reducer on.
         :return: a pathway median fractional part length reducer
@@ -309,14 +309,14 @@ class DaQMeasures:
         of the current table (pw.this). The missing values are considered to be either empty strings or None values by
         default, but you can specify a set of disguised missing values that will also be considered as missing.
         For example, you may want to treat 9999 or -1 as (disguised) missing values. If so, please provide these values
-        as a set to the ``disguised`` argument. The fraction is in range [0, 1] and is rounded to the specified precision.
-        The precision is the number of decimal points to include in the result. Defaults to 3.
+        as a set to the ``disguised`` argument. The fraction is in range [0, 1] and is rounded to the specified
+        precision. The precision is the number of decimal points to include in the result. Defaults to 3.
         :param column_name: the column name of pw.this table to apply the reducer on.
         :param disguised: the set of disguised missing values to consider as missing. Defaults to None.
         :param precision: the number of decimal points to include in the fraction result. Defaults to 3.
         :return: a pathway pw.apply statement ready for use as a column.
         """
-        explicit = {'', None} # explicit missing values are considered empty strings or None values
+        explicit = {'', None}  # explicit missing values are considered empty strings or None values
         missing_values = explicit if not disguised else explicit.union(disguised)
 
         def get_set_conformance_fraction(elements: tuple):
@@ -349,13 +349,16 @@ class DaQMeasures:
         have. The ordering can be one of the following options and refer to the ordering of values **after being sorted
         in chronological order**: \n
         - ``"ASC"``: values are in strictly ascending order \n
-        - ``"ASC_EQ"``: values are in ascending order (every next element is greater **or equal** to the previous one) \n
+        - ``"ASC_EQ"``: values are in ascending order (every next element is greater **or equal** to the previous one)
+        \n
         - ``"DESC"``: values are in strictly descending order \n
-        - ``"DESC_EQ"``: values are in descending order (every next element is smaller **or equal** to the previous one) \n
+        - ``"DESC_EQ"``: values are in descending order (every next element is smaller **or equal** to the previous one)
+        \n
         :param time_column: the column name of pw.this table that contains timestamps
         :param column_name: the column name of pw.this table to apply the median reducer on.
         :param time_format: the format of the timestamps in ``time_column``
-        :param ordering: the ordering to check for. Available options ``"ASC"``, ``"ASC_EQ"``, ``"DESC"``, ``"DESC_EQ"``.
+        :param ordering: the ordering to check for. Available options ``"ASC"``, ``"ASC_EQ"``, ``"DESC"``,
+        ``"DESC_EQ"``.
         :return: a pathway custom reducer that checks conformance of the values to the specified ordering
         """
 
@@ -428,7 +431,7 @@ class DaQMeasures:
     @staticmethod
     def ndarray(column_name: str) -> pw.internals.expression.ColumnExpression:
         """
-        Static getter to retrieve an ndarray pathway reducer, applied on current table (pw.this) and in the column specified
+        Static getter to retrieve an ndarray pathway reducer, applied on current table (pw.this) in the specified column
         by column name. **There is no guarantee that the items in the array will be ordered in chronological event time
         order.** In case your application requires ensured chronological ordering, please consider using
         ``tuple_sorted_by_time`` measure.
@@ -440,7 +443,7 @@ class DaQMeasures:
     @staticmethod
     def tuple(column_name: str) -> pw.internals.expression.ReducerExpression:
         """
-        Static getter to retrieve a tuple pathway reducer, applied on current table (pw.this) and in the column specified
+        Static getter to retrieve a tuple pathway reducer, applied on current table (pw.this) in the specified column
         by column name
         :param column_name: the column name of pw.this table to apply the tuple reducer on.
         :return: a pathway tuple reducer
@@ -450,8 +453,8 @@ class DaQMeasures:
     @staticmethod
     def tuple_sorted(column_name: str) -> pw.internals.expression.ReducerExpression:
         """
-        Static getter to retrieve a sorted_tuple pathway reducer, applied on current table (pw.this) and in the column specified
-        by column name
+        Static getter to retrieve a sorted_tuple pathway reducer, applied on current table (pw.this) in the column
+        specified by column name
         :param column_name: the column name of pw.this table to apply the sorted_tuple reducer on.
         :return: a pathway sorted_tuple reducer
         """
@@ -591,7 +594,8 @@ class DaQMeasures:
         Static getter to retrieve a custom reducer that computes the approximate number of distinct elements in the
         window, using the HyperLogLog++ sketch. The fraction is in range [0, 1]
         :param column_name: the column name of pw.this table to apply the reducer on
-        :param precision: the number of decimal points to include in the fraction result. Defaults to 0 (round to integer).
+        :param precision: the number of decimal points to include in the fraction result.
+        Defaults to 0 (round to integer).
         :return: a pathway pw.apply statement ready for use as a column
         """
         from streamdaq.CustomReducers import approx_distinct_count_reducer
@@ -664,8 +668,8 @@ class DaQMeasures:
         Static getter to retrieve a custom reducer that computes the fraction of unique elements over distinct ones
         in the window. The fraction is in range [0, 1], since #unique <= # distinct elements and the equality holds only
         for the case where all values inside a window are different from one another.
-        DEFINITION: Unique values are considered the ones that appear **exactly** once inside the window. For example, in
-        [a, a, b] the only unique value is 'b'. Distinct values are considered the ones that appear **at least** once
+        DEFINITION: Unique values are considered the ones that appear **exactly** once inside the window. For example,
+        in [a, a, b] the only unique value is 'b'. Distinct values are considered the ones that appear **at least** once
         inside the window. For example, in [a, a, b] the distinct values are 'a' and 'b'.
         :param column_name: the column name of pw.this table to apply the reducer on
         :param precision: the number of decimal points to include in the fraction result. Defaults to 3.
@@ -795,11 +799,11 @@ class DaQMeasures:
 
         '''
         IMPORTANT: percentiles argument has to be passed to pw.apply either as a tuple or a numpy.ndarray. Tuple was
-        preferred in this case due to performance reasons, since importing numpy and using an ndarray would be a clear
-        overkill. 
+        preferred in this case due to performance reasons, since importing numpy and using an ndarray would be
+        a clear overkill.
         The argument cannot be passed as a normal python list, since pathway has a predefined set of datatypes that
         can be passed as arguments to the pw.apply function. Python list is not included in that list. numpy.ndarrays
-        and tuples are both included, among others. 
+        and tuples are both included, among others.
         '''
         return pw.apply(get_percentiles, pw.reducers.ndarray(pw.this[column_name]), tuple(percentiles), precision)
 
@@ -890,7 +894,7 @@ class DaQMeasures:
         # todo: potentially this can be merged (with one more parameter) with set_conformance_fraction
         """
         Static getter to retrieve a custom reducer that computes the fraction of **the most frequent elements** in the
-        window that are contained in the specified set of allowed values. The fraction is a float number in range [0, 1].
+        window that are contained in the specified set of allowed values. The fraction is a float in range [0, 1].
         :param column_name: the column name of pw.this table to apply the reducer on
         :param allowed_values: a set of allowed values
         :param precision: the number of decimal points to include in the fraction result. Defaults to 3.
@@ -955,7 +959,7 @@ class DaQMeasures:
         :param first_column_name: The name of the first (x) column.
         :param second_column_name: The name of the second (y) column.
         :param precision: the number of decimal points to include in the fraction result. Defaults to 3.
-        :return: a pw.ColumnExpression that corresponds to the application of the custom reducer on the specified columns.
+        :return: a pw.ColumnExpression that corresponds to the application of the reducer on the specified columns.
         """
         from streamdaq.utils import calculate_pearson_correlation
 

@@ -91,7 +91,6 @@ class StreamDaQ:
         self.sink_operation = sink_operation
         return self
 
-
     def add(self, measure: pw.ColumnExpression | ReducerExpression, assess: str | Callable[[Any], bool] | None = None,
             name: Optional[str] = None) -> Self:
         """
@@ -143,4 +142,3 @@ class StreamDaQ:
                 pw.run()
         else:
             return data_measurement
-

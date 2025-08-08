@@ -1,3 +1,11 @@
+from typing import Callable, Optional
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.WARNING)
+logger = logging.getLogger(__name__)
+
+
 def create_frequency_dict(elements: tuple) -> dict:
     frequency_dict = dict()
     for element in elements:
@@ -69,7 +77,7 @@ def get_most_frequent_element(elements: tuple):
             current_max = list(item)
             continue
         if item[1] == current_max[1]:
-            if type(current_max[0]) != list:
+            if not isinstance(current_max[0], list):
                 current_max[0] = [current_max[0]]
             current_max[0].append(item[0])
     return current_max  # a tuple in the form (most_frequent_element, current_max_frequency)
@@ -151,7 +159,7 @@ def map_to_length(elements: list[str]) -> list[int]:
 
 def map_to_digit_count_in_integer_part(numbers: list[float]) -> list[int]:
     """
-    Computes and returns the number of digits in the integer parts of the provided list. The result is a list of lengths.
+    Computes the number of digits in the integer parts of list elements. The result is a list of lengths.
     :param numbers: the floating point numbers to operate on.
     :return: a list of integers, corresponding to the number of digits of each given number in the initial list.
     """
@@ -161,7 +169,7 @@ def map_to_digit_count_in_integer_part(numbers: list[float]) -> list[int]:
 
 def map_to_digit_count_in_fractional_part(numbers: list[float]) -> list[int]:
     """
-    Computes and returns the number of digits in the fractional parts of the provided list. The result is a list of lengths.
+    Computes the number of digits in the fractional parts of the list elements. The result is a list of lengths.
     :param numbers: the floating point numbers to operate on.
     :return: a list of integers, corresponding to the number of digits of each given number in the initial list.
     """
@@ -171,11 +179,11 @@ def map_to_digit_count_in_fractional_part(numbers: list[float]) -> list[int]:
 
 def get_first_digit_frequencies(numbers: list[int], precision: int) -> dict:
     """
-    Calculates and returns the frequency of the first digits of the provided list of numbers. Uses ``extract_first_digit``
-    internally. Returns a dictionary in the form {digit: [``abs_freq``, ``rel_freq``]} for all digits from 0-9. ``abs_freq`` stands
-    for the absolute frequency, i.e., the actual number of appearances of that specific digit in the list. ``rel_freq``
-    stands for the relative frequency, i.e. the fraction of appearances divided by the length of the list. ``abs_freq`` is
-    in range [0, ``len(numbers)``], while ``rel_freq`` is in range [0, 1].
+    Calculates the frequency of the first digits of the provided list of numbers. Uses ``extract_first_digit``
+    internally. Returns a dictionary in the form {digit: [``abs_freq``, ``rel_freq``]} for all digits from 0-9.
+    ``abs_freq`` stands for the absolute frequency, i.e., the actual number of appearances of that specific digit in
+    the list. ``rel_freq`` stands for the relative frequency, i.e. the fraction of appearances divided by the length
+    of the list. ``abs_freq`` is in range [0, ``len(numbers)``], while ``rel_freq`` is in range [0, 1].
     :param numbers: the numbers to calculate the first digits' frequencies from.
     :param precision: the number of decimal points to include in the relative frequency values.
     :return:
@@ -237,18 +245,16 @@ def elements_satisfy_ordering(sorted_elements_by_time: tuple, ordering="ASC") ->
         # match-case enabled in python, starting from version 3.10
         match type_literal:
             case "ASC":
-                function = lambda first, second: first < second
+                return lambda first, second: first < second
             case "DESC":
-                function = lambda first, second: first > second
+                return lambda first, second: first > second
             case "ASC_EQ":
-                function = lambda first, second: first <= second
+                return lambda first, second: first <= second
             case "DESC_EQ":
-                function = lambda first, second: first >= second
+                return lambda first, second: first >= second
             case _:
                 # if a wrong ordering is passed, do the same as "ASC"
-                function = lambda first, second: first < second
-
-        return function
+                return lambda first, second: first < second
 
     compare_function = get_compare_function(ordering)
     previous = sorted_elements_by_time[0]
@@ -273,27 +279,11 @@ def calculate_pearson_correlation(x, y, precision: int) -> float:
     from scipy.stats import pearsonr
     try:
         result = pearsonr(x, y)
-    except:
+    except ValueError:
+        # If the input arrays are empty or have different lengths, scipy will raise a ValueError
         return float("nan")
     return round(result.statistic, precision)
     # return round(result.statistic, precision), round(result.pvalue, precision)
-
-
-from enum import Enum
-
-
-class Regex(Enum):
-    EMAIL = "TODO ADJUST REGEXES COMING FROM SCALA TO PYTHON SYNTAX"
-    # EMAIL = """(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])"""
-    # URL = """(https?|ftp)://[^\s/$.?#].[^\s]*"""
-    # SOCIAL_SECURITY_NUMBER_US = """((?!219-09-9999|078-05-1120)(?!666|000|9\d{2})\d{3}-(?!00)\d{2}-(?!0{4})\d{4})|((?!219 09 9999|078 05 1120)(?!666|000|9\d{2})\d{3} (?!00)\d{2} (?!0{4})\d{4})|((?!219099999|078051120)(?!666|000|9\d{2})\d{3}(?!00)\d{2}(?!0{4})\d{4})"""
-
-    # Visa, MasterCard, AMEX, Diners Club
-    # http: // www.richardsramblings.com /regex/credit-card-numbers/
-    # CREDIT_CARD = """\b(?:3[47]\d{2}([\ \-]?)\d{6}\1\d|(?:(?:4\d|5[1-5]|65)\d{2}|6011)([\ \-]?)\d{4}\2\d{4}\2)\d{4}\b"""
-
-
-import matplotlib.pyplot as plt
 
 
 def plot_threshold_segments(
@@ -315,6 +305,8 @@ def plot_threshold_segments(
     - normal_color: Color for segments within thresholds
     - violation_color: Color for segments outside thresholds
     """
+    import matplotlib.pyplot as plt
+
     # If no thresholds are set, plot everything in normal color
     if max_threshold is None and min_threshold is None:
         plt.plot(timestamps, values, color=normal_color)
@@ -350,15 +342,6 @@ def plot_threshold_segments(
         plt.axhline(y=min_threshold, color=violation_color, linestyle='-.',
                     # label='Min Threshold',
                     alpha=0.3)
-
-
-import re
-import logging
-from typing import Callable, Union, Optional, Tuple
-
-# Configure logging
-logging.basicConfig(level=logging.WARNING)
-logger = logging.getLogger(__name__)
 
 
 def parse_comparison_operator(expr: str) -> Optional[tuple[str, float]]:
@@ -398,6 +381,8 @@ def parse_range_expression(expr: str) -> Optional[tuple[str, float, float]]:
     Returns:
         Optional[tuple[str, float, float]]: Tuple of (brackets, lower_bound, upper_bound) or None if invalid
     """
+    import re
+
     # Regular expression to match range patterns
     range_pattern = r'^[\(\[]([-+]?\d*\.?\d+)\s*,\s*([-+]?\d*\.?\d+)[\)\]]$'
 

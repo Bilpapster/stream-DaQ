@@ -1,6 +1,7 @@
 import pathway as pw
 from datasketch import HyperLogLogPlusPlus
-# todo check if this implementation of HLL++ sketching is more reliable (Apache) https://apache.github.io/datasketches-python/5.0.2/distinct_counting/hyper_log_log.html
+# todo check if this implementation of HLL++ sketching is more reliable (Apache)
+#  https://apache.github.io/datasketches-python/5.0.2/distinct_counting/hyper_log_log.html
 from datasketches import frequent_items_error_type, frequent_strings_sketch
 
 
@@ -61,8 +62,8 @@ class ApproxMostFrequentItemsReducer(pw.BaseCustomAccumulator):
 
     def __init__(self, element: str):
         # the sketch must be saved in its serialized (raw bytes) form, because it is not "picklable" otherwise.
-        # unfortunately, pathway uses pickle.dump(self) internally, so this is the only easy solution I could come up with
-        # todo re-explore alternatives, such as implementing __getstate__ and __setstate__ or __reduce__ methods of the class
+        # unfortunately, pathway uses pickle.dump(self) internally, so this is the only easy solution I came up with
+        # todo re-explore alternatives, such as implementing __getstate__ and __setstate__ or __reduce__ class methods
         k = 3
         self.serialized_sketch = frequent_strings_sketch(k).serialize()
         sketch = frequent_strings_sketch.deserialize(self.serialized_sketch)
@@ -107,7 +108,8 @@ class AllValuesTheSameReducer(pw.BaseCustomAccumulator):
             return
 
         self.all_same_so_far = False
-        other.all_same_so_far = False  # setting other.all_same_so_far could be redundant, in case always self is updated, needs to be double checked todo
+        other.all_same_so_far = False
+        # setting other.all_same_so_far may be redundant, if always `self` is updated. Todo: double-check
 
     def compute_result(self) -> bool:
         return self.all_same_so_far
