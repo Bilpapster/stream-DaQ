@@ -1,8 +1,7 @@
+from datetime import datetime
 from typing import Tuple
 
 import pathway as pw
-from datetime import datetime
-
 from pathway import ColumnExpression
 
 
@@ -119,7 +118,7 @@ class DaQMeasures:
         """
 
         def get_mean_length(elements):
-            from streamdaq.utils import map_to_length, calculate_fraction
+            from streamdaq.utils import calculate_fraction, map_to_length
 
             lengths = map_to_length(elements)
             return calculate_fraction(sum(lengths), len(lengths), precision)
@@ -136,7 +135,7 @@ class DaQMeasures:
         """
 
         def get_median_length(elements):
-            from streamdaq.utils import map_to_length, calculate_median
+            from streamdaq.utils import calculate_median, map_to_length
 
             lengths = map_to_length(elements)
             return calculate_median(lengths)
@@ -188,7 +187,7 @@ class DaQMeasures:
         """
 
         def get_mean_integer_part_length(numbers):
-            from streamdaq.utils import map_to_digit_count_in_integer_part, calculate_fraction
+            from streamdaq.utils import calculate_fraction, map_to_digit_count_in_integer_part
 
             integer_part_lengths = map_to_digit_count_in_integer_part(numbers)
             return calculate_fraction(sum(integer_part_lengths), len(integer_part_lengths), precision)
@@ -205,7 +204,7 @@ class DaQMeasures:
         """
 
         def get_median_integer_part_length(numbers):
-            from streamdaq.utils import map_to_digit_count_in_integer_part, calculate_median
+            from streamdaq.utils import calculate_median, map_to_digit_count_in_integer_part
 
             integer_part_lengths = map_to_digit_count_in_integer_part(numbers)
             return calculate_median(integer_part_lengths)
@@ -257,7 +256,7 @@ class DaQMeasures:
         """
 
         def get_mean_fractional_part_length(numbers):
-            from streamdaq.utils import map_to_digit_count_in_fractional_part, calculate_fraction
+            from streamdaq.utils import calculate_fraction, map_to_digit_count_in_fractional_part
 
             fractional_part_lengths = map_to_digit_count_in_fractional_part(numbers)
             return calculate_fraction(sum(fractional_part_lengths), len(fractional_part_lengths), precision)
@@ -274,7 +273,7 @@ class DaQMeasures:
         """
 
         def get_median_fractional_part_length(numbers):
-            from streamdaq.utils import map_to_digit_count_in_fractional_part, calculate_median
+            from streamdaq.utils import calculate_median, map_to_digit_count_in_fractional_part
 
             fractional_part_lengths = map_to_digit_count_in_fractional_part(numbers)
             return calculate_median(fractional_part_lengths)
@@ -690,7 +689,7 @@ class DaQMeasures:
         """
 
         def get_unique_over_distinct_fraction(elements: list):
-            from streamdaq.utils import calculate_number_of_unique_values, calculate_fraction
+            from streamdaq.utils import calculate_fraction, calculate_number_of_unique_values
 
             return calculate_fraction(calculate_number_of_unique_values(elements), len(set(elements)), precision)
 

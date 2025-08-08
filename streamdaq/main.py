@@ -1,5 +1,5 @@
-from streamdaq.StreamDaQ import StreamDaQ
 from streamdaq.DaQMeasures import DaQMeasures as dqm
+from streamdaq.StreamDaQ import StreamDaQ
 from streamdaq.Windows import tumbling
 
 # Step 1: Configure monitoring parameters

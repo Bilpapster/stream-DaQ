@@ -1,5 +1,5 @@
-from typing import Callable, Optional
 import logging
+from typing import Callable, Optional
 
 # Configure logging
 logging.basicConfig(level=logging.WARNING)

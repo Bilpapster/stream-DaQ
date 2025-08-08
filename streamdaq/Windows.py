@@ -1,7 +1,7 @@
-import pathway as pw
-from datetime import timedelta, datetime
-from typing import Callable, Any
+from datetime import datetime, timedelta
+from typing import Any, Callable
 
+import pathway as pw
 from pathway.stdlib.temporal import Window
 
 

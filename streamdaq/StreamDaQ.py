@@ -1,7 +1,7 @@
-import pathway as pw
 from datetime import timedelta
-from typing import Optional, Callable, Any, Self
+from typing import Any, Callable, Optional, Self
 
+import pathway as pw
 from pathway.internals import ReducerExpression
 from pathway.stdlib.temporal import Window
 
