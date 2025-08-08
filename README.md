@@ -1,7 +1,17 @@
-# Stream DaQ
+<p align="center">
+  <img height="220px" src="https://github.com/user-attachments/assets/ebe3a950-5fbb-49d8-b6b1-f232ca7dc362" alt="Stream DaQ logo">
+</p>
+<!-- TODO: Create a transparent version of the logo! -->
+
+<p align="center">
+    <a href="https://pypi.org/project/streamdaq/"><img src="https://img.shields.io/pypi/v/streamdaq?label=release&color=blue&" alt="PyPI version"></a>
+    <a href="https://pypi.org/project/streamdaq/"><img src="https://img.shields.io/pypi/pyversions/streamdaq.svg" alt="Python versions"></a>
+    <a href="https://pepy.tech/project/streamdaq"><img src="https://pepy.tech/badge/streamdaq" alt="Downloads"></a>
+    <a href="https://bilpapster.github.io/stream-DaQ/"><img src="https://img.shields.io/website?label=docs&url=https%3A%2F%2Fbilpapster.github.io/stream-DaQ%2F" alt="Documentation"></a>
+    <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+</p>
 
 ## TL; DR
-Plug-and-play quality monitoring for high-volume and velocity data streams! In Python, of course!
 
 ```python
 # pip install streamdaq
@@ -28,9 +38,7 @@ daq.add(dqm.count('interaction_events'), assess="(5, 15]", name="count")
 # Step 3: Kick-off monitoring and let Stream DaQ do the work while you focus on the important
 daq.watch_out()
 ```
-More examples can be found in the [examples directory](https://github.com/Bilpapster/stream-DaQ/tree/main/examples) of the project. Even more examples are on their way to be integrated shortly! Thank you for your patience! 
-
-![Stream DaQ logo](https://github.com/user-attachments/assets/ebe3a950-5fbb-49d8-b6b1-f232ca7dc362)
+More examples can be found in the [examples directory](https://github.com/Bilpapster/stream-DaQ/tree/main/examples) of the project. Even more examples are on their way to be integrated shortly! Thank you for your patience!
 
 ## Motivation
 Remember the joy of bath time with those trusty rubber ducks, keeping us company while floating through the bubbles?
