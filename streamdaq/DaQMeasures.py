@@ -5,8 +5,6 @@ from datetime import datetime
 
 from pathway import ColumnExpression
 
-from streamdaq.utils import Regex
-
 
 class DaQMeasures:
     @staticmethod
@@ -916,7 +914,7 @@ class DaQMeasures:
                         DaQMeasures.most_frequent(column_name))
 
     @staticmethod
-    def regex_conformance_count(column_name: str, regex: str | Regex) -> pw.internals.expression.ColumnExpression:
+    def regex_conformance_count(column_name: str, regex: str) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a custom reducer that computes the number of values in the window that match the
         specified regex argument. The provided ``regex`` argument has to comply with the built-in python library ``re``.
