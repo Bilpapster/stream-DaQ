@@ -141,6 +141,7 @@ Next Steps
 .. toctree::
    :hidden:
    :maxdepth: 2
+   :caption: Contents
 
    introduction
    why-stream-daq
@@ -151,6 +152,15 @@ Next Steps
    api-reference
    contributing
    changelog
+
+
+.. toctree::
+   :hidden:
+   :maxdepth: 2
+   :caption: Extras
+
+   github-stars
+   quacklity
 
 Ready to dive in? Here are some suggested paths:
 
@@ -173,8 +183,7 @@ We are a small, dedicated team committed to making Stream DaQ the best it can be
 - 💬 **Ask questions**: `GitHub Discussions <https://github.com/bilpapster/stream-DaQ/discussions>`_
 - ⭐ **Star the project**: `GitHub Repository <https://github.com/bilpapster/stream-DaQ>`_
 - 📧 **Contact the team**:
-    - papster at csd.auth.gr - Vassilis, primary maintainer 👷‍♂️
-    - gounaria at the same domain - Anastasios, project supervisor 🦸
+    |contact_details|
 
 Acknowledgments
 ---------------

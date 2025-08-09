@@ -64,4 +64,7 @@ html_theme_options = {
 
 html_static_path = ['_static']
 
-
+# This allows us to use substitutions in the documentation
+rst_prolog = """
+.. include:: _templates/substitutions.rst
+"""
