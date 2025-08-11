@@ -58,6 +58,9 @@ html_last_updated_fmt = ""
 html_theme_options = {
     "repository_url": "https://github.com/Bilpapster/Stream-DaQ",
     "use_repository_button": True,
+    # for more pygment styles, see: https://pygments.org/styles/
+    "pygment_light_style": "github",
+    "pygment_dark_style": "lightbulb",
 }
 
 # Add custom CSS
@@ -71,3 +74,4 @@ html_static_path = ['_static']
 rst_prolog = """
 .. include:: _templates/substitutions.rst
 """
+

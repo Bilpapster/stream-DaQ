@@ -1,5 +1,6 @@
 /* Bitter (descending weights) for headings */
-@import url('https://fonts.googleapis.com/css2?family=Bitter:wght@600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
 
 /* JetBrains Mono for code blocks */
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap');
@@ -10,6 +11,8 @@
 /* Apply Lato font to main content */
 body, .bd-main {
     font-family: "Lato", sans-serif;
+    line-height: 1.6;
+    font-optical-sizing: auto;
     font-weight: 400;
     font-style: normal;
 }
@@ -24,8 +27,11 @@ code, pre, .highlight {
 
 /* Improve headings using descending weights of the Bitter Google Font*/
 h1, h2, h3, h4, h5, h6 {
-    font-family: "Bitter", serif;
-    font-optical-sizing: auto;
+    font-family: 'Inter', sans-serif;
     font-weight: 600;
-    font-style: normal;
+}
+
+p {
+    font-size: 16px;
+    line-height: 1.7;
 }
