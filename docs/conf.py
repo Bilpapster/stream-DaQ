@@ -24,6 +24,7 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.napoleon',  # For Google-style docstrings
     'sphinx_design',
+    'sphinx_copybutton', # For copy button in code blocks
 ]
 
 templates_path = ['_templates']
