@@ -99,19 +99,6 @@ magic. Maria took our concept and turned it into the adorable, watchful mascot y
 
    Connect with Maria: `LinkedIn <https://www.linkedin.com/in/maria-kavouridou/>`_
 
-
-Quacklity in Action
----------------------
-
-While Quacklity might look like they're just enjoying a relaxing bubble bath, don't be fooled! This rubber duck is
-serious about data quality! Quacklity represents everything Stream DaQ stands for:
-
-- 🔍 **Vigilant monitoring**: always watching your data streams
-- 🛁 **Keeping things clean**: ensuring your data stays squeaky clean
-- ⚡ **Instant alerts**: quick to let you know when something's amiss
-- 🤗 **Friendly guidance**: making data quality accessible to everyone
-- 🌊 **Staying afloat**: resilient monitoring that never goes under
-
 Fun Facts About Quacklity
 --------------------------
 

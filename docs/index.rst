@@ -141,6 +141,12 @@ Next Steps
 .. toctree::
    :hidden:
    :maxdepth: 2
+
+   🏠 Home <self>
+
+.. toctree::
+   :hidden:
+   :maxdepth: 2
    :caption: Contents
 
    introduction

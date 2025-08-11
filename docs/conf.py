@@ -60,7 +60,10 @@ html_theme_options = {
     "use_repository_button": True,
 }
 
-
+# Add custom CSS
+html_css_files = [
+    'styles.css',
+]
 
 html_static_path = ['_static']
 
