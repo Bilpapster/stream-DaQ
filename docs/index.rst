@@ -140,7 +140,7 @@ Next Steps
 
 .. toctree::
    :hidden:
-   :maxdepth: 2
+   :maxdepth: 1
 
    🏠 Home <self>
 
@@ -162,7 +162,7 @@ Next Steps
 
 .. toctree::
    :hidden:
-   :maxdepth: 2
+   :maxdepth: 0
    :caption: Extras
 
    github-stars

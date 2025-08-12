@@ -37,8 +37,9 @@ Every great mascot has an origin story, and Quacklity is no exception.
 
 When we started building Stream DaQ, we first did our homework.
 We `dived deep <https://arxiv.org/abs/2507.17507>`_ into the source code of 7 open-source data quality tools and
-studied what other researchers had discovered for
-`enterprise tools <https://www.frontiersin.org/journals/big-data/articles/10.3389/fdata.2022.850611/full>`_;
+studied what other researchers
+`had discovered <https://www.frontiersin.org/journals/big-data/articles/10.3389/fdata.2022.850611/full>`_ for
+enterprise tools;
 all of them primarily focusing on static data. And we noticed something peculiar:
 the vast majority of them used some variation of the "DQ" acronym in their name. MobyDQ, Informatica DQ, Deequ ...
 the landscape was saturated with "DQ" solutions.

@@ -60,8 +60,8 @@ html_theme_options = {
     "repository_url": "https://github.com/Bilpapster/Stream-DaQ",
     "use_repository_button": True,
     # for more pygment styles, see: https://pygments.org/styles/
-    "pygment_light_style": "github",
-    "pygment_dark_style": "lightbulb",
+    "pygments_light_style": "tango",
+    "pygments_dark_style": "lightbulb",
 }
 
 # Add custom CSS
@@ -73,6 +73,6 @@ html_static_path = ['_static']
 
 # This allows us to use substitutions in the documentation
 rst_prolog = """
-.. include:: _templates/substitutions.rst
+.. include:: /_templates/substitutions.rst
 """
 
