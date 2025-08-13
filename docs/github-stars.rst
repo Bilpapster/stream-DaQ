@@ -65,4 +65,12 @@ So if that little chart above is going to keep trending upward, we need **you** 
 
 *Ready to help us glow up? Head over to* `GitHub <https://github.com/bilpapster/stream-DaQ>`_ *and smash that star button! ⭐*
 
+.. figure:: ../logo/quacklity/Quacklity_square_transparent_thankful.png
+   :alt: Quacklity, the Stream DaQ mascot
+   :align: center
+   :width: 150px
+
+   *Quacklity, the Stream DaQ mascot, has no words to thank you for supporting the project!*
+
+
 |made_with_love|

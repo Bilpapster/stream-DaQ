@@ -53,7 +53,7 @@ html_theme = "sphinx_book_theme"
 html_logo = "../Stream DaQ logo.png"
 html_title = "Stream DaQ Documentation"
 html_copy_source = True
-html_favicon = "../Stream DaQ logo square.png"
+html_favicon = "../logo/quacklity/Quacklity_square_transparent.png"
 html_last_updated_fmt = ""
 
 html_theme_options = {

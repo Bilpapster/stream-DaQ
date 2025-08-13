@@ -1,15 +1,15 @@
 🦆 Meet Quacklity
 =================
 
-.. figure:: https://github.com/user-attachments/assets/ebe3a950-5fbb-49d8-b6b1-f232ca7dc362
-   :alt: Quacklity, the Stream DaQ mascot
-   :align: center
-   :width: 400px
-
-   *Quacklity: Guardian of data streams, one quack at a time*
-
 Say hello to **Quacklity** (pronounced "QUACK-lity"), Stream DaQ's official mascot and your most
 reliable companion for worry-free data quality monitoring!
+
+.. figure:: ../logo/quacklity/Quacklity_square_transparent_waving.png
+   :alt: Quacklity, the Stream DaQ mascot
+   :align: center
+   :width: 200px
+
+   *Quacklity: guardian of data streams, one quack at a time*
 
 
 The Name
@@ -33,7 +33,8 @@ The Story Behind the Name
 
 Every great mascot has an origin story, and Quacklity is no exception.
 
-**The DQ Dilemma**
+The DQ Dilemma
+~~~~~~~~~~~~~~~~~~~~~~
 
 When we started building Stream DaQ, we first did our homework.
 We `dived deep <https://arxiv.org/abs/2507.17507>`_ into the source code of 7 open-source data quality tools and
@@ -47,13 +48,15 @@ the landscape was saturated with "DQ" solutions.
 We wanted Stream DaQ to stand apart from the crowd, so we made a conscious choice: **DaQ instead of DQ**.
 It was subtle but meaningful; a way to signal that we were approaching data quality differently.
 
-**The Stream Connection**
+The Stream Connection
+~~~~~~~~~~~~~~~~~~~~~~
 
 With "DaQ" settled, we needed a catchy metaphor for streaming data. The answer came naturally: **flowing water**.
 Streams, rivers, currents; all perfect analogies for data that never stops moving.
 Data streams should flow smoothly, just like water in a natural stream.
 
-**The Eureka Moment** 💡
+The Eureka Moment 💡
+~~~~~~~~~~~~~~~~~~~~~~
 
 One day during a particularly intense brainstorming session, someone on the team had a lightbulb moment:
 *"Wait... 'duck' sounds just like 'DaQ'!"*
@@ -83,6 +86,16 @@ But not just any duck. A **rubber duck**! Suddenly, everything clicked into plac
 
         Your bath duck was always there, watching over you, just like Stream DaQ does on your data
 
+
+.. figure:: ../logo/quacklity/Quacklity_square_transparent_suit.png
+   :alt: Quacklity, the Stream DaQ mascot
+   :align: center
+   :width: 150px
+
+   *While Quacklity might look like they're just enjoying a relaxing bubble bath, don't be fooled! This rubber duck is
+   totally serious about data quality!*
+
+
 From Concept to Creation
 ---------------------------
 
@@ -99,6 +112,7 @@ magic. Maria took our concept and turned it into the adorable, watchful mascot y
    perfectly captures the Stream DaQ spirit. We're incredibly grateful for her artistic vision!
 
    Connect with Maria: `LinkedIn <https://www.linkedin.com/in/maria-kavouridou/>`_
+
 
 Fun Facts About Quacklity
 --------------------------
