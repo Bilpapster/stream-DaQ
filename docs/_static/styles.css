@@ -35,3 +35,12 @@ p {
     font-size: 16px;
     line-height: 1.7;
 }
+
+/* for rendering transparent images as transparent in dark mode */
+/* https://github.com/pydata/pydata-sphinx-theme/issues/918#issuecomment-1240892605 */
+html[data-theme="dark"] img {
+    filter: none;
+}
+html[data-theme="dark"] .bd-content img:not(.only-dark):not(.dark-light) {
+    background: unset;
+}
