@@ -1,14 +1,13 @@
 <p align="center">
-  <img height="220px" src="https://github.com/user-attachments/assets/ebe3a950-5fbb-49d8-b6b1-f232ca7dc362" alt="Stream DaQ logo">
+  <img height="400px" src="https://github.com/user-attachments/assets/a42a440d-d61c-4cf8-aff0-092209aea052" alt="Stream DaQ logo">
 </p>
-<!-- TODO: Create a transparent version of the logo! -->
 
 <p align="center">
-    <a href="https://pypi.org/project/streamdaq/"><img src="https://img.shields.io/pypi/v/streamdaq?label=release&color=blue&" alt="PyPI version"></a>
-    <a href="https://pypi.org/project/streamdaq/"><img src="https://img.shields.io/pypi/pyversions/streamdaq.svg" alt="Python versions"></a>
-    <a href="https://pepy.tech/project/streamdaq"><img src="https://pepy.tech/badge/streamdaq" alt="Downloads"></a>
-    <a href="https://bilpapster.github.io/stream-DaQ/"><img src="https://img.shields.io/website?label=docs&url=https%3A%2F%2Fbilpapster.github.io/stream-DaQ%2F" alt="Documentation"></a>
-    <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+  <a href="https://pypi.org/project/streamdaq/"><img src="https://img.shields.io/pypi/v/streamdaq?label=release&color=blue&" alt="PyPI version"></a>
+  <a href="https://pypi.org/project/streamdaq/"><img src="https://img.shields.io/pypi/pyversions/streamdaq.svg" alt="Python versions"></a>
+  <a href="https://pepy.tech/project/streamdaq"><img src="https://pepy.tech/badge/streamdaq" alt="Downloads"></a>
+  <a href="https://bilpapster.github.io/stream-DaQ/"><img src="https://img.shields.io/website?label=docs&url=https%3A%2F%2Fbilpapster.github.io/stream-DaQ%2F" alt="Documentation"></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
 </p>
 
 ## TL; DR
