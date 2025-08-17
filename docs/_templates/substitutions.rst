@@ -9,6 +9,6 @@
 .. |contact_details| raw:: html
 
     <ul>
-      <li>papster at csd.auth.gr - Vassilis, primary maintainer 👷‍♂️</li>
-      <li>gounaria at the same domain - Anastasios, project supervisor 🦸</li>
+      <li>papster at csd.auth.gr - Vassilis, primary maintainer ‍🛠️️</li>
+      <li>gounaria at the same domain - Anastasios, project supervisor 👑</li>
     </ul>
