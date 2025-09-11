@@ -5,8 +5,10 @@ import pathway as pw
 from pathway.internals import ReducerExpression
 from pathway.stdlib.temporal import Window
 
+import streamdaq
 from streamdaq.artificial_stream_generators import generate_artificial_random_viewership_data_stream as artificial
 from streamdaq.utils import create_comparison_function
+from streamdaq.ValidationSchema import ValidationSchema
 
 
 class StreamDaQ:
@@ -40,6 +42,7 @@ class StreamDaQ:
         self.source = None
         self.sink_file_name = None
         self.sink_operation = None
+        self.schema = ValidationSchema
 
     def configure(
         self,
@@ -54,6 +57,7 @@ class StreamDaQ:
         source: pw.internals.Table | None = None,
         sink_file_name: str = None,
         sink_operation: Callable[[pw.internals.Table], None] | None = None,
+        schema: ValidationSchema = None
     ) -> Self:
         """
         Configures the DQ monitoring parameters. Specifying a window object, the key instance and the time column name
@@ -73,6 +77,9 @@ class StreamDaQ:
         :param sink_file_name: the name of the file to write the output to
         :param sink_operation: the operation to perform in order to send data out of Stream DaQ, e.g., a Kafka topic.
         :return: a self reference, so that you can use your favorite, Spark-like, functional syntax :)
+
+        Args:
+            schema:
         """
         self.window = window
         self.window_behavior = behavior
@@ -97,6 +104,8 @@ class StreamDaQ:
         self.source = source
         self.sink_file_name = sink_file_name
         self.sink_operation = sink_operation
+
+        self.schema = schema
         return self
 
     def add(
@@ -138,7 +147,8 @@ class StreamDaQ:
                 timestamp=pw.cast(float, pw.this.timestamp),
             )
             print("Data set to artificial")
-
+        # todo: Here probably there is a need for row check validation
+        self.schema.get_pydantic_model().model_validate()
         data_measurement = data.windowby(
             data[self.time_column],
             window=self.window,
