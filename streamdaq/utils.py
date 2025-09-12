@@ -289,6 +289,66 @@ def calculate_pearson_correlation(x, y, precision: int) -> float:
     # return round(result.statistic, precision), round(result.pvalue, precision)
 
 
+def calculate_spearman_correlation(x, y, precision: int) -> float:
+    """
+    Computes the Spearman correlation between x and y, rounded to the specified precision. Leverages internally
+    the relative implementation from scipy:
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.spearmanr.html
+    :param x: the x array_like values
+    :param y: the y array_like values
+    :param precision: the number of decimal places to include in the result
+    :return: the Spearman correlation coefficient
+    """
+    from scipy.stats import spearmanr
+
+    try:
+        result = spearmanr(x, y)
+    except ValueError:
+        # If the input arrays are empty or have different lengths, scipy will raise a ValueError
+        return float("nan")
+    return round(result.statistic, precision)
+    # return round(result.statistic, precision), round(result.pvalue, precision)
+
+def calculate_kendall_correlation(x, y, precision: int) -> float:
+    """
+    Computes the Kendall's tau correlation between x and y, rounded to the specified precision. Leverages internally
+    the relative implementation from scipy:
+    https://docs.scipy.org/doc//scipy-1.9.0/reference/generated/scipy.stats.kendalltau.html
+    :param x: the x array_like values
+    :param y: the y array_like values
+    :param precision: the number of decimal places to include in the result
+    :return: the Kendall's tau
+    """
+    from scipy.stats import kendalltau
+
+    try:
+        result = kendalltau(x, y)
+    except ValueError:
+        # If the input arrays are empty or have different lengths, scipy will raise a ValueError
+        return float("nan")
+    return round(result.statistic, precision)
+    # return round(result.statistic, precision), round(result.pvalue, precision)
+
+def calculate_cramer_correlation(observation, precision: int) -> float:
+    """
+    Computes the Cramer's V between x and y, rounded to the specified precision. Leverages internally
+    the relative implementation from scipy:
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.contingency.association.html
+    :param x: the x array_like values
+    :param y: the y array_like values
+    :param precision: the number of decimal places to include in the result
+    :return: the Cramer's V coefficient
+    """
+    from scipy.stats.contingency import association
+
+    try:
+        result = association(observation, method="cramer")
+    except ValueError:
+        # If the input arrays are empty or have different lengths, scipy will raise a ValueError
+        return float("nan")
+    return round(result.statistic, precision)
+    # return round(result.statistic, precision), round(result.pvalue, precision)
+
 def plot_threshold_segments(
     timestamps, values, max_threshold=None, min_threshold=None, normal_color="blue", violation_color="red"
 ):
