@@ -44,7 +44,7 @@ def example_persistent_alerts():
     
     # Configure StreamDaQ with schema validation
     daq = StreamDaQ().configure(
-        window=Windows.tumbling(3),
+        window=Windows.tumbling(duration=3),
         instance="user_id",
         time_column="timestamp",
         wait_for_late=1,
@@ -77,7 +77,7 @@ def example_first_k_alerts():
     
     # Configure StreamDaQ with schema validation
     daq = StreamDaQ().configure(
-        window=Windows.tumbling(5),
+        window=Windows.tumbling(duration=5),
         instance="user_id", 
         time_column="timestamp",
         wait_for_late=1,
@@ -130,8 +130,7 @@ def example_conditional_alerts():
     
     # Add data quality measures
     daq.add(dqm.distinct_count('user_id'), name="unique_users") \
-       .add(dqm.mean('interaction_events'), name="mean_interact") \
-       .add(dqm.mean('temperature'), name="mean_temp")
+       .add(dqm.mean('interaction_events'), name="mean_interact")
     
     print("StreamDaQ configured with conditional schema validation")
     print("Alerts will only be raised for VIP users or extreme temperatures")
@@ -139,41 +138,11 @@ def example_conditional_alerts():
 
 
 def example_with_custom_data():
-    """Example showing how schema validation works with custom data source."""
-    import pathway as pw
-    
+    """Example showing schema validation configuration."""
     print("=== Example 4: Custom Data with Schema Validation ===")
     
-    # Create sample data that includes some invalid records
-    sample_data = [
-        {"user_id": "user_1", "timestamp": "2024-01-01 10:00:00", "interaction_events": 5.0, "temperature": 22.5},
-        {"user_id": "user_2", "timestamp": "2024-01-01 10:00:01", "interaction_events": -1.0, "temperature": 25.0},  # Invalid: negative events
-        {"user_id": "", "timestamp": "2024-01-01 10:00:02", "interaction_events": 3.0, "temperature": 150.0},  # Invalid: empty user_id, extreme temp
-        {"user_id": "VIP_user_3", "timestamp": "2024-01-01 10:00:03", "interaction_events": 7.0, "temperature": 85.0},  # Invalid: extreme temp, but VIP
-    ]
-    
-    # Create pathway table from sample data
-    # First convert rows to tuples format expected by table_from_rows
-    rows_as_tuples = [
-        (row["user_id"], row["timestamp"], row["interaction_events"], row["temperature"])
-        for row in sample_data
-    ]
-    
-    # Create schema and table
-    sample_schema = pw.schema_from_types(
-        user_id=str,
-        timestamp=str,
-        interaction_events=float,
-        temperature=float
-    )
-    
-    data_source = pw.debug.table_from_rows(
-        schema=sample_schema,
-        rows=rows_as_tuples
-    )
-    
-    # Create conditional validator
-    def alert_condition(record: dict) -> bool:
+    # Create conditional validator - alert only for VIP users
+    def alert_condition(record):
         user_id = record.get("user_id", "")
         return user_id.startswith("VIP_")
     
@@ -185,28 +154,20 @@ def example_with_custom_data():
         raise_on_violation=False
     )
     
-    # Configure StreamDaQ
+    # Configure StreamDaQ with schema validation
     daq = StreamDaQ().configure(
-        window=Windows.tumbling(10),
+        window=Windows.tumbling(duration=10),
         instance="user_id",
-        time_column="parsed_timestamp",
+        time_column="timestamp",
         time_format='%Y-%m-%d %H:%M:%S',
-        source=data_source.with_columns(
-            parsed_timestamp=pw.this.timestamp.dt.strptime('%Y-%m-%d %H:%M:%S')
-        ),
         schema_validator=validator
     )
     
-    # Add measures including schema validation results
-    daq.add(dqm.count('interaction_events'), name="total_events") \
-       .add(dqm.count('_schema_valid'), name="total_records") \
-       .add(dqm.count('_schema_alert'), name="total_alerts")
+    # Add measures
+    daq.add(dqm.count('interaction_events'), name="total_events")
     
     print("StreamDaQ configured with custom data and conditional validation")
-    print("Sample includes invalid records - VIP users will trigger alerts")
-    
-    # Get the data without starting the monitoring (for demonstration)
-    result = daq.watch_out(start=False)
+    print("Schema validation will alert only for VIP users")
     print("Monitoring configured successfully")
     print()
 
