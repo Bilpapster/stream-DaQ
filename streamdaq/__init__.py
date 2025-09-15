@@ -18,13 +18,13 @@ except PackageNotFoundError:
 
 # Make version accessible
 __all__ = [
-    "StreamDaQ", 
-    "DaQMeasures", 
-    "Windows", 
-    "__version__", 
-    "tumbling", 
-    "sliding", 
-    "SchemaValidator", 
-    "AlertMode", 
+    "StreamDaQ",
+    "DaQMeasures",
+    "Windows",
+    "__version__",
+    "tumbling",
+    "sliding",
+    "SchemaValidator",
+    "AlertMode",
     "create_schema_validator"
 ]
