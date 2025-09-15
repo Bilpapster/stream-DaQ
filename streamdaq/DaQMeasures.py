@@ -964,75 +964,66 @@ class DaQMeasures:
         return pw.apply(get_regex_conformance_fraction, pw.reducers.tuple(pw.this[column_name]))
 
     @staticmethod
-    def pearson(
-        first_column_name: str, second_column_name: str, precision: int = 3
+    def correlation(
+        first_column_name: str, second_column_name: str, precision: int = 3, method: str = "pearson"
     ) -> pw.internals.expression.ColumnExpression:
         """
-        Static getter to retrieve a custom reducer that computes the Pearson Correlation of the values between two
-        different columns on the window.
+        Static getter to retrieve a custom reducer that computes the correlation or association between two
+        columns over a window, using a selected method. Supports Pearson, Spearman, Kendall correlations
+        and Cramer's V assosiation.
+
+        Note:
+            - Correlation measures in what way two variables are related, whereas, association measures how related the variables are.
+            - Cramér's V supports only non-negative integer numbers. If the input contains negative or float values,
+              the result will be NaN.
+
+        Internally uses the following implementations:
+            - Pearson correlation: `scipy.stats.pearsonr <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.pearsonr.html>`_
+            - Spearman correlation: `scipy.stats.spearmanr <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.spearmanr.html>`_
+            - Kendall tau: `scipy.stats.kendalltau <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.kendalltau.html>`_
+            - Cramér's V: `scipy.stats.contingency.association <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.contingency.association.html>`_
+
         :param first_column_name: The name of the first (x) column.
+        :type first_column_name: str
         :param second_column_name: The name of the second (y) column.
-        :param precision: the number of decimal points to include in the fraction result. Defaults to 3.
-        :return: a pw.ColumnExpression that corresponds to the application of the reducer on the specified columns.
+        :type second_column_name: str
+        :param precision: Number of decimal points to round the result to. Defaults to 3.
+        :type precision: int, optional
+        :param method: The correlation/association method to use. Must be one of:
+                      'pearson', 'spearman', 'kendall', or 'cramer'.
+        :type method: str
+        :return: A `pw.ColumnExpression` representing the result of applying the reducer
+                 to the specified columns.
+        :rtype: pw.ColumnExpression
+        :raises ValueError: If an unsupported correlation method is provided.
+
+        Examples:
+            Add Pearson's correlation as a data quality measurement.
+
+            >>> daq.add(dqm.correlation("colA", "colB", precision=3, method="pearson"), assess=">0.5", name="Pearson's Correlation")
+
+            Add Spearman's correlation as a data quality measurement.
+
+            >>> daq.add(dqm.correlation("colA", "colB", precision=3, method="spearman"), assess=">0.5", name="Spearman's Correlation")
+
+            Add Kendall's tau as a data quality measurement.
+
+            >>> daq.add(dqm.correlation("colA", "colB", precision=3, method="kendall"), assess=">0.5", name="Kendall's tau")
+
+            Add Cramér's V as a data quality measurement.
+
+            >>> daq.add(dqm.correlation("colA", "colB", precision=3, method="cramer"), assess=">0.5", name="Cramer's V")
+
         """
-        from streamdaq.utils import calculate_pearson_correlation
+        from streamdaq.utils import calculate_correlation
 
         x = pw.reducers.ndarray(pw.this[first_column_name])
         y = pw.reducers.ndarray(pw.this[second_column_name])
-        return pw.apply(calculate_pearson_correlation, x, y, precision)
 
-    @staticmethod
-    def spearman(
-        first_column_name: str, second_column_name: str, precision: int = 3
-    ) -> pw.internals.expression.ColumnExpression:
-        """
-        Static getter to retrieve a custom reducer that computes the Spearman's Correlation of the values between two
-        different columns on the window.
-        :param first_column_name: The name of the first (x) column.
-        :param second_column_name: The name of the second (y) column.
-        :param precision: the number of decimal points to include in the fraction result. Defaults to 3.
-        :return: a pw.ColumnExpression that corresponds to the application of the reducer on the specified columns.
-        """
-        from streamdaq.utils import calculate_spearman_correlation
+        # Supported correlation/association methods
+        supported_methods = ["pearson", "spearman", "kendall", "cramer"]
 
-        x = pw.reducers.ndarray(pw.this[first_column_name])
-        y = pw.reducers.ndarray(pw.this[second_column_name])
-        return pw.apply(calculate_spearman_correlation, x, y, precision)
+        if method not in supported_methods:
+            raise ValueError(f"Unsupported correlation/association method: {method}. Choose from {supported_methods}.")
 
-    @staticmethod
-    def kendall(
-        first_column_name: str, second_column_name: str, precision: int = 3
-    ) -> pw.internals.expression.ColumnExpression:
-        """
-        Static getter to retrieve a custom reducer that computes the Kendall's tau Correlation of the values between two
-        different columns on the window.
-        :param first_column_name: The name of the first (x) column.
-        :param second_column_name: The name of the second (y) column.
-        :param precision: the number of decimal points to include in the fraction result. Defaults to 3.
-        :return: a pw.ColumnExpression that corresponds to the application of the reducer on the specified columns.
-        """
-        from streamdaq.utils import calculate_kendall_correlation
-
-        x = pw.reducers.ndarray(pw.this[first_column_name])
-        y = pw.reducers.ndarray(pw.this[second_column_name])
-        return pw.apply(calculate_kendall_correlation, x, y, precision)
-
-    @staticmethod
-    def cramer(
-        first_column_name: str, second_column_name: str, precision: int = 3
-    ) -> pw.internals.expression.ColumnExpression:
-        """
-        Static getter to retrieve a custom reducer that computes the Cramer’s V of the values between two
-        different columns on the window.
-        :param first_column_name: The name of the first (x) column.
-        :param second_column_name: The name of the second (y) column.
-        :param precision: the number of decimal points to include in the fraction result. Defaults to 3.
-        :return: a pw.ColumnExpression that corresponds to the application of the reducer on the specified columns.
-        """
-        from streamdaq.utils import calculate_cramer_correlation
-        x = pw.reducers.ndarray(pw.this[first_column_name])
-        y = pw.reducers.ndarray(pw.this[second_column_name])
-        observation = pw.Table.empty(x=pw.this[first_column_name], y=pw.this[second_column_name])
-        observation = observation.reduce(x=pw.this[first_column_name], y=pw.this[second_column_name])
-        final = pw.reducers.ndarray(observation)
-        return pw.apply(calculate_cramer_correlation, final, precision)
+        return pw.apply(calculate_correlation, x, y, precision, method)
