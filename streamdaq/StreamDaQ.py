@@ -7,6 +7,7 @@ from pathway.stdlib.temporal import Window
 
 from streamdaq.artificial_stream_generators import generate_artificial_random_viewership_data_stream as artificial
 from streamdaq.utils import create_comparison_function
+from streamdaq.SchemaValidator import SchemaValidator
 
 
 class StreamDaQ:
@@ -40,6 +41,7 @@ class StreamDaQ:
         self.source = None
         self.sink_file_name = None
         self.sink_operation = None
+        self.schema_validator = None  # Add schema validator
 
     def configure(
         self,
@@ -54,6 +56,7 @@ class StreamDaQ:
         source: pw.internals.Table | None = None,
         sink_file_name: str = None,
         sink_operation: Callable[[pw.internals.Table], None] | None = None,
+        schema_validator: SchemaValidator | None = None,
     ) -> Self:
         """
         Configures the DQ monitoring parameters. Specifying a window object, the key instance and the time column name
@@ -72,6 +75,7 @@ class StreamDaQ:
         :param source: the source to get data from.
         :param sink_file_name: the name of the file to write the output to
         :param sink_operation: the operation to perform in order to send data out of Stream DaQ, e.g., a Kafka topic.
+        :param schema_validator: optional schema validator to apply before windowing
         :return: a self reference, so that you can use your favorite, Spark-like, functional syntax :)
         """
         self.window = window
@@ -97,6 +101,7 @@ class StreamDaQ:
         self.source = source
         self.sink_file_name = sink_file_name
         self.sink_operation = sink_operation
+        self.schema_validator = schema_validator
         return self
 
     def add(
@@ -138,6 +143,11 @@ class StreamDaQ:
                 timestamp=pw.cast(float, pw.this.timestamp),
             )
             print("Data set to artificial")
+
+        # Apply schema validation before windowing if configured
+        if self.schema_validator is not None:
+            self.schema_validator.process_window_start()
+            data = self.schema_validator.validate_data_stream(data)
 
         data_measurement = data.windowby(
             data[self.time_column],
