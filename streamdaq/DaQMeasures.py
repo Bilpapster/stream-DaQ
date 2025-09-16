@@ -998,21 +998,69 @@ class DaQMeasures:
         :raises ValueError: If an unsupported correlation method is provided.
 
         Examples:
+            Define a simple pandas DataFrame with two numeric columns (colA, colB) and a timestamp column,
+            then convert it into a Pathway table for use in data quality measurements. \n
+            >>> df = pd.DataFrame({
+            ...     "colA": [1, 1, 2, 4, 4, 7, 8, 5, 2, 6],
+            ...     "colB": [4, 7, 3, 5, 6, 1, 3, 9, 1, 6],
+            ...     "timestamp": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]})
+            >>> t = pw.debug.table_from_pandas(df)
+
             Add Pearson's correlation as a data quality measurement.
 
-            >>> daq.add(dqm.correlation("colA", "colB", precision=3, method="pearson"), assess=">0.5", name="Pearson's Correlation")
+            >>> daq.add(dqm.correlation("colA", "colB", precision=3, method="pearson"), assess=">0.1", name="Pearson's Correlation")
+
+            Output
+
+            .. table::
+            ==============  ===========  ======================
+            window_start    window_end   Pearson's Correlation
+            ==============  ===========  ======================
+            10              15           (0.1043, True)
+            15              20           (0.0627, False)
+            ==============  ===========  ======================
 
             Add Spearman's correlation as a data quality measurement.
 
             >>> daq.add(dqm.correlation("colA", "colB", precision=3, method="spearman"), assess=">0.5", name="Spearman's Correlation")
 
+            Output
+
+            .. table::
+            ==============  ===========  ======================
+            window_start    window_end   Spearman's Correlation
+            ==============  ===========  ======================
+            10              15           (0.0, False)
+            15              20           (-0.0513, False)
+            ==============  ===========  ======================
+
             Add Kendall's tau as a data quality measurement.
 
-            >>> daq.add(dqm.correlation("colA", "colB", precision=3, method="kendall"), assess=">0.5", name="Kendall's tau")
+            >>> daq.add(dqm.correlation("colA", "colB", precision=3, method="kendall"), assess=">-0.1", name="Kendall's tau")
+
+             Output
+
+            .. table::
+            ==============  ===========  ======================
+            window_start    window_end   Kendall's tau
+            ==============  ===========  ======================
+            10              15           (0.0, True)
+            15              20           (-0.1054, False)
+            ==============  ===========  ======================
 
             Add Cramér's V as a data quality measurement.
 
-            >>> daq.add(dqm.correlation("colA", "colB", precision=3, method="cramer"), assess=">0.5", name="Cramer's V")
+            >>> daq.add(dqm.correlation("colA", "colB", precision=3, method="cramer"), assess=">0.2", name="Cramer's V")
+
+            Output
+
+            .. table::
+            ==============  ===========  ======================
+            window_start    window_end   Cramer's V
+            ==============  ===========  ======================
+            10              15           (0.2745, True)
+            15              20           (0.385, True)
+            ==============  ===========  ======================
 
         """
         from streamdaq.utils import calculate_correlation

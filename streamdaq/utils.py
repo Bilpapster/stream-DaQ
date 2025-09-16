@@ -283,18 +283,15 @@ def calculate_correlation(x, y, precision: int, method:str) -> float:
 
     try:
         if method == "pearson":
-            result = pearsonr(x, y)
-            return round(result.statistic, precision)
+            result = pearsonr(x, y).statistic
         elif method == "spearman":
-            result = spearmanr(x, y)
-            return round(result.statistic, precision)
+            result = spearmanr(x, y).statistic
         elif method == "kendall":
-            result = kendalltau(x, y)
-            return round(result.statistic, precision)
+            result = kendalltau(x, y).statistic
         elif method == "cramer":
             observations = np.array(list(zip(x, y)))
             result = association(observations, method="cramer")
-            return round(result, precision)
+        return round(result, precision)
     except ValueError:
         # If the input arrays are empty or have different lengths, scipy will raise a ValueError
         return float("nan")
