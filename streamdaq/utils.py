@@ -1,5 +1,6 @@
 import logging
 from typing import Callable, Optional
+import numpy as np
 
 # Configure logging
 logging.basicConfig(level=logging.WARNING)
@@ -268,26 +269,32 @@ def elements_satisfy_ordering(sorted_elements_by_time: tuple, ordering="ASC") ->
     return True
 
 
-def calculate_pearson_correlation(x, y, precision: int) -> float:
+def calculate_correlation(x, y, precision: int, method:str) -> float:
     """
-    Computes the Pearson correlation between x and y, rounded to the specified precision. Leverages internally
-    the relative implementation from scipy:
-    https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.pearsonr.html
+    Computes the correlation/association between x and y, rounded to the specified precision.
+
     :param x: the x array_like values
     :param y: the y array_like values
     :param precision: the number of decimal places to include in the result
-    :return: the Pearson correlation coefficient
+    :return: the selec correlation coefficient
     """
-    from scipy.stats import pearsonr
+    from scipy.stats import pearsonr, spearmanr, kendalltau
+    from scipy.stats.contingency import association
 
     try:
-        result = pearsonr(x, y)
+        if method == "pearson":
+            result = pearsonr(x, y).statistic
+        elif method == "spearman":
+            result = spearmanr(x, y).statistic
+        elif method == "kendall":
+            result = kendalltau(x, y).statistic
+        elif method == "cramer":
+            observations = np.array(list(zip(x, y)))
+            result = association(observations, method="cramer")
+        return round(result, precision)
     except ValueError:
         # If the input arrays are empty or have different lengths, scipy will raise a ValueError
         return float("nan")
-    return round(result.statistic, precision)
-    # return round(result.statistic, precision), round(result.pvalue, precision)
-
 
 def plot_threshold_segments(
     timestamps, values, max_threshold=None, min_threshold=None, normal_color="blue", violation_color="red"
