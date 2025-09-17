@@ -496,3 +496,8 @@ def create_comparison_function(expr: str) -> Callable[[float], bool]:
     # If nothing matches, log warning and return identity function
     logger.warning(f"Unable to parse expression: {expr}. Using identity function.")
     return lambda x: True
+
+def construct_error_message(record:dict, error_msg: str) -> str:
+    pruned_error = error_msg.split("For further information", 1)[0].rstrip()
+    record_str = " | ".join(f"{k}: {v}" for k, v in record.items())
+    return "\n"+ record_str + "\n" + pruned_error

@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional, Callable, Dict, Any, Union
@@ -26,6 +27,7 @@ class SchemaValidatorConfig:
     condition_func: Optional[Callable[[Dict[str, Any]], bool]] = None  # Used with ONLY_IF mode
     log_violations: bool = True
     raise_on_violation: bool = False
+    deflect_violating_records: bool = False
 
 
 class SchemaValidator:
@@ -33,7 +35,6 @@ class SchemaValidator:
     Schema validator for streaming data using Pydantic models.
     Validates data streams before windowing and provides configurable alerting mechanisms.
     """
-
     def __init__(self, config: SchemaValidatorConfig):
         """
         Initialize the schema validator.
@@ -42,6 +43,7 @@ class SchemaValidator:
         self.config = config
         self.violation_count = 0
         self.window_count = 0
+        self.logger = logging.getLogger(__name__)
 
         # Validate configuration
         if config.alert_mode == AlertMode.ONLY_ON_FIRST_K and config.k_windows is None:
@@ -60,8 +62,9 @@ class SchemaValidator:
             self.config.schema(**record)
             return True, None
         except ValidationError as e:
-            error_msg = f"Schema validation failed: {str(e)}"
+            error_msg = str(e)
             return False, error_msg
+
 
     def should_alert(self, is_valid: bool, record: Dict[str, Any]) -> bool:
         """
@@ -88,11 +91,11 @@ class SchemaValidator:
         """Called when a new window starts processing."""
         self.window_count += 1
 
-    def validate_data_stream(self, data: pw.Table) -> pw.Table:
+    def validate_data_stream(self, data: pw.Table) -> tuple[pw.Table, pw.Table]:
         """
         Apply schema validation to a data stream.
         :param data: Input data stream
-        :return:  with validation results added
+        :return:  Input data stream with validation results added
         """
         def validate_row(**kwargs) -> tuple[bool, str, bool]:
             """Validate a single row and return validation metadata."""
@@ -103,12 +106,12 @@ class SchemaValidator:
             should_alert = self.should_alert(is_valid, row_dict)
 
             # Log violations if configured
-            if not is_valid and self.config.log_violations:
+            if not is_valid and should_alert and self.config.log_violations:
                 self.logger.warning(f"Schema validation failed for record: {error_msg}")
 
             # Raise exception if configured and should alert
             if not is_valid and should_alert and self.config.raise_on_violation:
-                raise ValidationError(f"Schema validation failed: {error_msg}")
+                raise ValueError(f"Schema validation failed: {error_msg}")
 
             return is_valid, error_msg or "", should_alert
 
@@ -124,15 +127,18 @@ class SchemaValidator:
             )
         )
 
-        # Extract validation metadata back to separate columns
-        validated_data = validated_data.select(
-            **{col: pw.this[col] for col in data.column_names()},
-            _schema_valid=pw.this._validation_result[0],
-            _schema_error=pw.this._validation_result[1],
-            _schema_alert=pw.this._validation_result[2]
-        )
+        if self.config.deflect_violating_records:
+            # Deflect violating records to a separate stream
+            validated_data = validated_data.filter(
+                pw.this._validation_result[0] == False).select(
+                **{col: pw.this[col] for col in data.column_names()},
+                _schema_error=pw.this._validation_result[1]
+            )
 
-        return validated_data
+        return data, validated_data
+
+    def settings(self) -> SchemaValidatorConfig:
+        return self.config
 
 
 
@@ -142,7 +148,8 @@ def create_schema_validator(
     k_windows: Optional[int] = None,
     condition_func: Optional[Callable[[Dict[str, Any]], bool]] = None,
     log_violations: bool = True,
-    raise_on_violation: bool = False
+    raise_on_violation: bool = False,
+    deflect_violating_records: bool = False
 ) -> SchemaValidator:
     """
     Factory function to create a schema validator with simplified parameters.
@@ -152,6 +159,7 @@ def create_schema_validator(
     :param condition_func: Condition function for ONLY_IF mode
     :param log_violations: Whether to log validation violations
     :param raise_on_violation: Whether to raise exceptions on violations
+    :param deflect_violating_records: Whether to raise exceptions on violations
     :return: Configured SchemaValidator instance
     """
     if isinstance(alert_mode, str):
@@ -163,7 +171,8 @@ def create_schema_validator(
         k_windows=k_windows,
         condition_func=condition_func,
         log_violations=log_violations,
-        raise_on_violation=raise_on_violation
+        raise_on_violation=raise_on_violation,
+        deflect_violating_records = deflect_violating_records
     )
 
     return SchemaValidator(config)

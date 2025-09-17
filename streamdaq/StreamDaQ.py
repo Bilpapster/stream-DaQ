@@ -149,7 +149,7 @@ class StreamDaQ:
         # Apply schema validation before windowing if configured
         if self.schema_validator is not None:
             self.schema_validator.process_window_start()
-            data = self.schema_validator.validate_data_stream(data)
+            data, schema_stream = self.schema_validator.validate_data_stream(data)
 
         data_measurement = data.windowby(
             data[self.time_column],
@@ -166,8 +166,18 @@ class StreamDaQ:
         if start:
             if self.sink_operation is None:
                 pw.debug.compute_and_print(data_measurement)
+                if self.schema_validator.settings().deflect_violating_records:
+                    pw.debug.compute_and_print(schema_stream, include_id=False)
+                else:
+                    # Necessary due to lazy computation of Pathway
+                    pw.debug._compute_tables(schema_stream)
             else:
                 self.sink_operation(data_measurement)
+                if self.schema_validator.deflect_violating_records:
+                    self.sink_operation(schema_stream)
+                else:
+                    # Necessary due to lazy computation of Pathway
+                    pw.debug._compute_tables(schema_stream)
                 pw.run()
         else:
             return data_measurement
