@@ -37,6 +37,32 @@ daq.add(dqm.count('interaction_events'), assess="(5, 15]", name="count")
 # Step 3: Kick-off monitoring and let Stream DaQ do the work while you focus on the important
 daq.watch_out()
 ```
+
+### Schema Validation
+```python
+from pydantic import BaseModel, Field
+from streamdaq import create_schema_validator, AlertMode
+
+# Define your data schema
+class SensorData(BaseModel):
+    user_id: str = Field(..., min_length=1)
+    interaction_events: float = Field(..., ge=0)
+    temperature: float = Field(..., ge=-50, le=100)
+
+# Create schema validator with persistent alerts
+validator = create_schema_validator(
+    schema=SensorData,
+    alert_mode=AlertMode.PERSISTENT
+)
+
+# Integrate with StreamDaQ
+daq = StreamDaQ().configure(
+    window=Windows.tumbling(3),
+    instance="user_id",
+    time_column="timestamp",
+    schema_validator=validator  # Schema validation before windowing
+)
+```
 More examples can be found in the [examples directory](https://github.com/Bilpapster/stream-DaQ/tree/main/examples) of the project. Even more examples are on their way to be integrated shortly! Thank you for your patience!
 
 ## Motivation
@@ -71,6 +97,10 @@ quality monitoring on data streams:
 2. *Real time alerts*: Stream DaQ defines highly meaningful data quality checks for data streams, letting the check
    results be a stream on their own, as well. This architectural choice enables real time alerts, in case the standards
    or thresholds you have defined are not met!
+3. *Schema validation*: Stream DaQ supports Pydantic-based schema validation with configurable alerting mechanisms:
+   - **Persistent alerts**: Always alert on schema violations
+   - **First-k alerts**: Alert only on the first k windows with violations
+   - **Conditional alerts**: Alert only when custom conditions are met
 
 ## Stream DaQ's architecture
 
