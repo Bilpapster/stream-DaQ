@@ -1,5 +1,6 @@
 import logging
-from typing import Callable, Optional
+import typing
+from typing import Callable, Optional, get_origin, get_args
 import numpy as np
 
 # Configure logging
@@ -269,7 +270,7 @@ def elements_satisfy_ordering(sorted_elements_by_time: tuple, ordering="ASC") ->
     return True
 
 
-def calculate_correlation(x, y, precision: int, method:str) -> float:
+def calculate_correlation(x, y, precision: int, method: str) -> float:
     """
     Computes the correlation/association between x and y, rounded to the specified precision.
 
@@ -296,8 +297,9 @@ def calculate_correlation(x, y, precision: int, method:str) -> float:
         # If the input arrays are empty or have different lengths, scipy will raise a ValueError
         return float("nan")
 
+
 def plot_threshold_segments(
-    timestamps, values, max_threshold=None, min_threshold=None, normal_color="blue", violation_color="red"
+        timestamps, values, max_threshold=None, min_threshold=None, normal_color="blue", violation_color="red"
 ):
     """
     Plot line segments with color-coded thresholds.
@@ -332,8 +334,8 @@ def plot_threshold_segments(
 
         # Plot segment with appropriate color
         plt.plot(
-            timestamps.iloc[i : i + 2],
-            values.iloc[i : i + 2],
+            timestamps.iloc[i: i + 2],
+            values.iloc[i: i + 2],
             color=violation_color if is_violation else normal_color,
             linestyle="-",
         )
@@ -497,7 +499,64 @@ def create_comparison_function(expr: str) -> Callable[[float], bool]:
     logger.warning(f"Unable to parse expression: {expr}. Using identity function.")
     return lambda x: True
 
-def construct_error_message(record:dict, error_msg: str) -> str:
-    pruned_error = error_msg.split("For further information", 1)[0].rstrip()
-    record_str = " | ".join(f"{k}: {v}" for k, v in record.items())
-    return "\n"+ record_str + "\n" + pruned_error
+
+def construct_error_message(record: dict, error_msg: str, stream_flag=False) -> str:
+    """
+    Construct a formatted error message for a given event, optionally adapting
+    the format for streaming contexts.
+
+    This function combines the record's field values with the validation error message,
+    while removing any redundant "For further information" lines of Pydantic. It can produce
+    either a multi-line message for console output or a single-line streaming-friendly message
+    for a separate deflecting stream.
+
+    Args:
+        record (dict): The data record.
+                       Keys are field names and values are their corresponding values.
+        error_msg (str): The raw error message returned from Pydantic validation.
+        stream_flag (bool, optional): If True, returns a single-line message with errors
+                                      joined by " -> ". If False (default), returns a
+                                      multi-line message with record info at the top.
+
+    Returns:
+        str: The formatted error message. Returns None if `error_msg` is None.
+    """
+    if error_msg is None:
+        return None
+
+    # Split into lines
+    lines = error_msg.splitlines()
+
+    # Drop any "For further information..." lines
+    cleaned_lines = [
+        line.rstrip()
+        for line in lines
+        if not line.strip().startswith("For further information")
+    ]
+
+    # Put the record info at the top
+    if not stream_flag:
+        record_str = " | ".join(f"{k}: {v}" for k, v in record.items())
+        return "\n" + record_str + "\n" + "\n".join(cleaned_lines)
+    else:
+        return " -> ".join(cleaned_lines)
+
+
+def unpack_schema(t):
+    """
+    Unpack and normalize a type annotation into a string representation.
+
+    Resolves `typing.Union` annotations by recursively
+    unpacking the first type argument. If the input is a concrete
+    Python type, its class name is returned. Otherwise, the object is
+    converted to a string.
+    Args:
+        t: A type annotation or Python type.
+    Returns:
+        str: A string representation of the unpacked type.
+    """
+    if get_origin(t) is typing.Union:
+        return unpack_schema(get_args(t)[0])
+    elif isinstance(t, type):
+        return t.__name__
+    return str(t)

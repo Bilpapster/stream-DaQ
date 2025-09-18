@@ -1,19 +1,25 @@
 import logging
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional, Callable, Dict, Any, Union
+from typing import Optional, Callable, Dict, Any, Union, get_type_hints
 
-from pydantic import BaseModel, create_model, ValidationError
+from pathway import Schema
+from pydantic import BaseModel, ValidationError
 import pathway as pw
+
+from streamdaq.utils import unpack_schema, construct_error_message
 
 
 class AlertMode(Enum):
     """
-    Enumeration of available alert modes for schema validation.
+    Enumeration of available alert modes for schema validation: \n
+    - **PERSISTENT**:  Always raise alarm on schema violation.
+    - **ONLY_ON_FIRST_K**:  Raise alarm on first k windows only.
+    - **ONLY_IF**:  Raise alarm when schema is violated and condition holds.
     """
-    PERSISTENT = "persistent"  # Always raise alarm on schema violation
-    ONLY_ON_FIRST_K = "only_on_first_k"  # Raise alarm on first k windows only
-    ONLY_IF = "only_if"  # Raise alarm when schema is violated and condition holds
+    PERSISTENT = "persistent"
+    ONLY_ON_FIRST_K = "only_on_first_k"
+    ONLY_IF = "only_if"
 
 
 @dataclass
@@ -27,7 +33,8 @@ class SchemaValidatorConfig:
     condition_func: Optional[Callable[[Dict[str, Any]], bool]] = None  # Used with ONLY_IF mode
     log_violations: bool = True
     raise_on_violation: bool = False
-    deflect_violating_records: bool = False
+    deflect_violating_records: bool = False,
+    filter_respecting_records: bool = False
 
 
 class SchemaValidator:
@@ -93,7 +100,7 @@ class SchemaValidator:
 
     def validate_data_stream(self, data: pw.Table) -> tuple[pw.Table, pw.Table]:
         """
-        Apply schema validation to a data stream.
+        Apply schema validation to input data stream.
         :param data: Input data stream
         :return:  Input data stream with validation results added
         """
@@ -107,13 +114,14 @@ class SchemaValidator:
 
             # Log violations if configured
             if not is_valid and should_alert and self.config.log_violations:
-                self.logger.warning(f"Schema validation failed for record: {error_msg}")
+                # self.logger.warning(f"Schema validation failed for record: {error_msg}")
+                self.logger.warning(construct_error_message(row_dict, error_msg))
 
             # Raise exception if configured and should alert
             if not is_valid and should_alert and self.config.raise_on_violation:
-                raise ValueError(f"Schema validation failed: {error_msg}")
+                raise ValueError(construct_error_message(row_dict, error_msg))
 
-            return is_valid, error_msg or "", should_alert
+            return is_valid, construct_error_message(row_dict, error_msg, stream_flag=True) or "", should_alert
 
         # Apply validation to each row using pw.apply with all columns as arguments
         column_args = {col: pw.this[col] for col in data.column_names()}
@@ -129,18 +137,43 @@ class SchemaValidator:
 
         if self.config.deflect_violating_records:
             # Deflect violating records to a separate stream
-            validated_data = validated_data.filter(
-                pw.this._validation_result[0] == False).select(
+            deflected_stream = validated_data.filter(
+                pw.this._validation_result[2] == True).select(
                 **{col: pw.this[col] for col in data.column_names()},
                 _schema_error=pw.this._validation_result[1]
             )
+            return data, deflected_stream
+
+        if self.config.filter_respecting_records:
+            # Keep the respecting records in the input stream
+            data = validated_data.filter(
+                pw.this._validation_result[0] == True).select(
+                **{col: pw.this[col] for col in data.column_names()})
+
 
         return data, validated_data
 
     def settings(self) -> SchemaValidatorConfig:
+        """
+        Retrieve the current schema validation configuration.
+        Returns:
+            SchemaValidatorConfig: The configuration object containing schema
+            validation parameters.
+        """
         return self.config
 
+    def create_pw_schema(self) -> type[Schema]:
+        """
+        Generate a Pathway schema from the configured Pydantic schema.
 
+        Returns:
+            pw.Schema: A Pathway schema constructed from the configured
+            Pydantic schema's type hints.
+        """
+        pydantic_schema = get_type_hints(self.config.schema)
+        raw_dict_schema = {k: unpack_schema(v) for k, v in pydantic_schema.items()}
+        pw_schema = pw.schema_from_types(**{k: v for k, v in raw_dict_schema.items()})
+        return pw_schema
 
 def create_schema_validator(
     schema: BaseModel,
@@ -149,7 +182,8 @@ def create_schema_validator(
     condition_func: Optional[Callable[[Dict[str, Any]], bool]] = None,
     log_violations: bool = True,
     raise_on_violation: bool = False,
-    deflect_violating_records: bool = False
+    deflect_violating_records: bool = False,
+    filter_respecting_records: bool = True
 ) -> SchemaValidator:
     """
     Factory function to create a schema validator with simplified parameters.
@@ -159,7 +193,8 @@ def create_schema_validator(
     :param condition_func: Condition function for ONLY_IF mode
     :param log_violations: Whether to log validation violations
     :param raise_on_violation: Whether to raise exceptions on violations
-    :param deflect_violating_records: Whether to raise exceptions on violations
+    :param deflect_violating_records: Whether to deflect violating records to a separate stream
+    :param filter_respecting_records: Whether to filter the respecting records
     :return: Configured SchemaValidator instance
     """
     if isinstance(alert_mode, str):
@@ -172,7 +207,8 @@ def create_schema_validator(
         condition_func=condition_func,
         log_violations=log_violations,
         raise_on_violation=raise_on_violation,
-        deflect_violating_records = deflect_violating_records
+        deflect_violating_records = deflect_violating_records,
+        filter_respecting_records = filter_respecting_records
     )
 
     return SchemaValidator(config)
