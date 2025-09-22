@@ -102,7 +102,6 @@ class StreamDaQ:
         self.source = source
         self.sink_file_name = sink_file_name
         self.sink_operation = sink_operation
-
         self.schema_validator = schema_validator
         return self
 
@@ -173,11 +172,11 @@ class StreamDaQ:
                     pw.debug._compute_tables(schema_stream)
             else:
                 self.sink_operation(data_measurement)
-                if self.schema_validator.deflect_violating_records:
-                    self.sink_operation(schema_stream)
+                if self.schema_validator.settings().deflect_violating_records:
+                    self.schema_validator.settings().deflection_sink(schema_stream)
                 else:
-                    # Necessary due to lazy computation of Pathway
-                    pw.debug._compute_tables(schema_stream)
+                    # NOT WORKING PROPERLY
+                    pw.run_all()
                 pw.run()
         else:
             return data_measurement

@@ -34,6 +34,7 @@ class SchemaValidatorConfig:
     log_violations: bool = True
     raise_on_violation: bool = False
     deflect_violating_records: bool = False,
+    deflection_sink: Optional[Callable[[pw.internals.Table], None]] = None,
     filter_respecting_records: bool = False
 
 
@@ -58,6 +59,9 @@ class SchemaValidator:
 
         if config.alert_mode == AlertMode.ONLY_IF and config.condition_func is None:
             raise ValueError("condition_func must be specified when using ONLY_IF alert mode")
+
+        if config.deflect_violating_records and config.deflection_sink is None:
+            raise ValueError("deflection_sink must be specified when deflecting violating records")
 
     def validate_record(self, record: Dict[str, Any]) -> tuple[bool, Optional[str]]:
         """
@@ -183,6 +187,7 @@ def create_schema_validator(
     log_violations: bool = True,
     raise_on_violation: bool = False,
     deflect_violating_records: bool = False,
+    deflection_sink: Optional[Callable[[pw.internals.Table], None]] = None,
     filter_respecting_records: bool = True
 ) -> SchemaValidator:
     """
@@ -194,8 +199,12 @@ def create_schema_validator(
     :param log_violations: Whether to log validation violations
     :param raise_on_violation: Whether to raise exceptions on violations
     :param deflect_violating_records: Whether to deflect violating records to a separate stream
+    :param deflection_sink: Deflected records sink function
     :param filter_respecting_records: Whether to filter the respecting records
     :return: Configured SchemaValidator instance
+
+    Args:
+        deflection_sink:
     """
     if isinstance(alert_mode, str):
         alert_mode = AlertMode(alert_mode)
@@ -208,6 +217,7 @@ def create_schema_validator(
         log_violations=log_violations,
         raise_on_violation=raise_on_violation,
         deflect_violating_records = deflect_violating_records,
+        deflection_sink=deflection_sink,
         filter_respecting_records = filter_respecting_records
     )
 
