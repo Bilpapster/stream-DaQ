@@ -1,3 +1,4 @@
+import logging
 from datetime import timedelta
 from typing import Any, Callable, Optional, Self
 
@@ -6,9 +7,10 @@ from pathway.internals import ReducerExpression
 from pathway.stdlib.temporal import Window
 
 import streamdaq
+from streamdaq import DaQMeasures
 from streamdaq.artificial_stream_generators import generate_artificial_random_viewership_data_stream as artificial
 from streamdaq.utils import create_comparison_function
-from streamdaq.SchemaValidator import SchemaValidator
+from streamdaq.SchemaValidator import SchemaValidator, AlertMode
 
 
 class StreamDaQ:
@@ -45,19 +47,19 @@ class StreamDaQ:
         self.schema_validator = SchemaValidator
 
     def configure(
-        self,
-        window: Window,
-        time_column: str,
-        behavior: pw.temporal.CommonBehavior | pw.temporal.ExactlyOnceBehavior | None = None,
-        instance: str | None = None,
-        wait_for_late: int | float | timedelta | None = None,
-        time_format: str = "%Y-%m-%d %H:%M:%S",
-        show_window_start: bool = True,
-        show_window_end: bool = True,
-        source: pw.internals.Table | None = None,
-        sink_file_name: str = None,
-        sink_operation: Callable[[pw.internals.Table], None] | None = None,
-        schema_validator: SchemaValidator = None
+            self,
+            window: Window,
+            time_column: str,
+            behavior: pw.temporal.CommonBehavior | pw.temporal.ExactlyOnceBehavior | None = None,
+            instance: str | None = None,
+            wait_for_late: int | float | timedelta | None = None,
+            time_format: str = "%Y-%m-%d %H:%M:%S",
+            show_window_start: bool = True,
+            show_window_end: bool = True,
+            source: pw.internals.Table | None = None,
+            sink_file_name: str = None,
+            sink_operation: Callable[[pw.internals.Table], None] | None = None,
+            schema_validator: SchemaValidator = None
     ) -> Self:
         """
         Configures the DQ monitoring parameters. Specifying a window object, the key instance and the time column name
@@ -106,10 +108,10 @@ class StreamDaQ:
         return self
 
     def add(
-        self,
-        measure: pw.ColumnExpression | ReducerExpression,
-        assess: str | Callable[[Any], bool] | None = None,
-        name: Optional[str] = None,
+            self,
+            measure: pw.ColumnExpression | ReducerExpression,
+            assess: str | Callable[[Any], bool] | None = None,
+            name: Optional[str] = None,
     ) -> Self:
         """
         Adds a DQ measurement to be monitored within the stream windows.
@@ -145,38 +147,86 @@ class StreamDaQ:
             )
             print("Data set to artificial")
 
-        # Apply schema validation before windowing if configured
+        # Apply schema validation
         if self.schema_validator is not None:
-            self.schema_validator.process_window_start()
-            data, schema_stream = self.schema_validator.validate_data_stream(data)
+            validated_data = self.schema_validator.validate_data_stream(data, time_column=self.time_column)
 
-        data_measurement = data.windowby(
-            data[self.time_column],
-            window=self.window,
-            instance=data[self.instance] if self.instance is not None else None,
-            behavior=(
-                pw.temporal.exactly_once_behavior(shift=self.wait_for_late)
-                if self.window_behavior is None
-                else self.window_behavior
-            ),
-            # todo handle the case int | timedelta
-        ).reduce(**self.measures)
+            # Create stream for deflected records if needed
+            if self.schema_validator.settings().deflect_violating_records:
+                deflected_stream = validated_data.filter(pw.this._validation_metadata[0] == False)
+
+            if self.schema_validator.settings().filter_respecting_records:
+                validated_data = validated_data.filter(pw.this._validation_metadata[0] == True)
+                data_measurement = validated_data.windowby(
+                    validated_data[self.time_column],
+                    window=self.window,
+                    instance=validated_data[self.instance] if self.instance is not None else None,
+                    behavior=(
+                        pw.temporal.exactly_once_behavior(shift=self.wait_for_late)
+                        if self.window_behavior is None
+                        else self.window_behavior
+                    ),
+                    # todo handle the case int | timedelta
+                ).reduce(**self.measures)
+            else:
+                # Helper reducer for aggregating deflected records in a proper way
+                column_args = {col: pw.this[col] for col in validated_data.column_names()}
+                validated_data = validated_data.select(
+                    **column_args,
+                    deflected_records=pw.apply_with_type(lambda x: int(not x), int, pw.this._validation_metadata[0]),
+                    error_messages=pw.apply_with_type(lambda x: None if x == '' else x, str | None,
+                                                      pw.this._validation_metadata[1])
+                )
+
+                error_measures = {
+                    "schema_errors": pw.reducers.sum(pw.this.deflected_records),
+                    "error_messages": pw.reducers.tuple(pw.this.error_messages, skip_nones=True)
+                }
+
+                all_measures = {**self.measures, **error_measures}
+                data_measurement = (validated_data.windowby(
+                    validated_data[self.time_column],
+                    window=self.window,
+                    instance=validated_data[self.instance] if self.instance is not None else None,
+                    behavior=(
+                        pw.temporal.exactly_once_behavior(shift=self.wait_for_late)
+                        if self.window_behavior is None
+                        else self.window_behavior
+                    ),
+                    # todo handle the case int | timedelta
+                )
+                .reduce(
+                    **all_measures
+                ))
+
+                # todo: Traversal of should alert to raise alerts for the window if needed
+
+        else:
+            data_measurement = data.windowby(
+                data[self.time_column],
+                window=self.window,
+                instance=data[self.instance] if self.instance is not None else None,
+                behavior=(
+                    pw.temporal.exactly_once_behavior(shift=self.wait_for_late)
+                    if self.window_behavior is None
+                    else self.window_behavior
+                ),
+                # todo handle the case int | timedelta
+            ).reduce(**self.measures)
+
 
         if start:
             if self.sink_operation is None:
                 pw.debug.compute_and_print(data_measurement)
-                if self.schema_validator.settings().deflect_violating_records:
-                    pw.debug.compute_and_print(schema_stream, include_id=False)
-                else:
-                    # Necessary due to lazy computation of Pathway
-                    pw.debug._compute_tables(schema_stream)
+
+                if self.schema_validator is not None and self.schema_validator.settings().deflect_violating_records:
+                    pw.debug.compute_and_print(deflected_stream)
             else:
                 self.sink_operation(data_measurement)
-                if self.schema_validator.settings().deflect_violating_records:
-                    self.schema_validator.settings().deflection_sink(schema_stream)
-                else:
-                    # NOT WORKING PROPERLY
-                    pw.run_all()
+
+                if self.schema_validator is not None and self.schema_validator.settings().deflect_violating_records:
+                    self.schema_validator.settings().deflection_sink(deflected_stream)
+
                 pw.run()
         else:
-            return data_measurement
+            return validated_data

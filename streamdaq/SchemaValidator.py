@@ -102,60 +102,33 @@ class SchemaValidator:
         """Called when a new window starts processing."""
         self.window_count += 1
 
-    def validate_data_stream(self, data: pw.Table) -> tuple[pw.Table, pw.Table]:
+    def validate_data_stream(self, data: pw.Table, time_column: str) -> tuple[pw.Table, pw.Table]:
         """
         Apply schema validation to input data stream.
         :param data: Input data stream
         :return:  Input data stream with validation results added
         """
-        def validate_row(**kwargs) -> tuple[bool, str, bool]:
+        def validate_row(**kwargs) -> tuple[bool, str]:
             """Validate a single row and return validation metadata."""
             # Convert keyword arguments to a dictionary for validation
             row_dict = dict(kwargs)
 
             is_valid, error_msg = self.validate_record(row_dict)
-            should_alert = self.should_alert(is_valid, row_dict)
 
-            # Log violations if configured
-            if not is_valid and should_alert and self.config.log_violations:
-                # self.logger.warning(f"Schema validation failed for record: {error_msg}")
-                self.logger.warning(construct_error_message(row_dict, error_msg))
-
-            # Raise exception if configured and should alert
-            if not is_valid and should_alert and self.config.raise_on_violation:
-                raise ValueError(construct_error_message(row_dict, error_msg))
-
-            return is_valid, construct_error_message(row_dict, error_msg, stream_flag=True) or "", should_alert
+            return is_valid, construct_error_message(row_dict, error_msg, stream_flag=True) or ""
 
         # Apply validation to each row using pw.apply with all columns as arguments
         column_args = {col: pw.this[col] for col in data.column_names()}
-
         validated_data = data.select(
             **column_args,
-            _validation_result=pw.apply_with_type(
+            _validation_metadata=pw.apply_with_type(
                 validate_row,
-                tuple[bool, str, bool],
+                tuple[bool, str],
                 **column_args
             )
         )
 
-        if self.config.deflect_violating_records:
-            # Deflect violating records to a separate stream
-            deflected_stream = validated_data.filter(
-                pw.this._validation_result[2] == True).select(
-                **{col: pw.this[col] for col in data.column_names()},
-                _schema_error=pw.this._validation_result[1]
-            )
-            return data, deflected_stream
-
-        if self.config.filter_respecting_records:
-            # Keep the respecting records in the input stream
-            data = validated_data.filter(
-                pw.this._validation_result[0] == True).select(
-                **{col: pw.this[col] for col in data.column_names()})
-
-
-        return data, validated_data
+        return validated_data
 
     def settings(self) -> SchemaValidatorConfig:
         """
