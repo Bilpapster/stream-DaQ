@@ -560,3 +560,31 @@ def unpack_schema(t):
     elif isinstance(t, type):
         return t.__name__
     return str(t)
+
+
+def extract_error_number(error_str: str) -> int:
+    """
+    Extracts the first digit(s) at the start of a validation error string
+    and returns them as an integer.
+
+    - If the string is empty -> returns 0
+    - If no leading digit -> returns 0
+    - Otherwise -> returns the integer value
+
+    Examples:
+    "3 validation errors ..."  -> 3
+    "12 validation errors ..." -> 12
+    ""                         -> 0
+    "validation errors ..."    -> 0
+    """
+    if not error_str:
+        return 0
+
+    num_str = ""
+    for ch in error_str:
+        if ch.isdigit():
+            num_str += ch
+        else:
+            break
+
+    return int(num_str) if num_str else 0

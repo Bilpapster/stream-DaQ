@@ -35,7 +35,8 @@ class SchemaValidatorConfig:
     raise_on_violation: bool = False
     deflect_violating_records: bool = False,
     deflection_sink: Optional[Callable[[pw.internals.Table], None]] = None,
-    filter_respecting_records: bool = False
+    filter_respecting_records: bool = False,
+    show_error_messages: bool = True
 
 
 class SchemaValidator:
@@ -77,17 +78,17 @@ class SchemaValidator:
             return False, error_msg
 
 
-    def should_alert(self, is_valid: bool, record: Dict[str, Any]) -> bool:
+    def should_alert(self, record: Dict[str, Any]) -> bool:
         """
         Determine if an alert should be raised based on the alert mode.
         :param is_valid: Whether the record passed validation
         :param record: The record being validated
         :return: True if an alert should be raised
         """
-        if is_valid:
-            return False
+        schema_error = record.get('schema_errors', None)
 
-        self.violation_count += 1
+        if all(error == '' for error in schema_error):
+            return False
 
         if self.config.alert_mode == AlertMode.PERSISTENT:
             return True
@@ -98,14 +99,11 @@ class SchemaValidator:
 
         return False
 
-    def process_window_start(self):
-        """Called when a new window starts processing."""
-        self.window_count += 1
-
-    def validate_data_stream(self, data: pw.Table, time_column: str) -> tuple[pw.Table, pw.Table]:
+    def validate_data_stream(self, data: pw.Table) -> tuple[pw.Table, pw.Table]:
         """
         Apply schema validation to input data stream.
         :param data: Input data stream
+        :param time_column: Name of the time column in the data
         :return:  Input data stream with validation results added
         """
         def validate_row(**kwargs) -> tuple[bool, str]:
@@ -152,6 +150,28 @@ class SchemaValidator:
         pw_schema = pw.schema_from_types(**{k: v for k, v in raw_dict_schema.items()})
         return pw_schema
 
+    def raise_alerts(self, data: pw.Table) -> tuple[pw.Table, pw.Table]:
+        def alert_if_needed(**kwargs) -> bool:
+            record = dict(kwargs)
+            alert = self.should_alert(record)
+            if alert:
+                for error in record.get('schema_errors'):
+                    if error is not None:
+                        self.logger.warning(f"Schema violation detected: {error}")
+
+            return alert
+
+        column_args = {col: pw.this[col] for col in data.column_names()}
+        alert_stream = data.select(
+            is_valid=pw.apply_with_type(
+                alert_if_needed,
+                bool,
+                **column_args
+            )
+        )
+
+        return alert_stream
+
 def create_schema_validator(
     schema: BaseModel,
     alert_mode: Union[AlertMode, str] = AlertMode.PERSISTENT,
@@ -161,7 +181,8 @@ def create_schema_validator(
     raise_on_violation: bool = False,
     deflect_violating_records: bool = False,
     deflection_sink: Optional[Callable[[pw.internals.Table], None]] = None,
-    filter_respecting_records: bool = True
+    filter_respecting_records: bool = True,
+    show_error_messages: bool = True
 ) -> SchemaValidator:
     """
     Factory function to create a schema validator with simplified parameters.
@@ -174,6 +195,7 @@ def create_schema_validator(
     :param deflect_violating_records: Whether to deflect violating records to a separate stream
     :param deflection_sink: Deflected records sink function
     :param filter_respecting_records: Whether to filter the respecting records
+    :param show_error_messages: Whether to include error messages in logs
     :return: Configured SchemaValidator instance
 
     Args:
@@ -191,7 +213,8 @@ def create_schema_validator(
         raise_on_violation=raise_on_violation,
         deflect_violating_records = deflect_violating_records,
         deflection_sink=deflection_sink,
-        filter_respecting_records = filter_respecting_records
+        filter_respecting_records = filter_respecting_records,
+        show_error_messages = show_error_messages
     )
 
     return SchemaValidator(config)

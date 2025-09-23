@@ -1,4 +1,3 @@
-import logging
 from datetime import timedelta
 from typing import Any, Callable, Optional, Self
 
@@ -6,11 +5,9 @@ import pathway as pw
 from pathway.internals import ReducerExpression
 from pathway.stdlib.temporal import Window
 
-import streamdaq
-from streamdaq import DaQMeasures
 from streamdaq.artificial_stream_generators import generate_artificial_random_viewership_data_stream as artificial
-from streamdaq.utils import create_comparison_function
-from streamdaq.SchemaValidator import SchemaValidator, AlertMode
+from streamdaq.utils import create_comparison_function, extract_error_number
+from streamdaq.SchemaValidator import SchemaValidator
 
 
 class StreamDaQ:
@@ -149,7 +146,7 @@ class StreamDaQ:
 
         # Apply schema validation
         if self.schema_validator is not None:
-            validated_data = self.schema_validator.validate_data_stream(data, time_column=self.time_column)
+            validated_data = self.schema_validator.validate_data_stream(data)
 
             # Create stream for deflected records if needed
             if self.schema_validator.settings().deflect_violating_records:
@@ -173,17 +170,15 @@ class StreamDaQ:
                 column_args = {col: pw.this[col] for col in validated_data.column_names()}
                 validated_data = validated_data.select(
                     **column_args,
-                    deflected_records=pw.apply_with_type(lambda x: int(not x), int, pw.this._validation_metadata[0]),
+                    schema_errors=pw.apply_with_type(extract_error_number,int,pw.this._validation_metadata[1]),
                     error_messages=pw.apply_with_type(lambda x: None if x == '' else x, str | None,
                                                       pw.this._validation_metadata[1])
                 )
+                if self.schema_validator.settings().show_error_messages:
+                    all_measures = {**self.measures, "schema_errors": pw.reducers.tuple(pw.this.error_messages, skip_nones=True)}
+                else:
+                    all_measures = self.measures
 
-                error_measures = {
-                    "schema_errors": pw.reducers.sum(pw.this.deflected_records),
-                    "error_messages": pw.reducers.tuple(pw.this.error_messages, skip_nones=True)
-                }
-
-                all_measures = {**self.measures, **error_measures}
                 data_measurement = (validated_data.windowby(
                     validated_data[self.time_column],
                     window=self.window,
@@ -194,12 +189,11 @@ class StreamDaQ:
                         else self.window_behavior
                     ),
                     # todo handle the case int | timedelta
-                )
-                .reduce(
-                    **all_measures
-                ))
+                ).reduce(**all_measures))
 
-                # todo: Traversal of should alert to raise alerts for the window if needed
+            # todo: Traversal of should alert to raise alerts for the window if needed
+            alerts = self.schema_validator.raise_alerts(data_measurement)
+            pw.debug.compute_and_print(alerts)
 
         else:
             data_measurement = data.windowby(
@@ -218,7 +212,6 @@ class StreamDaQ:
         if start:
             if self.sink_operation is None:
                 pw.debug.compute_and_print(data_measurement)
-
                 if self.schema_validator is not None and self.schema_validator.settings().deflect_violating_records:
                     pw.debug.compute_and_print(deflected_stream)
             else:
