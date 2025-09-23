@@ -269,7 +269,7 @@ def elements_satisfy_ordering(sorted_elements_by_time: tuple, ordering="ASC") ->
     return True
 
 
-def calculate_correlation(x, y, precision: int, method:str) -> float:
+def calculate_correlation(x, y, precision: int, method: str) -> float:
     """
     Computes the correlation/association between x and y, rounded to the specified precision.
 
@@ -295,6 +295,47 @@ def calculate_correlation(x, y, precision: int, method:str) -> float:
     except ValueError:
         # If the input arrays are empty or have different lengths, scipy will raise a ValueError
         return float("nan")
+
+
+def calculate_trend(elements: tuple, precision: int = 3) -> float:
+    """
+    Calculate the trend (slope) of the values using linear regression.
+
+    This function computes the slope of the best-fit line through the data points,
+    where x-values are the sequential indices (0, 1, 2, ...) and y-values are the elements.
+
+    :param elements: tuple of numeric values to analyze for trend
+    :param precision: number of decimal points to include in the result. Defaults to 3.
+    :return: slope value representing the trend. Positive = increasing, negative = decreasing, 0 = flat
+    """
+    try:
+        if len(elements) < 2:
+            return 0.0
+
+        # Convert to numpy array for easier computation
+        y = np.array(elements, dtype=float)
+        x = np.arange(len(y), dtype=float)
+
+        # Handle edge cases
+        if len(set(y)) == 1:  # All values are the same
+            return 0.0
+
+        # Calculate slope using linear regression formula: slope = Σ((x-x̄)(y-ȳ)) / Σ((x-x̄)²)
+        x_mean = np.mean(x)
+        y_mean = np.mean(y)
+
+        numerator = np.sum((x - x_mean) * (y - y_mean))
+        denominator = np.sum((x - x_mean) ** 2)
+
+        if denominator == 0:
+            return 0.0
+
+        slope = numerator / denominator
+        return round(slope, precision)
+
+    except (ValueError, TypeError):
+        return float("nan")
+
 
 def plot_threshold_segments(
     timestamps, values, max_threshold=None, min_threshold=None, normal_color="blue", violation_color="red"
@@ -332,8 +373,8 @@ def plot_threshold_segments(
 
         # Plot segment with appropriate color
         plt.plot(
-            timestamps.iloc[i : i + 2],
-            values.iloc[i : i + 2],
+            timestamps.iloc[i:i + 2],
+            values.iloc[i:i + 2],
             color=violation_color if is_violation else normal_color,
             linestyle="-",
         )

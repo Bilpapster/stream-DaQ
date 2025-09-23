@@ -1,4 +1,3 @@
-import typing
 from datetime import datetime
 from typing import Tuple
 
@@ -973,15 +972,20 @@ class DaQMeasures:
         and Cramer's V assosiation.
 
         Note:
-            - Correlation measures in what way two variables are related, whereas, association measures how related the variables are.
+            - Correlation measures in what way two variables are related, whereas, association measures how related
+              the variables are.
             - Cramér's V supports only non-negative integer numbers. If the input contains negative or float values,
               the result will be NaN.
 
         Internally uses the following implementations:
-            - Pearson correlation: `scipy.stats.pearsonr <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.pearsonr.html>`_
-            - Spearman correlation: `scipy.stats.spearmanr <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.spearmanr.html>`_
-            - Kendall tau: `scipy.stats.kendalltau <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.kendalltau.html>`_
-            - Cramér's V: `scipy.stats.contingency.association <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.contingency.association.html>`_
+            - Pearson correlation: `scipy.stats.pearsonr
+              <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.pearsonr.html>`_
+            - Spearman correlation: `scipy.stats.spearmanr
+              <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.spearmanr.html>`_
+            - Kendall tau: `scipy.stats.kendalltau
+              <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.kendalltau.html>`_
+            - Cramér's V: `scipy.stats.contingency.association
+              <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.contingency.association.html>`_
 
         :param first_column_name: The name of the first (x) column.
         :type first_column_name: str
@@ -1008,7 +1012,8 @@ class DaQMeasures:
 
             Add Pearson's correlation as a data quality measurement.
 
-            >>> daq.add(dqm.correlation("colA", "colB", precision=3, method="pearson"), assess=">0.1", name="Pearson's Correlation")
+            >>> daq.add(dqm.correlation("colA", "colB", precision=3, method="pearson"),
+            ...          assess=">0.1", name="Pearson's Correlation")
 
             Output
 
@@ -1022,7 +1027,8 @@ class DaQMeasures:
 
             Add Spearman's correlation as a data quality measurement.
 
-            >>> daq.add(dqm.correlation("colA", "colB", precision=3, method="spearman"), assess=">0.5", name="Spearman's Correlation")
+            >>> daq.add(dqm.correlation("colA", "colB", precision=3, method="spearman"),
+            ...          assess=">0.5", name="Spearman's Correlation")
 
             Output
 
@@ -1036,7 +1042,8 @@ class DaQMeasures:
 
             Add Kendall's tau as a data quality measurement.
 
-            >>> daq.add(dqm.correlation("colA", "colB", precision=3, method="kendall"), assess=">-0.1", name="Kendall's tau")
+            >>> daq.add(dqm.correlation("colA", "colB", precision=3, method="kendall"),
+            ...          assess=">-0.1", name="Kendall's tau")
 
              Output
 
@@ -1075,3 +1082,70 @@ class DaQMeasures:
             raise ValueError(f"Unsupported correlation/association method: {method}. Choose from {supported_methods}.")
 
         return pw.apply(calculate_correlation, x, y, precision, method)
+
+    @staticmethod
+    def trend(column_name: str, precision: int = 3) -> pw.internals.expression.ColumnExpression:
+        """
+        Static getter to retrieve a trend analysis reducer that computes the slope of the linear trend
+        in the values within a window. The trend is calculated using linear regression, where the
+        x-values are sequential indices (0, 1, 2, ...) and y-values are the column values.
+
+        This measure helps identify if values are generally increasing (positive slope),
+        decreasing (negative slope), or staying flat (slope near zero) over time within the window.
+
+        :param column_name: The column name of pw.this table to apply the trend analysis on.
+        :type column_name: str
+        :param precision: Number of decimal points to round the result to. Defaults to 3.
+        :type precision: int, optional
+        :return: A `pw.ColumnExpression` representing the slope/trend of the values.
+                 Positive values indicate increasing trend, negative values indicate decreasing trend,
+                 and values near zero indicate flat/stable trend.
+        :rtype: pw.ColumnExpression
+
+        Examples:
+            Add trend analysis as a data quality measurement to detect increasing trends.
+
+            >>> daq.add(dqm.trend("sensor_reading"), assess=">0.1", name="increasing_trend")
+
+            Output for an increasing trend:
+
+            .. table::
+            ==============  ===========  =================
+            window_start    window_end   increasing_trend
+            ==============  ===========  =================
+            10              15           (0.4, True)
+            15              20           (0.6, True)
+            ==============  ===========  =================
+
+            Add trend analysis to detect decreasing trends with negative slope threshold.
+
+            >>> daq.add(dqm.trend("temperature"), assess="<-0.2", name="cooling_trend")
+
+            Output for a decreasing trend:
+
+            .. table::
+            ==============  ===========  =================
+            window_start    window_end   cooling_trend
+            ==============  ===========  =================
+            10              15           (-0.3, True)
+            15              20           (-0.1, False)
+            ==============  ===========  =================
+
+            Add trend analysis to detect stable values (trend near zero).
+
+            >>> daq.add(dqm.trend("stable_metric"), assess="[-0.1, 0.1]", name="stability_check")
+
+            Output for stable values:
+
+            .. table::
+            ==============  ===========  =================
+            window_start    window_end   stability_check
+            ==============  ===========  =================
+            10              15           (0.05, True)
+            15              20           (0.15, False)
+            ==============  ===========  =================
+
+        """
+        from streamdaq.utils import calculate_trend
+
+        return pw.apply(calculate_trend, pw.reducers.tuple(pw.this[column_name]), precision)
