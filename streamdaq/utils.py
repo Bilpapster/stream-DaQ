@@ -496,3 +496,49 @@ def create_comparison_function(expr: str) -> Callable[[float], bool]:
     # If nothing matches, log warning and return identity function
     logger.warning(f"Unable to parse expression: {expr}. Using identity function.")
     return lambda x: True
+
+
+def calculate_trend(elements: tuple, precision: int = 3) -> float:
+    """
+    Calculate the trend (slope) of a sequence of values using linear regression.
+    
+    :param elements: A tuple of numeric values
+    :param precision: Number of decimal places to round the result to. Defaults to 3.
+    :return: The slope/trend value. Positive indicates ascending trend, negative indicates descending trend.
+    """
+    if not elements or len(elements) < 2:
+        return 0.0
+    
+    try:
+        # Convert to numbers and filter out non-numeric values
+        numeric_values = []
+        for val in elements:
+            try:
+                numeric_values.append(float(val))
+            except (ValueError, TypeError):
+                continue
+                
+        if len(numeric_values) < 2:
+            return 0.0
+            
+        n = len(numeric_values)
+        # Use indices as x-values (0, 1, 2, ..., n-1)
+        x_values = list(range(n))
+        y_values = numeric_values
+        
+        # Calculate linear regression slope: m = (n*Σxy - Σx*Σy) / (n*Σx² - (Σx)²)
+        sum_x = sum(x_values)
+        sum_y = sum(y_values)
+        sum_xy = sum(x * y for x, y in zip(x_values, y_values))
+        sum_x_squared = sum(x * x for x in x_values)
+        
+        denominator = n * sum_x_squared - sum_x * sum_x
+        if denominator == 0:
+            return 0.0
+            
+        slope = (n * sum_xy - sum_x * sum_y) / denominator
+        return round(slope, precision)
+        
+    except Exception as e:
+        logger.warning(f"Error calculating trend: {e}. Returning 0.0.")
+        return 0.0

@@ -1075,3 +1075,49 @@ class DaQMeasures:
             raise ValueError(f"Unsupported correlation/association method: {method}. Choose from {supported_methods}.")
 
         return pw.apply(calculate_correlation, x, y, precision, method)
+
+    @staticmethod
+    def trend(column_name: str, precision: int = 3) -> pw.internals.expression.ColumnExpression:
+        """
+        Static getter to retrieve a custom reducer that computes the trend (slope) of values in the window
+        using linear regression. Positive values indicate an ascending trend, negative values indicate
+        a descending trend, and values near zero indicate a stable trend.
+        
+        The trend is calculated as the slope of the best-fit line through the data points,
+        where x-axis represents the chronological order and y-axis represents the values.
+        
+        :param column_name: The column name of pw.this table to apply the trend reducer on.
+        :type column_name: str
+        :param precision: Number of decimal points to round the result to. Defaults to 3.
+        :type precision: int, optional
+        :return: A `pw.ColumnExpression` representing the result of applying the trend calculation
+                 to the specified column.
+        :rtype: pw.ColumnExpression
+        
+        Examples:
+            Add trend analysis as a data quality measurement:
+            
+            >>> daq.add(dqm.trend("price"), assess=">0", name="price_trending_up")
+            
+            Check for stable trend (close to zero):
+            
+            >>> daq.add(dqm.trend("temperature"), assess="[-0.1, 0.1]", name="stable_temperature")
+            
+            Monitor for declining trend:
+            
+            >>> daq.add(dqm.trend("user_engagement"), assess="<-0.5", name="engagement_declining")
+
+            Output
+
+            .. table::
+            
+            ==============  ===========  ======================
+            window_start    window_end   price_trending_up
+            ==============  ===========  ======================
+            10              15           (1.25, True)
+            15              20           (-0.83, False)
+            ==============  ===========  ======================
+        """
+        from streamdaq.utils import calculate_trend
+
+        return pw.apply(calculate_trend, pw.reducers.tuple(pw.this[column_name]), precision)
