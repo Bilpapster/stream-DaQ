@@ -1,0 +1,7 @@
+Collecting paho-mqtt
+  Downloading paho_mqtt-2.1.0-py3-none-any.whl.metadata
+     - 23.5 kB 228.3 MB/s 0:00:00
+Downloading paho_mqtt-2.1.0-py3-none-any.whl
+   - 67.2 kB 14.9 MB/s 0:00:00
+Installing collected packages: paho-mqtt
+Successfully installed paho-mqtt-2.1.0

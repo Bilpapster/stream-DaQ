@@ -1,6 +1,6 @@
 # Compact Data Representation for MQTT Input
 
-StreamDaQ now supports compact data representation for MQTT and other inputs, providing automatic transformation from compact format to native representation. This feature allows users to work with efficiently transmitted data while maintaining the same StreamDaQ experience.
+StreamDaQ now supports compact data representation for MQTT and other inputs, providing automatic transformation from compact format to native representation. This feature includes **production-ready MQTT connectivity** using the `paho-mqtt` client library.
 
 ## What is Compact Data Representation?
 
@@ -25,13 +25,15 @@ StreamDaQ automatically transforms this to:
 ## Key Benefits
 
 1. **Bandwidth Efficiency**: Reduces data transmission size by avoiding repeated field names
-2. **Transparent**: Users work with native field names as if data was originally in native format  
-3. **Automatic**: No manual transformation required from the user
-4. **Consistent**: Same StreamDaQ experience regardless of input format
+2. **Production Ready**: Uses `paho-mqtt` for reliable MQTT connectivity
+3. **Transparent**: Users work with native field names as if data was originally in native format  
+4. **Automatic**: No manual transformation required from the user
+5. **Secure**: Supports TLS/SSL encryption and authentication
+6. **Robust**: Includes error handling, reconnection, and graceful fallbacks
 
-## Usage
+## Production MQTT Setup
 
-### Basic Setup
+### Basic Production Usage
 
 ```python
 from streamdaq import StreamDaQ, DaQMeasures as dqm, Windows, mqtt_connectors
@@ -39,11 +41,18 @@ from streamdaq import StreamDaQ, DaQMeasures as dqm, Windows, mqtt_connectors
 # Define your expected field names
 field_names = ["temperature", "humidity", "pressure"]
 
-# Create MQTT source with compact support
+# Create production MQTT source
 mqtt_source = mqtt_connectors.create_mqtt_compact_streamdaq_source(
     field_names=field_names,
     broker_host="your-mqtt-broker.com",
-    topic="sensors/data"
+    broker_port=1883,
+    topic="sensors/data",
+    username="your_username",
+    password="your_password",
+    use_production=True,  # Uses paho-mqtt client (default)
+    client_id="streamdaq_client_001",
+    qos=1,
+    timeout=60
 )
 
 # Configure StreamDaQ with compact fields
@@ -64,79 +73,139 @@ daq.add(dqm.count('temperature'), assess=">0", name="temp_count") \
 daq.watch_out()
 ```
 
-### Custom Connector
-
-You can also use compact representation with custom connectors:
+### Secure MQTT with TLS
 
 ```python
-import pathway as pw
-from streamdaq.utils import transform_compact_to_native
-
-class CompactSchema(pw.Schema):
-    fields: list[str] 
-    values: list[float]
-    timestamp: int
-
-# Your custom connector
-compact_table = pw.io.python.read(your_connector, schema=CompactSchema)
-
-# Use with StreamDaQ
-daq = StreamDaQ().configure(
-    window=Windows.sliding(duration=30, hop=10),
-    time_column="timestamp", 
-    source=compact_table,
-    compact_fields=["sensor1", "sensor2", "sensor3"]
-)
-```
-
-## MQTT Integration
-
-The `mqtt_connectors` module provides ready-to-use MQTT connectivity:
-
-```python
-from streamdaq import mqtt_connectors
-
-# Create MQTT source
+# Production setup with TLS encryption
 mqtt_source = mqtt_connectors.create_mqtt_compact_streamdaq_source(
-    field_names=["temp", "humid", "press"],
-    broker_host="mqtt.example.com",
-    broker_port=1883,
-    topic="iot/sensors",
-    username="user",
-    password="pass",
-    qos=1
+    field_names=["sensor1", "sensor2", "sensor3"],
+    broker_host="secure-mqtt-broker.com",
+    broker_port=8883,  # TLS port
+    topic="production/sensors",
+    username="prod_user",
+    password="secure_password",
+    use_tls=True,
+    ca_certs="/path/to/ca-certificates.crt",
+    certfile="/path/to/client.crt",  # Optional client cert
+    keyfile="/path/to/client.key",   # Optional client key
+    qos=2,  # Highest QoS for critical data
+    client_id="streamdaq_production"
 )
 ```
 
-## Requirements and Assumptions
+## MQTT Features
 
-1. **Field Names Known in Advance**: You must provide the expected field names when configuring StreamDaQ
-2. **Consistent Schema**: The data schema (names and number of fields) should not change during execution
-3. **Ordered Values**: Values in the `values` array must correspond to the order of field names
-4. **Valid Format**: Input data must have both `fields` and `values` keys with matching array lengths
+### Production Features
+- ✅ **Real MQTT Connectivity**: Uses `paho-mqtt` library for production-grade MQTT communication
+- ✅ **TLS/SSL Support**: Secure encrypted connections with certificate validation
+- ✅ **Authentication**: Username/password and certificate-based authentication
+- ✅ **Quality of Service**: Full QoS 0, 1, 2 support for message delivery guarantees
+- ✅ **Error Handling**: Robust error handling with logging and fallback mechanisms
+- ✅ **Reconnection**: Automatic reconnection handling for network interruptions
+- ✅ **Message Validation**: Validates compact message format and field consistency
 
-## Implementation Details
+### Development Features
+- 🔧 **Simulation Mode**: Built-in simulation for development and testing
+- 🔧 **Fallback Support**: Graceful fallback when paho-mqtt is not available
+- 🔧 **Debug Logging**: Comprehensive logging for troubleshooting
 
-The compact-to-native transformation:
+## Installation
 
-1. **Automatic**: Triggered when `compact_fields` parameter is provided
-2. **Internal**: Completely transparent to the user
-3. **Efficient**: Uses Pathway UDFs for optimal performance
-4. **Type-Safe**: Maintains proper data types throughout the transformation
+The production MQTT connector requires the `paho-mqtt` library:
+
+```bash
+pip install streamdaq  # Includes paho-mqtt dependency
+```
+
+Or to install manually:
+```bash  
+pip install paho-mqtt>=1.6.0
+```
+
+## Configuration Options
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `field_names` | `List[str]` | Required | Expected field names in compact representation |
+| `broker_host` | `str` | `"localhost"` | MQTT broker hostname or IP |
+| `broker_port` | `int` | `1883` | MQTT broker port (8883 for TLS) |
+| `topic` | `str` | `"streamdaq/data"` | MQTT topic to subscribe to |
+| `username` | `str` | `None` | MQTT username (optional) |
+| `password` | `str` | `None` | MQTT password (optional) |
+| `use_production` | `bool` | `True` | Use paho-mqtt client vs simulation |
+| `client_id` | `str` | Auto-generated | Unique MQTT client identifier |
+| `qos` | `int` | `0` | Quality of Service level (0, 1, or 2) |
+| `timeout` | `int` | `60` | Connection timeout in seconds |
+| `use_tls` | `bool` | `False` | Enable TLS/SSL encryption |
+| `ca_certs` | `str` | `None` | Path to CA certificates file |
+| `certfile` | `str` | `None` | Path to client certificate file |
+| `keyfile` | `str` | `None` | Path to client private key file |
+
+## Message Format Validation
+
+The production connector validates incoming messages:
+
+```python
+# ✅ Valid compact message
+{
+    "fields": ["temp", "humid", "press"],
+    "values": [22.5, 65.0, 1013.25],
+    "timestamp": 1234567890  # Optional, auto-added if missing
+}
+
+# ❌ Invalid messages are rejected with logging
+{
+    "fields": ["temp", "humid"],
+    "values": [22.5, 65.0, 1013.25]  # Length mismatch
+}
+```
 
 ## Error Handling
 
-- Invalid compact format will cause processing warnings
-- Missing or mismatched field/value arrays are handled gracefully
-- Out-of-bounds field access returns sensible defaults (0.0)
+The production connector includes comprehensive error handling:
 
-## Example MQTT Message Formats
+```python
+# Connection errors
+[StreamDaQ MQTT] Failed to connect, return code 5
 
-### Sensor Data
+# Message validation errors  
+[StreamDaQ MQTT] Invalid message format: {...}
+
+# Field validation errors
+[StreamDaQ MQTT] Field mismatch. Expected: [...], Got: [...]
+
+# JSON parsing errors
+[StreamDaQ MQTT] JSON decode error: Expecting ',' delimiter
+```
+
+## Development and Testing
+
+For development and testing without a real MQTT broker:
+
+```python
+# Use simulation mode
+mqtt_source = mqtt_connectors.create_mqtt_compact_streamdaq_source(
+    field_names=["temp", "humidity"],
+    use_production=False  # Uses built-in simulation
+)
+```
+
+## Example MQTT Messages
+
+### IoT Sensor Data
 ```json
 {
-  "fields": ["temperature", "humidity", "light_level", "motion"],
-  "values": [22.5, 45.8, 350.0, 0.0],
+  "fields": ["temperature", "humidity", "light", "motion"],
+  "values": [22.5, 45.8, 350, 0],
+  "timestamp": 1758745400
+}
+```
+
+### Industrial Monitoring  
+```json
+{
+  "fields": ["pressure", "flow_rate", "temperature", "vibration"],
+  "values": [85.2, 1250.5, 78.3, 0.15],
   "timestamp": 1758745400
 }
 ```
@@ -150,13 +219,4 @@ The compact-to-native transformation:
 }
 ```
 
-### IoT Metrics
-```json
-{
-  "fields": ["cpu_usage", "memory_usage", "disk_usage", "network_io"],
-  "values": [75.2, 68.1, 45.0, 1024.5],
-  "timestamp": 1758745400
-}
-```
-
-This feature enables StreamDaQ to work seamlessly with space-efficient data transmission while maintaining full data quality monitoring capabilities.
+This production-ready implementation enables StreamDaQ to work with real MQTT infrastructures while maintaining the simplicity of compact data representation and automatic quality monitoring.

@@ -35,7 +35,8 @@ dependencies = [
     "matplotlib==3.10.1",
     "python-dateutil==2.9.0.post0",
     "datasketch~=1.6.5",
-    "datasketches~=5.1.0"
+    "datasketches~=5.1.0",
+    "paho-mqtt>=1.6.0"
 ]
 
 [project.urls]
