@@ -1,6 +1,7 @@
 from .DaQMeasures import DaQMeasures
 from .StreamDaQ import StreamDaQ
 from .Windows import sliding, tumbling
+from . import mqtt_connectors
 
 try:
     from importlib.metadata import PackageNotFoundError, version
@@ -16,4 +17,4 @@ except PackageNotFoundError:
     __version__ = "0.1.8-dev"
 
 # Make version accessible
-__all__ = ["StreamDaQ", "DaQMeasures", "Windows", "__version__", "tumbling", "sliding"]
+__all__ = ["StreamDaQ", "DaQMeasures", "Windows", "mqtt_connectors", "__version__", "tumbling", "sliding"]

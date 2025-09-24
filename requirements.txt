@@ -2,3 +2,4 @@ pathway
 matplotlib
 datasketch
 datasketches
+paho-mqtt

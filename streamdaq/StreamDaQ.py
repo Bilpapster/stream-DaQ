@@ -6,7 +6,7 @@ from pathway.internals import ReducerExpression
 from pathway.stdlib.temporal import Window
 
 from streamdaq.artificial_stream_generators import generate_artificial_random_viewership_data_stream as artificial
-from streamdaq.utils import create_comparison_function
+from streamdaq.utils import create_comparison_function, transform_compact_to_native
 
 
 class StreamDaQ:
@@ -40,6 +40,7 @@ class StreamDaQ:
         self.source = None
         self.sink_file_name = None
         self.sink_operation = None
+        self.compact_fields = None
 
     def configure(
         self,
@@ -54,6 +55,7 @@ class StreamDaQ:
         source: pw.internals.Table | None = None,
         sink_file_name: str = None,
         sink_operation: Callable[[pw.internals.Table], None] | None = None,
+        compact_fields: list[str] | None = None,
     ) -> Self:
         """
         Configures the DQ monitoring parameters. Specifying a window object, the key instance and the time column name
@@ -72,6 +74,8 @@ class StreamDaQ:
         :param source: the source to get data from.
         :param sink_file_name: the name of the file to write the output to
         :param sink_operation: the operation to perform in order to send data out of Stream DaQ, e.g., a Kafka topic.
+        :param compact_fields: list of field names for compact data representation. If provided, the source data
+        is expected to have 'fields' and 'values' columns that will be transformed to native representation.
         :return: a self reference, so that you can use your favorite, Spark-like, functional syntax :)
         """
         self.window = window
@@ -97,6 +101,7 @@ class StreamDaQ:
         self.source = source
         self.sink_file_name = sink_file_name
         self.sink_operation = sink_operation
+        self.compact_fields = compact_fields
         return self
 
     def add(
@@ -138,6 +143,10 @@ class StreamDaQ:
                 timestamp=pw.cast(float, pw.this.timestamp),
             )
             print("Data set to artificial")
+
+        # Apply compact-to-native transformation if compact_fields are specified
+        if self.compact_fields is not None and data is not None:
+            data = transform_compact_to_native(data, self.compact_fields)
 
         data_measurement = data.windowby(
             data[self.time_column],
