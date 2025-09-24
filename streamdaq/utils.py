@@ -1,6 +1,7 @@
 import logging
 from typing import Callable, Optional
 import numpy as np
+import pathway as pw
 
 # Configure logging
 logging.basicConfig(level=logging.WARNING)
@@ -269,7 +270,7 @@ def elements_satisfy_ordering(sorted_elements_by_time: tuple, ordering="ASC") ->
     return True
 
 
-def calculate_correlation(x, y, precision: int, method:str) -> float:
+def calculate_correlation(x, y, precision: int, method: str) -> float:
     """
     Computes the correlation/association between x and y, rounded to the specified precision.
 
@@ -496,3 +497,74 @@ def create_comparison_function(expr: str) -> Callable[[float], bool]:
     # If nothing matches, log warning and return identity function
     logger.warning(f"Unable to parse expression: {expr}. Using identity function.")
     return lambda x: True
+
+
+@pw.udf(deterministic=True)
+def extract_ith_value(values: list[float], i: int) -> float:
+    """
+    Extract the i-th value from a list of values.
+    Returns the value if index is valid, otherwise returns 0.0.
+
+    Args:
+        values: List of numeric values
+        i: Index to extract
+
+    Returns:
+        The value at index i, or 0.0 if index is out of bounds
+    """
+    return float(values[i]) if i < len(values) else 0.0
+
+
+def transform_compact_to_native(compact_table: pw.Table, field_names: list[str]) -> pw.Table:
+    """
+    Transform a compact representation table to native representation.
+
+    The compact table should have columns 'fields' and 'values' where:
+    - 'fields' contains a list of field names (same for all rows)
+    - 'values' contains a list of values corresponding to the fields
+
+    Args:
+        compact_table: Pathway table with compact representation
+        field_names: List of expected field names
+
+    Returns:
+        Pathway table with native representation (each field as a separate column)
+    """
+    # Create transformations for each field
+    transformations = {
+        field_names[i]: extract_ith_value(pw.this.values, i)
+        for i in range(len(field_names))
+    }
+
+    # Apply transformations and remove compact columns
+    native_table = compact_table.with_columns(**transformations).without("values", "fields")
+    return native_table
+
+
+def create_compact_data_connector(
+    field_names: list[str],
+    connector_subject: pw.io.python.ConnectorSubject
+) -> pw.Table:
+    """
+    Create a connector that automatically transforms compact data to native representation.
+
+    Args:
+        field_names: List of field names in the expected order
+        connector_subject: The connector subject that provides compact data
+
+    Returns:
+        Pathway table with native representation
+    """
+    from pathway import Schema
+
+    class CompactSchema(Schema):
+        fields: list[str]
+        values: list[float]
+
+    # Read the compact data
+    compact_table = pw.io.python.read(connector_subject, schema=CompactSchema)
+
+    # Transform to native representation
+    native_table = transform_compact_to_native(compact_table, field_names)
+
+    return native_table
