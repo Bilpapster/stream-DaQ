@@ -562,7 +562,7 @@ def unpack_schema(t):
     return str(t)
 
 
-def extract_error_number(error_str: str) -> int:
+def extract_violation_count(error_str: str) -> int:
     """
     Extracts the first digit(s) at the start of a validation error string
     and returns them as an integer.

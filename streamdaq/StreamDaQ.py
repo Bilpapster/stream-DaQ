@@ -6,7 +6,7 @@ from pathway.internals import ReducerExpression
 from pathway.stdlib.temporal import Window
 
 from streamdaq.artificial_stream_generators import generate_artificial_random_viewership_data_stream as artificial
-from streamdaq.utils import create_comparison_function, extract_error_number
+from streamdaq.utils import create_comparison_function, extract_violation_count
 from streamdaq.SchemaValidator import SchemaValidator
 
 
@@ -148,10 +148,11 @@ class StreamDaQ:
         if self.schema_validator is not None:
             validated_data = self.schema_validator.validate_data_stream(data)
 
-            # Create stream for deflected records if needed
+            # Create stream of raw events for deflected records if needed
             if self.schema_validator.settings().deflect_violating_records:
                 deflected_stream = validated_data.filter(pw.this._validation_metadata[0] == False)
 
+            # Apply measurements on valid records only
             if self.schema_validator.settings().filter_respecting_records:
                 validated_data = validated_data.filter(pw.this._validation_metadata[0] == True)
                 data_measurement = validated_data.windowby(
@@ -170,15 +171,14 @@ class StreamDaQ:
                 column_args = {col: pw.this[col] for col in validated_data.column_names()}
                 validated_data = validated_data.select(
                     **column_args,
-                    schema_errors=pw.apply_with_type(extract_error_number,int,pw.this._validation_metadata[1]),
+                    schema_errors=pw.apply_with_type(extract_violation_count,int,pw.this._validation_metadata[1]),
                     error_messages=pw.apply_with_type(lambda x: None if x == '' else x, str | None,
                                                       pw.this._validation_metadata[1])
                 )
-                if self.schema_validator.settings().show_error_messages:
-                    all_measures = {**self.measures, "schema_errors": pw.reducers.tuple(pw.this.error_messages, skip_nones=True)}
-                else:
-                    all_measures = self.measures
+                all_measures = {**self.measures,
+                                "schema_errors": pw.reducers.tuple(pw.this.error_messages, skip_nones=True)}
 
+                # Windowing and applying all measures including schema violations
                 data_measurement = (validated_data.windowby(
                     validated_data[self.time_column],
                     window=self.window,
@@ -191,9 +191,15 @@ class StreamDaQ:
                     # todo handle the case int | timedelta
                 ).reduce(**all_measures))
 
-            # todo: Traversal of should alert to raise alerts for the window if needed
-            alerts = self.schema_validator.raise_alerts(data_measurement)
-            pw.debug.compute_and_print(alerts)
+            # Handle schema violation alerts
+            alerts = None
+            if self.schema_validator.settings().log_violations or self.schema_validator.settings().raise_on_violation:
+                alerts = self.schema_validator.raise_alerts(data_measurement)
+
+            # Remove error messages from output if not asked
+            if not self.schema_validator.settings().include_error_messages:
+                cols_to_keep = {col: pw.this[col] for col in data_measurement.column_names() if col != "schema_errors"}
+                data_measurement = data_measurement.select(**cols_to_keep)
 
         else:
             data_measurement = data.windowby(
@@ -212,14 +218,20 @@ class StreamDaQ:
         if start:
             if self.sink_operation is None:
                 pw.debug.compute_and_print(data_measurement)
-                if self.schema_validator is not None and self.schema_validator.settings().deflect_violating_records:
+                if self.schema_validator.settings().deflect_violating_records and self.schema_validator.settings().deflection_sink is None:
                     pw.debug.compute_and_print(deflected_stream)
+
+                if alerts is not None:
+                    pw.debug.table_to_dicts(alerts) # Force computation to create alerts on the fly - ignore result table
             else:
                 self.sink_operation(data_measurement)
-
-                if self.schema_validator is not None and self.schema_validator.settings().deflect_violating_records:
+                if self.schema_validator is not None and self.schema_validator.settings().deflect_violating_records and self.schema_validator.settings().deflection_sink is not None:
                     self.schema_validator.settings().deflection_sink(deflected_stream)
 
-                pw.run()
+                if alerts is not None:
+                    pw.run_all() # Force computation to create alerts on the fly - ignore result table
+                else:
+                    pw.run()
+
         else:
-            return validated_data
+            return data_measurement

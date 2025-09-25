@@ -36,7 +36,7 @@ class SchemaValidatorConfig:
     deflect_violating_records: bool = False,
     deflection_sink: Optional[Callable[[pw.internals.Table], None]] = None,
     filter_respecting_records: bool = False,
-    show_error_messages: bool = True
+    include_error_messages: bool = True
 
 
 class SchemaValidator:
@@ -50,7 +50,6 @@ class SchemaValidator:
         :param config: Schema validation configuration
         """
         self.config = config
-        self.violation_count = 0
         self.window_count = 0
         self.logger = logging.getLogger(__name__)
 
@@ -60,9 +59,6 @@ class SchemaValidator:
 
         if config.alert_mode == AlertMode.ONLY_IF and config.condition_func is None:
             raise ValueError("condition_func must be specified when using ONLY_IF alert mode")
-
-        if config.deflect_violating_records and config.deflection_sink is None:
-            raise ValueError("deflection_sink must be specified when deflecting violating records")
 
     def validate_record(self, record: Dict[str, Any]) -> tuple[bool, Optional[str]]:
         """
@@ -81,11 +77,11 @@ class SchemaValidator:
     def should_alert(self, record: Dict[str, Any]) -> bool:
         """
         Determine if an alert should be raised based on the alert mode.
-        :param is_valid: Whether the record passed validation
         :param record: The record being validated
         :return: True if an alert should be raised
         """
         schema_error = record.get('schema_errors', None)
+        self.window_count += 1
 
         if all(error == '' for error in schema_error):
             return False
@@ -103,7 +99,6 @@ class SchemaValidator:
         """
         Apply schema validation to input data stream.
         :param data: Input data stream
-        :param time_column: Name of the time column in the data
         :return:  Input data stream with validation results added
         """
         def validate_row(**kwargs) -> tuple[bool, str]:
@@ -151,16 +146,28 @@ class SchemaValidator:
         return pw_schema
 
     def raise_alerts(self, data: pw.Table) -> tuple[pw.Table, pw.Table]:
+        """
+        Raise alerts based on schema validation results and configured alert mode.
+        Args:
+            data: Processed stream with schema validation metadata.
+        Returns:
+
+        """
         def alert_if_needed(**kwargs) -> bool:
             record = dict(kwargs)
-            alert = self.should_alert(record)
+            alert = self.should_alert(record) # Check if alert should be raised based on alert mode
             if alert:
                 for error in record.get('schema_errors'):
                     if error is not None:
-                        self.logger.warning(f"Schema violation detected: {error}")
-
+                        if self.config.raise_on_violation:
+                            raise ValueError(f"Schema violation detected: {error}")
+                        else:
+                            self.logger.warning(
+                                f"[{record.get('window_start')}] Schema violation detected: {error}"
+                            )
             return alert
 
+        # Traverse the data stream and apply alerting logic
         column_args = {col: pw.this[col] for col in data.column_names()}
         alert_stream = data.select(
             is_valid=pw.apply_with_type(
@@ -181,8 +188,8 @@ def create_schema_validator(
     raise_on_violation: bool = False,
     deflect_violating_records: bool = False,
     deflection_sink: Optional[Callable[[pw.internals.Table], None]] = None,
-    filter_respecting_records: bool = True,
-    show_error_messages: bool = True
+    filter_respecting_records: bool = False,
+    include_error_messages: bool = True
 ) -> SchemaValidator:
     """
     Factory function to create a schema validator with simplified parameters.
@@ -195,11 +202,8 @@ def create_schema_validator(
     :param deflect_violating_records: Whether to deflect violating records to a separate stream
     :param deflection_sink: Deflected records sink function
     :param filter_respecting_records: Whether to filter the respecting records
-    :param show_error_messages: Whether to include error messages in logs
+    :param include_error_messages: Whether to include error messages in output stream
     :return: Configured SchemaValidator instance
-
-    Args:
-        deflection_sink:
     """
     if isinstance(alert_mode, str):
         alert_mode = AlertMode(alert_mode)
@@ -214,7 +218,7 @@ def create_schema_validator(
         deflect_violating_records = deflect_violating_records,
         deflection_sink=deflection_sink,
         filter_respecting_records = filter_respecting_records,
-        show_error_messages = show_error_messages
+        include_error_messages = include_error_messages
     )
 
     return SchemaValidator(config)
