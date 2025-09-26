@@ -152,11 +152,39 @@ class StreamDaQ:
             if self.schema_validator.settings().deflect_violating_records:
                 deflected_stream = validated_data.filter(pw.this._validation_metadata[0] == False)
 
+            column_args = {col: pw.this[col] for col in validated_data.column_names()}
+            validated_data = validated_data.select(
+                **column_args,
+                schema_errors=pw.apply_with_type(extract_violation_count, int, pw.this._validation_metadata[1]),
+                error_messages=pw.apply_with_type(lambda x: None if x == '' else x, str | None,
+                                                  pw.this._validation_metadata[1])
+            )
+            all_measures = {**self.measures,
+                            "schema_errors": pw.reducers.tuple(pw.this.error_messages, skip_nones=True)}
+
+            # Windowing and applying all measures including schema violations
+            data_measurement = (validated_data.windowby(
+                validated_data[self.time_column],
+                window=self.window,
+                instance=validated_data[self.instance] if self.instance is not None else None,
+                behavior=(
+                    pw.temporal.exactly_once_behavior(shift=self.wait_for_late)
+                    if self.window_behavior is None
+                    else self.window_behavior
+                ),
+                # todo handle the case int | timedelta
+            ).reduce(**all_measures))
+
+            # Handle schema violation alerts
+            alerts = None
+            if self.schema_validator.settings().log_violations or self.schema_validator.settings().raise_on_violation:
+                alerts = self.schema_validator.raise_alerts(data_measurement)
+
             # Apply measurements on valid records only
             if self.schema_validator.settings().filter_respecting_records:
-                validated_data = validated_data.filter(pw.this._validation_metadata[0] == True)
-                data_measurement = validated_data.windowby(
-                    validated_data[self.time_column],
+                filtered_data = validated_data.filter(pw.this._validation_metadata[0] == True)
+                data_measurement = filtered_data.windowby(
+                    filtered_data[self.time_column],
                     window=self.window,
                     instance=validated_data[self.instance] if self.instance is not None else None,
                     behavior=(
@@ -166,35 +194,6 @@ class StreamDaQ:
                     ),
                     # todo handle the case int | timedelta
                 ).reduce(**self.measures)
-            else:
-                # Helper reducer for aggregating deflected records in a proper way
-                column_args = {col: pw.this[col] for col in validated_data.column_names()}
-                validated_data = validated_data.select(
-                    **column_args,
-                    schema_errors=pw.apply_with_type(extract_violation_count,int,pw.this._validation_metadata[1]),
-                    error_messages=pw.apply_with_type(lambda x: None if x == '' else x, str | None,
-                                                      pw.this._validation_metadata[1])
-                )
-                all_measures = {**self.measures,
-                                "schema_errors": pw.reducers.tuple(pw.this.error_messages, skip_nones=True)}
-
-                # Windowing and applying all measures including schema violations
-                data_measurement = (validated_data.windowby(
-                    validated_data[self.time_column],
-                    window=self.window,
-                    instance=validated_data[self.instance] if self.instance is not None else None,
-                    behavior=(
-                        pw.temporal.exactly_once_behavior(shift=self.wait_for_late)
-                        if self.window_behavior is None
-                        else self.window_behavior
-                    ),
-                    # todo handle the case int | timedelta
-                ).reduce(**all_measures))
-
-            # Handle schema violation alerts
-            alerts = None
-            if self.schema_validator.settings().log_violations or self.schema_validator.settings().raise_on_violation:
-                alerts = self.schema_validator.raise_alerts(data_measurement)
 
             # Remove error messages from output if not asked
             if not self.schema_validator.settings().include_error_messages:
