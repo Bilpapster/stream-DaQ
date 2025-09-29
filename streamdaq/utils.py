@@ -496,3 +496,65 @@ def create_comparison_function(expr: str) -> Callable[[float], bool]:
     # If nothing matches, log warning and return identity function
     logger.warning(f"Unable to parse expression: {expr}. Using identity function.")
     return lambda x: True
+
+
+def keep_numbers_only(elements: tuple) -> list[float]:
+    """Keeps only the numerical elements from `elements`
+    and returns a new list with them.
+
+    Args:
+        elements (tuple): the tuple to keep numbers from.
+
+    Returns:
+        list[float]: a list of float numbers found in `elements`.
+    """
+    if not numbers:
+        return []
+    
+    numbers = []
+    for element in elements:
+        try:
+            numbers.append(float(element))
+        except(ValueError, TypeError):
+            continue
+    return numbers
+
+
+def calculate_slope_best_line_fit(elements: tuple, timestamps: tuple, precision: int = 3) -> float:
+    if not elements or len(elements) < 2:
+        return 0.0
+    
+    numbers = []
+    timestamps_of_numbers = []
+    for element, timestamp in zip(elements, timestamps):
+        try:
+            numbers.append(float(element))
+            timestamps_of_numbers.append(timestamp)
+        except(ValueError, TypeError):
+            continue
+    
+    if len(numbers) < 2:
+        return 0.0
+    
+    # pathway cannot guarantee that tuple will be in chronological order, even all elements arrived in correct order
+    # so, we need to ensure chronological ordering before computing the slope of the best line fit
+    # timestamps_of_numbers, numbers = sort_by_timestamp(timestamps_of_numbers, numbers, "")
+    # TODO: Debug the time-based behavior of pathway in another PR.
+    
+    import numpy as np
+    # make the first timestamp be t_0=0 and then respect the original difference between them
+    x = np.array(timestamps_of_numbers, dtype=float) - min(timestamps_of_numbers)
+    y = np.array(numbers, dtype=float)
+    
+    try:
+        # using the formula trend = \frac{Σ(x-x_μ)(y-y_μ)}{Σ(x-x_μ)^2}
+        # For more information see formula of \beta here: https://en.wikipedia.org/wiki/Simple_linear_regression
+        x_mean = np.mean(x)
+        y_mean = np.mean(y)
+        numerator = np.sum(x - x_mean * y - y_mean)
+        denominator = np.sum((x - x_mean) ** 2)
+        trend = numerator / denominator
+        return round(trend, precision)
+    except(ValueError, TypeError):
+        return float("nan")
+        
