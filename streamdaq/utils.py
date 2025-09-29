@@ -297,7 +297,6 @@ def calculate_correlation(x, y, precision: int, method: str) -> float:
         # If the input arrays are empty or have different lengths, scipy will raise a ValueError
         return float("nan")
 
-
 def plot_threshold_segments(
         timestamps, values, max_threshold=None, min_threshold=None, normal_color="blue", violation_color="red"
 ):
