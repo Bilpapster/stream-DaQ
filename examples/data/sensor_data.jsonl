@@ -1,0 +1,15 @@
+{"user_id": "", "timestamp": 1694877000, "interaction_events": -3, "temperature": 150.5}
+{"user_id": "user123", "timestamp": 1694877060, "interaction_events": 5, "temperature": 22.3}
+{"user_id": "a", "timestamp": 1694877120, "interaction_events": 0, "temperature": -60}
+{"user_id": "user456", "timestamp": 1694877180, "interaction_events": 10, "temperature": 99.9}
+{"user_id": "user789", "timestamp": 1694877240, "interaction_events": 3.5, "temperature": 10}
+{"user_id": "   ", "timestamp": 1694877300, "interaction_events": 2, "temperature": -49.9}
+{"user_id": "user000", "timestamp": 1694877360, "interaction_events": -1, "temperature": 20}
+{"user_id": "xyz", "timestamp": 1694877420, "interaction_events": 1000000, "temperature": 75}
+{"user_id": "user_long_id_1234567890", "timestamp": 1694877480, "interaction_events": 1, "temperature": 25}
+{"user_id": "ok", "timestamp": 1694877540, "interaction_events": 4, "temperature": 101}
+{"user_id": "VIP_short", "timestamp": 1694877600, "interaction_events": 7, "temperature": -55}
+{"user_id": "xyz", "timestamp": 1694877660, "interaction_events": 2.2, "temperature": 50}
+{"user_id": "xyz", "timestamp": 1694877720, "interaction_events": -100, "temperature": -100}
+{"user_id": "user_test", "timestamp": 1694877780, "interaction_events": 6, "temperature": 10}
+{"user_id": "X", "timestamp": 1694877840, "interaction_events": 0, "temperature": 100}

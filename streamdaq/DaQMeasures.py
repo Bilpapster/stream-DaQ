@@ -38,16 +38,6 @@ class DaQMeasures:
         return pw.reducers.count(pw.this[column_name])
 
     @staticmethod
-    def sum(column_name: str) -> pw.internals.expression.ReducerExpression:
-        """
-        Static getter to retrieve a sum pathway reducer, applied on current table (pw.this) in the specified column
-        by column name
-        :param column_name: the column name of pw.this table to apply the sum reducer on.
-        :return: a pathway sum reducer
-        """
-        return pw.reducers.sum(pw.this[column_name])
-
-    @staticmethod
     def availability(column_name: str) -> pw.internals.expression.ColumnExpression:
         """
         Static getter to retrieve a count pathway reducer, applied on current table (pw.this) in the specified column

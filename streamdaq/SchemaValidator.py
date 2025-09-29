@@ -33,10 +33,11 @@ class SchemaValidatorConfig:
     condition_func: Optional[Callable[[Dict[str, Any]], bool]] = None  # Used with ONLY_IF mode
     log_violations: bool = True
     raise_on_violation: bool = False
-    deflect_violating_records: bool = False,
-    deflection_sink: Optional[Callable[[pw.internals.Table], None]] = None,
-    filter_respecting_records: bool = False,
+    deflect_violating_records: bool = False
+    deflection_sink: Optional[Callable[[pw.internals.Table], None]] = None
+    filter_respecting_records: bool = False
     include_error_messages: bool = True
+    column_name: str = "_schema_errors"  # Column to store validation results
 
 
 class SchemaValidator:
@@ -60,19 +61,6 @@ class SchemaValidator:
         if config.alert_mode == AlertMode.ONLY_IF and config.condition_func is None:
             raise ValueError("condition_func must be specified when using ONLY_IF alert mode")
 
-    def validate_record(self, record: Dict[str, Any]) -> tuple[bool, Optional[str]]:
-        """
-        Validate a single record against the schema.
-        :param record: Dictionary containing the record to validate
-        :return: Tuple of (is_valid, error_message)
-        """
-        try:
-            self.config.schema(**record)
-            return True, None
-        except ValidationError as e:
-            error_msg = str(e)
-            return False, error_msg
-
 
     def should_alert(self, record: Dict[str, Any]) -> bool:
         """
@@ -80,22 +68,33 @@ class SchemaValidator:
         :param record: The record being validated
         :return: True if an alert should be raised
         """
-        schema_error = record.get('schema_errors', None)
-        self.window_count += 1
-
-        if all(error == '' for error in schema_error):
-            return False
+        schema_error = record.get('error_messages', None)
+        has_violations = bool(schema_error and any(error for error in schema_error if error))
 
         if self.config.alert_mode == AlertMode.PERSISTENT:
-            return True
+            if has_violations:
+                return True
+            else:
+                return False
         elif self.config.alert_mode == AlertMode.ONLY_ON_FIRST_K:
-            return self.window_count < self.config.k_windows
+            if has_violations:
+                self.window_count += 1
+                should_alert = self.window_count <= self.config.k_windows
+                return should_alert
+            else:
+                # Reset counter when compliance is restored and log if we had consecutive violations
+                if self.window_count >= self.config.k_windows:
+                    self.logger.info(
+                        f"Schema compliance restored after {self.window_count} consecutive windows with violations")
+                self.window_count = 0
+                return False
         elif self.config.alert_mode == AlertMode.ONLY_IF:
-            return self.config.condition_func(record)
+            if has_violations and self.config.condition_func:
+                return self.config.condition_func(record)
+            else:
+                return False
 
-        return False
-
-    def validate_data_stream(self, data: pw.Table) -> tuple[pw.Table, pw.Table]:
+    def validate_data_stream(self, data: pw.Table) -> pw.Table:
         """
         Apply schema validation to input data stream.
         :param data: Input data stream
@@ -106,7 +105,11 @@ class SchemaValidator:
             # Convert keyword arguments to a dictionary for validation
             row_dict = dict(kwargs)
 
-            is_valid, error_msg = self.validate_record(row_dict)
+            try:
+                self.config.schema(**row_dict)
+                is_valid, error_msg = True, None
+            except ValidationError as e:
+                is_valid, error_msg = False, str(e)
 
             return is_valid, construct_error_message(row_dict, error_msg, stream_flag=True) or ""
 
@@ -145,26 +148,32 @@ class SchemaValidator:
         pw_schema = pw.schema_from_types(**{k: v for k, v in raw_dict_schema.items()})
         return pw_schema
 
-    def raise_alerts(self, data: pw.Table) -> tuple[pw.Table, pw.Table]:
+    def raise_alerts(self, data: pw.Table) -> pw.Table:
         """
         Raise alerts based on schema validation results and configured alert mode.
         Args:
             data: Processed stream with schema validation metadata.
         Returns:
+            pw.Table: A table containing an `is_valid` column indicating whether
+            an alert was raised for each record based on the configured alert mode
+            and validation results. It's a dummy table just to force the computation into the function.
 
         """
         def alert_if_needed(**kwargs) -> bool:
             record = dict(kwargs)
             alert = self.should_alert(record) # Check if alert should be raised based on alert mode
-            if alert:
-                for error in record.get('schema_errors'):
-                    if error is not None:
-                        if self.config.raise_on_violation:
-                            raise ValueError(f"Schema violation detected: {error}")
-                        else:
-                            self.logger.warning(
-                                f"[{record.get('window_start')}] Schema violation detected: {error}"
-                            )
+            if not alert:
+                return False  # Return False for clarity.
+
+            for error in record.get('error_messages'):
+                if not error:
+                    continue
+                if self.config.raise_on_violation:
+                    raise ValueError(f"Schema violation detected: {error}")
+                # else would be redundant here imho since we are raising an exception
+                self.logger.warning(
+                    f"[{record.get('window_start')}] Schema violation detected: {error}"
+                )
             return alert
 
         # Traverse the data stream and apply alerting logic
@@ -189,7 +198,8 @@ def create_schema_validator(
     deflect_violating_records: bool = False,
     deflection_sink: Optional[Callable[[pw.internals.Table], None]] = None,
     filter_respecting_records: bool = False,
-    include_error_messages: bool = True
+    include_error_messages: bool = True,
+    column_name: str = "_schema_errors"
 ) -> SchemaValidator:
     """
     Factory function to create a schema validator with simplified parameters.
@@ -203,6 +213,7 @@ def create_schema_validator(
     :param deflection_sink: Deflected records sink function
     :param filter_respecting_records: Whether to filter the respecting records
     :param include_error_messages: Whether to include error messages in output stream
+    :param column_name: Column name to store validation results
     :return: Configured SchemaValidator instance
     """
     if isinstance(alert_mode, str):
@@ -218,7 +229,8 @@ def create_schema_validator(
         deflect_violating_records = deflect_violating_records,
         deflection_sink=deflection_sink,
         filter_respecting_records = filter_respecting_records,
-        include_error_messages = include_error_messages
+        include_error_messages = include_error_messages,
+        column_name=column_name
     )
 
     return SchemaValidator(config)

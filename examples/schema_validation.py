@@ -1,13 +1,18 @@
 from typing import Optional
+from pathway import io
 from pydantic import BaseModel, Field
 import pathway as pw
 
 from streamdaq import StreamDaQ, DaQMeasures as dqm, Windows
-from streamdaq.SchemaValidator import SchemaValidator, create_schema_validator, AlertMode
+from streamdaq.SchemaValidator import create_schema_validator, AlertMode
 
-# Define Pydantic schema for our data stream
 class SensorData(BaseModel):
-    """Pydantic model for sensor data stream validation."""
+    """
+    Pydantic model for sensor data stream validation.
+
+        For available field arguments and validation options, see:
+        https://docs.pydantic.dev/latest/concepts/fields/
+    """
     user_id: str = Field(..., min_length=1, description="User identifier")
     timestamp: int = Field(..., description="Timestamp string")
     interaction_events: float = Field(..., ge=0, description="Number of interaction events")
@@ -26,7 +31,6 @@ def write_to_jsonlines_deflect(data: pw.internals.Table) -> None:
     # Here, we just write the output as jsonlines to 'output.jsonlines'.
     # New quality assessment results are written (appended) to the file on the fly, when window processing is finished.
     pw.io.jsonlines.write(data, "deflect_data_output.jsonlines")
-    # pw.debug.compute_and_print(data)
 
 
 def example_persistent_alerts():
@@ -37,16 +41,18 @@ def example_persistent_alerts():
     validator = create_schema_validator(
         schema=SensorData,
         alert_mode=AlertMode.PERSISTENT,
-        log_violations=True,
+        log_violations=False,
         raise_on_violation=False,
         deflect_violating_records=False,
         filter_respecting_records=False,
-        include_error_messages=False
+        deflection_sink=write_to_jsonlines_deflect,
+        include_error_messages=True,
+        column_name="schema_errors"
     )
     InputSchema = validator.create_pw_schema()
 
     sensor_data = pw.io.jsonlines.read(
-            "../data/sensor_data.json",
+            "data/sensor_data.jsonl",
             schema=InputSchema,
             mode="static"
         )
@@ -62,11 +68,8 @@ def example_persistent_alerts():
     )
 
     # Add data quality measures
-    daq.add(dqm.count('interaction_events'), assess="(5, 15]", name="count") \
-       .add(dqm.max('interaction_events'), assess=">5.09", name="max_interact") \
-       .add(dqm.median('interaction_events'), assess="[3, 8]", name="med_interact") \
-       .add(dqm.sum('schema_errors'), name="count_deflected") \
-       .add(dqm.mean('schema_errors'), assess="(3, 7]", name="mean_deflected")
+    daq.add(dqm.count('interaction_events'), assess="(0, 10]", name="count") \
+       .add(dqm.mean('schema_errors'), assess="[0, 1]", name="mean_deflected")
 
     print("StreamDaQ configured with persistent schema validation")
     daq.watch_out()
@@ -82,17 +85,17 @@ def example_first_k_alerts():
         schema=SensorData,
         alert_mode=AlertMode.ONLY_ON_FIRST_K,
         k_windows=3,
-        log_violations=False,
+        log_violations=True,
         raise_on_violation=False,
-        deflect_violating_records=False,
+        deflect_violating_records=True,
         deflection_sink=write_to_jsonlines_deflect,
         filter_respecting_records=False,
-        include_error_messages=True
+        include_error_messages=False
     )
     InputSchema = validator.create_pw_schema()
 
     sensor_data = pw.io.jsonlines.read(
-            "../data/sensor_data.json",
+            "data/sensor_data.jsonl",
             schema=InputSchema,
             mode="static"
         )
@@ -104,15 +107,12 @@ def example_first_k_alerts():
         wait_for_late=1,
         time_format=None,
         schema_validator=validator,
+        sink_operation=write_to_jsonlines,
         source=sensor_data
     )
 
     # Add data quality measures
-    daq.add(dqm.count('interaction_events'), assess="(5, 15]", name="count") \
-       .add(dqm.max('interaction_events'), assess=">5.09", name="max_interact") \
-       .add(dqm.median('interaction_events'), assess="[3, 8]", name="med_interact") \
-       .add(dqm.sum('schema_errors'), name="count_deflected") \
-       .add(dqm.mean('schema_errors'), assess="(3, 7]", name="mean_deflected")
+    daq.add(dqm.count('interaction_events'), assess="(0, 10]", name="count") \
 
     print("StreamDaQ configured with first-3-windows schema validation")
     print("Alerts will only be raised for the first 3 windows with violations")
@@ -142,13 +142,13 @@ def example_conditional_alerts():
         deflect_violating_records=False,
         deflection_sink=write_to_jsonlines_deflect,
         filter_respecting_records=False,
-        include_error_messages=True
+        include_error_messages=False
     )
 
     InputSchema = validator.create_pw_schema()
 
     sensor_data = pw.io.jsonlines.read(
-        "../data/sensor_data.json",
+        "data/sensor_data.jsonl",
         schema=InputSchema,
         mode="static"
     )
@@ -164,8 +164,7 @@ def example_conditional_alerts():
     )
 
     # Add data quality measures
-    daq.add(dqm.distinct_count('user_id'), name="unique_users") \
-       .add(dqm.mean('interaction_events'), name="mean_interact")
+    daq.add(dqm.distinct_count('user_id'), name="unique_users")
 
     print("StreamDaQ configured with conditional schema validation")
     daq.watch_out()
@@ -178,7 +177,9 @@ if __name__ == "__main__":
 
     try:
         example_persistent_alerts()
+        print()
         example_first_k_alerts()
+        print()
         example_conditional_alerts()
 
     except Exception as e:
