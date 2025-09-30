@@ -8,11 +8,13 @@ version = "0.2.1"
 description = "Plug-and-play real-time quality monitoring for data streams!"
 authors = [
     {name = "Vassilis Papastergios", email = "papster@csd.auth.gr"},
+    {name = "George Atmatzidis"},
     {name = "Apostolos Giannoulidis"},
     {name = "Anastasios Gounaris", email = "gounaria@csd.auth.gr"}
 ]
 maintainers = [
-    {name = "Vassilis Papastergios", email = "papster@csd.auth.gr"}
+    {name = "Vassilis Papastergios", email = "papster@csd.auth.gr"},
+    {name = "George Atmatzidis"}
 ]
 readme = "README.md"
 license = {text = "MIT"}
