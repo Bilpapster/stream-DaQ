@@ -5,6 +5,7 @@ Schema Validation Example
 --------------------------
 
 .. code-block:: python
+    
     # pip install streamdaq
     
     from typing import Optional
