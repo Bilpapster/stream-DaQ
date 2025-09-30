@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "streamdaq"
-version = "0.2.0"
+version = "0.2.1"
 description = "Plug-and-play real-time quality monitoring for data streams!"
 authors = [
     {name = "Vassilis Papastergios", email = "papster@csd.auth.gr"},
@@ -82,6 +82,6 @@ max-line-length = 120
 extend-ignore = "E203,W503"
 
 [tool.mypy]
-python_version = "0.2.0"
+python_version = "0.2.1"
 warn_return_any = true
 warn_unused_configs = true
