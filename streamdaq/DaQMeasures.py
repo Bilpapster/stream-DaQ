@@ -1129,7 +1129,9 @@ class DaQMeasures:
         from streamdaq.utils import calculate_slope_best_line_fit
 
         return pw.apply_with_type(
-            calculate_slope_best_line_fit, float, 
+            calculate_slope_best_line_fit,
+            float,
             pw.reducers.tuple(pw.this[column_name]),
-            pw.reducers.tuple(pw.this[time_column]), precision
+            pw.reducers.tuple(pw.this[time_column]),
+            precision,
         )
