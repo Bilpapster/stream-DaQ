@@ -39,6 +39,7 @@ class StreamDaQ:
         self.show_window_start = True
         self.show_window_end = True
         self.source = None
+        self.sources = None
         self.sink_file_name = None
         self.sink_operation = None
         self.schema_validator = None
@@ -54,6 +55,7 @@ class StreamDaQ:
             show_window_start: bool = True,
             show_window_end: bool = True,
             source: pw.internals.Table | None = None,
+            sources: list[pw.internals.Table] | None = None,
             sink_file_name: str = None,
             sink_operation: Callable[[pw.internals.Table], None] | None = None,
             schema_validator: SchemaValidator | None = None
@@ -72,7 +74,8 @@ class StreamDaQ:
         the results
         :param show_window_end: boolean flag to specify whether the window ending timestamp should be included in
         the results
-        :param source: the source to get data from.
+        :param source: the source to get data from (single source).
+        :param sources: a list of sources to get data from (multiple sources). Cannot be used together with `source`.
         :param sink_file_name: the name of the file to write the output to
         :param sink_operation: the operation to perform in order to send data out of Stream DaQ, e.g., a Kafka topic.
         :param schema_validator: an optional schema validator to apply on the input data stream
@@ -84,6 +87,11 @@ class StreamDaQ:
         self.time_column = time_column
         self.wait_for_late = wait_for_late
         self.time_format = time_format
+
+        # Validate that both source and sources are not provided simultaneously
+        if source is not None and sources is not None:
+            raise ValueError("Cannot specify both 'source' and 'sources' parameters. Use 'source' for a single "
+                             "input source or 'sources' for multiple input sources.")
 
         if self.instance:
             self.measures[self.instance] = pw.reducers.any(pw.this[self.instance])
@@ -99,6 +107,7 @@ class StreamDaQ:
             self.assessments["window_end"] = pw.this._pw_window_end
 
         self.source = source
+        self.sources = sources
         self.sink_file_name = sink_file_name
         self.sink_operation = sink_operation
         self.schema_validator = schema_validator
@@ -131,13 +140,32 @@ class StreamDaQ:
         return self
 
     def _get_data_source_or_else_artificial(self) -> pw.Table:
-        """Get data source, falling back to artificial if none specified."""
+        """Get data source, falling back to artificial if none specified.
+
+        When multiple sources are provided, concatenates them into a single table.
+        Ensures all tables have disjoint universes before concatenation.
+        """
+        # If multiple sources are provided, concatenate them
+        if self.sources is not None:
+            if len(self.sources) == 0:
+                raise ValueError("The 'sources' list cannot be empty.")
+
+            # Ensure universes are disjoint before concatenation
+            pw.universes.promise_are_pairwise_disjoint(*self.sources)
+
+            # Start with the first source and concatenate the rest
+            result = self.sources[0]
+            for source in self.sources[1:]:
+                result = result.concat(source)
+            return result
+
+        # Single source case
         if self.source is None:
             data = artificial(number_of_rows=100, input_rate=10).with_columns(
                 date_and_time=pw.this.timestamp.dt.strptime(self.time_format),
                 timestamp=pw.cast(float, pw.this.timestamp),
             )
-            print("Data set to artificial" )
+            print("Data set to artificial")
             return data
         return self.source
 
