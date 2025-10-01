@@ -1,6 +1,75 @@
 🧙‍♂️ Advanced Examples
 =============================
 
+Multiple Input Sources Example
+-------------------------------
+
+Stream DaQ supports monitoring data from multiple input sources (pw.Tables) in a single instance. This is useful when you need to monitor data from multiple machines, sensors, or data streams with a unified quality monitoring setup.
+
+.. code-block:: python
+
+    # pip install streamdaq
+    
+    from streamdaq import StreamDaQ, DaQMeasures as dqm, Windows
+    import time
+    import pathway as pw
+    
+    # Define two separate data sources simulating different machines/sensors
+    machine1_data = [
+        {"timestamp": 1, "machine_id": "m1", "temperature": 75.2, "pressure": 1200},
+        {"timestamp": 2, "machine_id": "m1", "temperature": 76.1, "pressure": 1205},
+        {"timestamp": 3, "machine_id": "m1", "temperature": 75.8, "pressure": 1198},
+    ]
+    
+    machine2_data = [
+        {"timestamp": 1, "machine_id": "m2", "temperature": 68.5, "pressure": 1180},
+        {"timestamp": 2, "machine_id": "m2", "temperature": 69.2, "pressure": 1185},
+        {"timestamp": 3, "machine_id": "m2", "temperature": 68.9, "pressure": 1182},
+    ]
+    
+    # Create connector subjects for each machine
+    class Machine1Subject(pw.io.python.ConnectorSubject):
+        def run(self):
+            for line in machine1_data:
+                self.next(**line)
+                time.sleep(0.5)
+    
+    class Machine2Subject(pw.io.python.ConnectorSubject):
+        def run(self):
+            for line in machine2_data:
+                self.next(**line)
+                time.sleep(0.5)
+    
+    class MachineSchema(pw.Schema):
+        timestamp: int
+        machine_id: str
+        temperature: float
+        pressure: int
+    
+    # Create separate pw.Table sources
+    source1 = pw.io.python.read(Machine1Subject(), schema=MachineSchema)
+    source2 = pw.io.python.read(Machine2Subject(), schema=MachineSchema)
+    
+    # Configure Stream DaQ with multiple sources using the 'sources' parameter
+    daq = StreamDaQ().configure(
+        sources=[source1, source2],  # Pass a list of sources
+        window=Windows.sliding(hop=1, duration=3, origin=0),
+        instance="machine_id",
+        time_column="timestamp",
+        wait_for_late=1,
+    )
+    
+    # Define data quality measures across all sources
+    daq.add(dqm.count('machine_id'), assess=">0", name="count_readings") \
+        .add(dqm.mean('temperature'), assess="[65, 80]", name="mean_temp") \
+        .add(dqm.min('pressure'), assess=">1100", name="min_pressure") \
+        .add(dqm.max('pressure'), assess="<1300", name="max_pressure")
+    
+    # Start monitoring all sources in a single instance
+    daq.watch_out()
+
+**Note:** The ``sources`` parameter cannot be used together with the ``source`` parameter. Use ``source`` for a single input source or ``sources`` for multiple input sources.
+
 Schema Validation Example
 --------------------------
 
