@@ -2,7 +2,8 @@
 
 """
 This example demonstrates how to use Stream DaQ with multiple input sources.
-Multiple pw.Tables are combined into a single streamDaQ instance for unified monitoring.
+Each source has its own configuration (window, time_column, etc.) and output
+includes source traceability via the _source_id column.
 """
 
 from streamdaq import StreamDaQ, DaQMeasures as dqm, Windows
@@ -70,9 +71,23 @@ def write_to_jsonlines(data: pw.internals.Table) -> None:
 
 
 # Step 1: Configure Stream DaQ with multiple sources
+# Each source has its own configuration and is tracked via source_id
 daq = StreamDaQ().configure(
-    sources=[source1, source2],  # Multiple sources!
-    window=Windows.sliding(hop=1, duration=3, origin=0),
+    sources=[
+        {
+            'source': source1,
+            'source_id': 'machine_1',
+            'window': Windows.sliding(hop=1, duration=3, origin=0),
+            'time_column': 'timestamp',
+        },
+        {
+            'source': source2,
+            'source_id': 'machine_2',
+            'window': Windows.sliding(hop=1, duration=3, origin=0),
+            'time_column': 'timestamp',
+        },
+    ],
+    window=Windows.sliding(hop=1, duration=3, origin=0),  # Default for sources without explicit config
     instance="machine_id",
     time_column="timestamp",
     wait_for_late=1,
@@ -80,6 +95,7 @@ daq = StreamDaQ().configure(
 )
 
 # Step 2: Define what Data Quality means across all sources
+# Output will include _source_id column showing which source each record came from
 daq.add(dqm.count('machine_id'), assess=">0", name="count_readings") \
     .add(dqm.mean('temperature'), assess="[65, 80]", name="mean_temp") \
     .add(dqm.min('pressure'), assess=">1100", name="min_pressure") \

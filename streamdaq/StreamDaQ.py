@@ -40,6 +40,7 @@ class StreamDaQ:
         self.show_window_end = True
         self.source = None
         self.sources = None
+        self.source_configs = None
         self.sink_file_name = None
         self.sink_operation = None
         self.schema_validator = None
@@ -55,7 +56,7 @@ class StreamDaQ:
             show_window_start: bool = True,
             show_window_end: bool = True,
             source: pw.internals.Table | None = None,
-            sources: list[pw.internals.Table] | None = None,
+            sources: list[dict] | None = None,
             sink_file_name: str = None,
             sink_operation: Callable[[pw.internals.Table], None] | None = None,
             schema_validator: SchemaValidator | None = None
@@ -75,7 +76,10 @@ class StreamDaQ:
         :param show_window_end: boolean flag to specify whether the window ending timestamp should be included in
         the results
         :param source: the source to get data from (single source).
-        :param sources: a list of sources to get data from (multiple sources). Cannot be used together with `source`.
+        :param sources: a list of source configurations. Each element should be a dict with 'source' (pw.Table) and
+        optionally 'source_id' (str), 'window', 'time_column', 'behavior', 'wait_for_late', 'time_format'.
+        If configuration parameters are not provided for a source, they default to the global parameters.
+        Cannot be used together with the `source` parameter.
         :param sink_file_name: the name of the file to write the output to
         :param sink_operation: the operation to perform in order to send data out of Stream DaQ, e.g., a Kafka topic.
         :param schema_validator: an optional schema validator to apply on the input data stream
@@ -108,6 +112,11 @@ class StreamDaQ:
 
         self.source = source
         self.sources = sources
+        if sources is not None:
+            # Process and normalize source configurations
+            self.source_configs = self._normalize_source_configs(sources)
+        else:
+            self.source_configs = None
         self.sink_file_name = sink_file_name
         self.sink_operation = sink_operation
         self.schema_validator = schema_validator
@@ -139,26 +148,43 @@ class StreamDaQ:
         self.measures[name] = pw.apply_with_type(tuple, tuple, (measure, assessment_result))
         return self
 
+    def _normalize_source_configs(self, sources: list[dict]) -> list[dict]:
+        """Normalize source configurations by filling in missing values with global defaults.
+        
+        Args:
+            sources: List of source configuration dictionaries
+            
+        Returns:
+            List of normalized source configurations with all required fields
+        """
+        normalized = []
+        for idx, source_config in enumerate(sources):
+            if not isinstance(source_config, dict):
+                raise ValueError(f"Each element in 'sources' must be a dictionary, got {type(source_config)}")
+            
+            if 'source' not in source_config:
+                raise ValueError(f"Source configuration at index {idx} missing required 'source' key")
+            
+            # Create normalized config with defaults from global configuration
+            normalized_config = {
+                'source': source_config['source'],
+                'source_id': source_config.get('source_id', f'source_{idx}'),
+                'window': source_config.get('window', self.window),
+                'time_column': source_config.get('time_column', self.time_column),
+                'behavior': source_config.get('behavior', self.window_behavior),
+                'wait_for_late': source_config.get('wait_for_late', self.wait_for_late),
+                'time_format': source_config.get('time_format', self.time_format),
+            }
+            normalized.append(normalized_config)
+        
+        return normalized
+
     def _get_data_source_or_else_artificial(self) -> pw.Table:
         """Get data source, falling back to artificial if none specified.
 
-        When multiple sources are provided, concatenates them into a single table.
-        Ensures all tables have disjoint universes before concatenation.
+        When multiple sources are provided, this method is not used directly.
+        Use _process_multiple_sources instead.
         """
-        # If multiple sources are provided, concatenate them
-        if self.sources is not None:
-            if len(self.sources) == 0:
-                raise ValueError("The 'sources' list cannot be empty.")
-
-            # Ensure universes are disjoint before concatenation
-            pw.universes.promise_are_pairwise_disjoint(*self.sources)
-
-            # Start with the first source and concatenate the rest
-            result = self.sources[0]
-            for source in self.sources[1:]:
-                result = result.concat(source)
-            return result
-
         # Single source case
         if self.source is None:
             data = artificial(number_of_rows=100, input_rate=10).with_columns(
@@ -168,6 +194,113 @@ class StreamDaQ:
             print("Data set to artificial")
             return data
         return self.source
+
+    def _process_single_source(self, source: pw.Table, source_id: str, config: dict) -> pw.Table:
+        """Process a single source with its specific configuration.
+        
+        Args:
+            source: The pw.Table to process
+            source_id: Identifier for this source
+            config: Configuration dictionary for this source
+            
+        Returns:
+            Processed pw.Table with source tracking
+        """
+        # Add source_id column for traceability
+        data = source.with_columns(_source_id=pw.cast(str, source_id))
+        
+        # Apply schema validation if needed
+        data = self._validate_schema_if_needed(data)
+        
+        # Handle violations if needed
+        deflected_data = self._deflect_violations_if_needed(data)
+        
+        # Keep compliant data if needed
+        data = self._keep_compliant_data_if_needed(data)
+        
+        # Apply windowing and measurements with source-specific config
+        quality_meta_stream = self._window_measure_and_assess_single(
+            data, 
+            config['window'],
+            config['time_column'],
+            config['behavior'],
+            config['wait_for_late']
+        )
+        
+        return quality_meta_stream
+
+    def _window_measure_and_assess_single(self, data: pw.Table, window: Window, 
+                                          time_column: str, behavior, wait_for_late) -> pw.Table:
+        """Apply windowing and measurements to a single source.
+        
+        Args:
+            data: The data table to process
+            window: Window configuration
+            time_column: Name of the time column
+            behavior: Temporal behavior
+            wait_for_late: Late event handling
+            
+        Returns:
+            Quality meta-stream table
+        """
+        if self.schema_validator:
+            column_name = self.schema_validator.settings().column_name
+            data = data.with_columns(
+                **{column_name: pw.apply_with_type(extract_violation_count, int, pw.this._validation_metadata[1])},
+                error_messages=pw.apply_with_type(
+                    lambda x: None if x == '' else x,
+                    str | None,
+                    pw.this._validation_metadata[1]
+                )
+            )
+            # Note: We don't add to self.measures here as it would be shared across sources
+            measures = dict(self.measures)
+            measures[self.schema_validator.settings().column_name] = pw.reducers.sum(pw.this[column_name])
+            measures['error_messages'] = pw.reducers.tuple(pw.this.error_messages, skip_nones=True)
+        else:
+            measures = dict(self.measures)
+        
+        # Ensure _source_id is included in the output
+        if '_source_id' not in measures:
+            measures['_source_id'] = pw.reducers.any(pw.this._source_id)
+
+        return data.windowby(
+            data[time_column],
+            window=window,
+            instance=data[self.instance] if self.instance else None,
+            behavior=behavior or pw.temporal.exactly_once_behavior(shift=wait_for_late),
+        ).reduce(**measures)
+
+    def _process_multiple_sources(self) -> pw.Table:
+        """Process multiple sources with their individual configurations.
+        
+        Returns:
+            Combined quality meta-stream from all sources
+        """
+        if not self.source_configs or len(self.source_configs) == 0:
+            raise ValueError("The 'sources' list cannot be empty.")
+        
+        processed_sources = []
+        for config in self.source_configs:
+            processed = self._process_single_source(
+                config['source'],
+                config['source_id'],
+                config
+            )
+            processed_sources.append(processed)
+        
+        # Concatenate all processed sources
+        if len(processed_sources) == 1:
+            return processed_sources[0]
+        
+        # Ensure universes are disjoint before concatenation
+        pw.universes.promise_are_pairwise_disjoint(*processed_sources)
+        
+        result = processed_sources[0]
+        for processed in processed_sources[1:]:
+            result = result.concat(processed)
+        
+        return result
 
     def _validate_schema_if_needed(self, data: pw.Table) -> pw.Table:
         """If schema validation is configured, enriches `data`
@@ -342,19 +475,33 @@ class StreamDaQ:
         `True` (default), else a `pw.Table` reference to the quality
         meta-stream for advanced programmatic handling (see important notice above).
         """
-        data = self._get_data_source_or_else_artificial()
-        data = self._validate_schema_if_needed(data)
-        deflected_data = self._deflect_violations_if_needed(data)
-        data = self._keep_compliant_data_if_needed(data)
-        quality_meta_stream = self._window_measure_and_asses(data)
-        alerts = self._raise_alerts_if_needed(quality_meta_stream)
-        quality_meta_stream = self._remove_error_messages_if_needed(quality_meta_stream)
+        # Handle multiple sources case
+        if self.source_configs is not None:
+            quality_meta_stream = self._process_multiple_sources()
+            # For multiple sources, violations and alerts are handled within _process_single_source
+            alerts = self._raise_alerts_if_needed(quality_meta_stream)
+            quality_meta_stream = self._remove_error_messages_if_needed(quality_meta_stream)
+            
+            self._send_to_sinks_if_needed(
+                quality_meta_stream=quality_meta_stream,
+                violations=None,  # Already handled per-source
+                alerts=alerts
+            )
+        else:
+            # Single source case (original logic)
+            data = self._get_data_source_or_else_artificial()
+            data = self._validate_schema_if_needed(data)
+            deflected_data = self._deflect_violations_if_needed(data)
+            data = self._keep_compliant_data_if_needed(data)
+            quality_meta_stream = self._window_measure_and_asses(data)
+            alerts = self._raise_alerts_if_needed(quality_meta_stream)
+            quality_meta_stream = self._remove_error_messages_if_needed(quality_meta_stream)
 
-        self._send_to_sinks_if_needed(
-            quality_meta_stream=quality_meta_stream,
-            violations=deflected_data,
-            alerts=alerts
-        )
+            self._send_to_sinks_if_needed(
+                quality_meta_stream=quality_meta_stream,
+                violations=deflected_data,
+                alerts=alerts
+            )
 
         if not start:
             # ideally `return quality_meta_stream, deflected_data, alerts` but it would be a breaking change - TBD
