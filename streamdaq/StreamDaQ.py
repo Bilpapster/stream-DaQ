@@ -8,6 +8,7 @@ from pathway.stdlib.temporal import Window
 from streamdaq.artificial_stream_generators import generate_artificial_random_viewership_data_stream as artificial
 from streamdaq.utils import create_comparison_function, extract_violation_count
 from streamdaq.SchemaValidator import SchemaValidator
+from streamdaq.CompactData import CompactData
 
 
 class StreamDaQ:
@@ -21,6 +22,9 @@ class StreamDaQ:
     3. Kick-off DQ monitoring of your data stream, letting Stream DaQ continuously watch out your data, while you
     focus on the important.
     """
+
+    _FIELDS_KEY: str = "FIELDS"
+    _VALUES_KEY: str = "VALUES"
 
     def __init__(self):
         """
@@ -42,21 +46,24 @@ class StreamDaQ:
         self.sink_file_name = None
         self.sink_operation = None
         self.schema_validator = None
+        self.compact_data = None
+        self._DAQ_INTERNAL_STATE = dict()
 
     def configure(
-            self,
-            window: Window,
-            time_column: str,
-            behavior: pw.temporal.CommonBehavior | pw.temporal.ExactlyOnceBehavior | None = None,
-            instance: str | None = None,
-            wait_for_late: int | float | timedelta | None = None,
-            time_format: str = "%Y-%m-%d %H:%M:%S",
-            show_window_start: bool = True,
-            show_window_end: bool = True,
-            source: pw.internals.Table | None = None,
-            sink_file_name: str = None,
-            sink_operation: Callable[[pw.internals.Table], None] | None = None,
-            schema_validator: SchemaValidator | None = None
+        self,
+        window: Window,
+        time_column: str,
+        behavior: pw.temporal.CommonBehavior | pw.temporal.ExactlyOnceBehavior | None = None,
+        instance: str | None = None,
+        wait_for_late: int | float | timedelta | None = None,
+        time_format: str = "%Y-%m-%d %H:%M:%S",
+        show_window_start: bool = True,
+        show_window_end: bool = True,
+        source: pw.internals.Table | None = None,
+        sink_file_name: str = None,
+        sink_operation: Callable[[pw.internals.Table], None] | None = None,
+        schema_validator: SchemaValidator | None = None,
+        compact_data: CompactData | None = None,
     ) -> Self:
         """
         Configures the DQ monitoring parameters. Specifying a window object, the key instance and the time column name
@@ -76,6 +83,7 @@ class StreamDaQ:
         :param sink_file_name: the name of the file to write the output to
         :param sink_operation: the operation to perform in order to send data out of Stream DaQ, e.g., a Kafka topic.
         :param schema_validator: an optional schema validator to apply on the input data stream
+        :param compact_data: an optional compact data configuration for working with compact data representations
         :return: a self reference, so that you can use your favorite, Spark-like, functional syntax :)
         """
         self.window = window
@@ -102,13 +110,14 @@ class StreamDaQ:
         self.sink_file_name = sink_file_name
         self.sink_operation = sink_operation
         self.schema_validator = schema_validator
+        self.compact_data = compact_data
         return self
 
     def add(
-            self,
-            measure: pw.ColumnExpression | ReducerExpression,
-            assess: str | Callable[[Any], bool] | None = None,
-            name: Optional[str] = None,
+        self,
+        measure: pw.ColumnExpression | ReducerExpression,
+        assess: str | Callable[[Any], bool] | None = None,
+        name: Optional[str] = None,
     ) -> Self:
         """
         Adds a DQ measurement to be monitored within the stream windows.
@@ -137,9 +146,43 @@ class StreamDaQ:
                 date_and_time=pw.this.timestamp.dt.strptime(self.time_format),
                 timestamp=pw.cast(float, pw.this.timestamp),
             )
-            print("Data set to artificial" )
+            self.compact_data = None  # The artificial data source is native
+            print("Data set to artificial and data representation to native.")
             return data
         return self.source
+
+    def _convert_to_native_if_needed(self, data: pw.Table) -> pw.Table:
+        if not self.compact_data:
+            return data
+
+        fields_column = self.compact_data._fields_column
+        values_column = self.compact_data._values_column
+        values_dtype = self.compact_data._values_dtype
+
+        def on_change(key: pw.Pointer, row: dict, time: int, is_addition: bool):
+            if self._FIELDS_KEY in self._DAQ_INTERNAL_STATE:
+                # TODO: here we can detect and handle schema evolution!
+                return
+            self._DAQ_INTERNAL_STATE[self._FIELDS_KEY] = row[fields_column]
+            # self._DAQ_INTERNAL_STATE[self._FIELDS_KEY] now contains the field names
+            # e.g., ['temperature', 'pressure']
+
+        pw.io.subscribe(table=data, on_change=on_change)
+        pw.run(monitoring_level=pw.MonitoringLevel.NONE)
+        
+        column_names = self._DAQ_INTERNAL_STATE[self._FIELDS_KEY]
+        compact_to_native_transformations = {
+            column_names[i]: pw.this.values.get(i)
+            for i in range(len(column_names))
+        }
+        native_data_types = {
+            column_names[i]: values_dtype
+            for i in range(len(column_names))
+        }
+        return data \
+            .with_columns(**compact_to_native_transformations) \
+            .update_types(**native_data_types) \
+            .without(fields_column, values_column)
 
     def _validate_schema_if_needed(self, data: pw.Table) -> pw.Table:
         """If schema validation is configured, enriches `data`
@@ -315,6 +358,7 @@ class StreamDaQ:
         meta-stream for advanced programmatic handling (see important notice above).
         """
         data = self._get_data_source_or_else_artificial()
+        data = self._convert_to_native_if_needed(data)
         data = self._validate_schema_if_needed(data)
         deflected_data = self._deflect_violations_if_needed(data)
         data = self._keep_compliant_data_if_needed(data)
