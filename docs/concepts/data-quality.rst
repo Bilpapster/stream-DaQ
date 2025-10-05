@@ -289,6 +289,7 @@ What's Next?
 
 Now that you understand how data quality concepts evolve for streaming data:
 
+- 📊 **Understand data formats**: :doc:`compact-vs-native-data` - How Stream DaQ handles different data representations seamlessly
 - 🪟 **Learn about windowing**: :doc:`stream-windows` - How to make infinite streams manageable
 - 📏 **Explore measures**: :doc:`measures-and-assessments` - The building blocks of Stream DaQ quality checks
 - 💡 **See it in action**: :doc:`../examples/index` - Real-world quality monitoring examples

@@ -110,3 +110,11 @@ The trend measure calculates the slope of a linear regression line through the d
 Trend analysis complements traditional min-max and range checks for comprehensive data quality monitoring. While threshold checks validate current values, trend analysis ensures data consistency over time by detecting unexpected patterns or gradual shifts that could indicate sensor drift or measurement errors.
 
 Luckily, Stream DaQ offers a suite of over 30 data quality measures, including range conformance, profiling statistics, trend analysis and many more - making comprehensive data quality monitoring both powerful and effortless!
+
+**What's Next?**
+
+Ready for more advanced scenarios? Check out:
+
+- 🧙‍♂️ **Advanced Examples**: :doc:`advanced-examples` - Compact data handling, schema validation, and more
+- 📚 **Core Concepts**: :doc:`../concepts/index` - Deep dive into streaming data quality theory
+- 📊 **Data Formats**: :doc:`../concepts/compact-vs-native-data` - Understanding different data representations
