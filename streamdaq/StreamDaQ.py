@@ -158,6 +158,7 @@ class StreamDaQ:
         fields_column = self.compact_data._fields_column
         values_column = self.compact_data._values_column
         values_dtype = self.compact_data._values_dtype
+        type_exceptions = self.compact_data._type_exceptions
 
         def on_change(key: pw.Pointer, row: dict, time: int, is_addition: bool):
             if self._FIELDS_KEY in self._DAQ_INTERNAL_STATE:
@@ -175,10 +176,17 @@ class StreamDaQ:
             column_names[i]: pw.this.values.get(i)
             for i in range(len(column_names))
         }
+        # at first define all columns to have the 'default' dtype
         native_data_types = {
             column_names[i]: values_dtype
             for i in range(len(column_names))
         }
+        # overwrite the default types with the user-specified exceptions, if any
+        if type_exceptions:
+            for column_name, dtype in type_exceptions.items():
+                if column_name in column_names:
+                    native_data_types[column_name] = dtype
+        
         return data \
             .with_columns(**compact_to_native_transformations) \
             .update_types(**native_data_types) \

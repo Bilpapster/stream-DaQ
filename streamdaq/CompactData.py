@@ -1,4 +1,4 @@
-from typing import Self, Type
+from typing import Self, Type, Optional
 
 
 class CompactData:
@@ -92,6 +92,7 @@ class CompactData:
         self._fields_column = "fields"
         self._values_column = "values"
         self._values_dtype = float
+        self._type_exceptions = None
 
     def with_fields_column(self, fields_column: str) -> Self:
         """Set the name that contains the field names. You do not
@@ -119,15 +120,24 @@ class CompactData:
         self._values_column = str(values_column)
         return self
 
-    def with_values_dtype(self, values_dtype: Type) -> Self:
+    def with_values_dtype(self, values_dtype: Type, exceptions: Optional[dict[str, Type]] = None) -> Self:
         """Set the data type of the individual values. You do not
-        need to use it if the data type is `float`.
+        need to use it if the data type of all your values is float.
 
         Args:
-            values_dtype (Type): the type of the individual values.
+            values_dtype (Type): the (default) data type of the
+            individual values.
+            exceptions (Optional[dict[str, Type]], optional): A mapping 
+            between column names and data types that deviate from the
+            `values_dtype` example. Use this parameter if the majority 
+            of your values are of type `values_dtype` but there are some
+            exceptions that should be manually defined.
+            Column names that do not correspond to existing ones will be 
+            ignored. Defaults to None.
 
         Returns:
             Self: a self reference to accommodate chain calls.
         """
         self._values_dtype = values_dtype
+        self._type_exceptions = exceptions
         return self
