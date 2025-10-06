@@ -295,10 +295,13 @@ class DaQMeasures:
         """
         from streamdaq.utils import calculate_set_conformance_count
 
-        explicit = {"", None}  # explicit missing values are considered empty strings or None values
-        missing_values = explicit if not disguised else explicit.union(disguised)
-
-        return pw.apply(calculate_set_conformance_count, pw.reducers.tuple(pw.this[column_name]), missing_values)
+        explicit = ("", None)  # explicit missing values are considered empty strings and None values
+        # We have to transform the set into a tuple because pathway's pw.apply cannot accept a set parameter
+        missing_values = explicit if not disguised else explicit + tuple(disguised)
+        return pw.apply_with_type(
+            calculate_set_conformance_count, int, 
+            pw.reducers.tuple(pw.this[column_name]), missing_values
+        )
 
     @staticmethod
     def missing_fraction(
@@ -316,16 +319,20 @@ class DaQMeasures:
         :param precision: the number of decimal points to include in the fraction result. Defaults to 3.
         :return: a pathway pw.apply statement ready for use as a column.
         """
-        explicit = {"", None}  # explicit missing values are considered empty strings or None values
-        missing_values = explicit if not disguised else explicit.union(disguised)
+        explicit = ("", None)  # explicit missing values are considered empty strings or None values
+        missing_values = explicit if not disguised else explicit + tuple(disguised)
 
-        def get_set_conformance_fraction(elements: tuple):
+        def get_set_conformance_fraction(elements: tuple, missing_values: set):
             from streamdaq.utils import calculate_set_conformance_count
 
+            missing_values = set(missing_values)
             fraction = calculate_set_conformance_count(elements, missing_values) / len(elements)
             return round(fraction, precision)
 
-        return pw.apply(get_set_conformance_fraction, pw.reducers.tuple(pw.this[column_name]))
+        return pw.apply_with_type(
+            get_set_conformance_fraction, float,
+            pw.reducers.tuple(pw.this[column_name]), missing_values
+        )
 
     @staticmethod
     def is_frozen(column_name: str) -> pw.internals.expression.ColumnExpression:

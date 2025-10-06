@@ -53,7 +53,7 @@ def calculate_set_conformance_count(elements: tuple, allowed_values: set):
     except TypeError:
         # if not iterable, convert to a list
         elements = [elements]
-
+    allowed_values = set(allowed_values) # ensure that `allowed_values` is a set
     return sum(element in allowed_values for element in elements)
 
 
