@@ -1,6 +1,96 @@
 🧙‍♂️ Advanced Examples
 =============================
 
+Multiple Input Sources Example
+-------------------------------
+
+Stream DaQ supports monitoring data from multiple input sources (pw.Tables) in a single instance. Each source can have its own distinct configuration (window, time_column, etc.), and the output includes source traceability via the ``_source_id`` column.
+
+.. code-block:: python
+
+    # pip install streamdaq
+    
+    from streamdaq import StreamDaQ, DaQMeasures as dqm, Windows
+    import time
+    import pathway as pw
+    
+    # Define two separate data sources simulating different machines/sensors
+    machine1_data = [
+        {"timestamp": 1, "machine_id": "m1", "temperature": 75.2, "pressure": 1200},
+        {"timestamp": 2, "machine_id": "m1", "temperature": 76.1, "pressure": 1205},
+        {"timestamp": 3, "machine_id": "m1", "temperature": 75.8, "pressure": 1198},
+    ]
+    
+    machine2_data = [
+        {"timestamp": 1, "machine_id": "m2", "temperature": 68.5, "pressure": 1180},
+        {"timestamp": 2, "machine_id": "m2", "temperature": 69.2, "pressure": 1185},
+        {"timestamp": 3, "machine_id": "m2", "temperature": 68.9, "pressure": 1182},
+    ]
+    
+    # Create connector subjects for each machine
+    class Machine1Subject(pw.io.python.ConnectorSubject):
+        def run(self):
+            for line in machine1_data:
+                self.next(**line)
+                time.sleep(0.5)
+    
+    class Machine2Subject(pw.io.python.ConnectorSubject):
+        def run(self):
+            for line in machine2_data:
+                self.next(**line)
+                time.sleep(0.5)
+    
+    class MachineSchema(pw.Schema):
+        timestamp: int
+        machine_id: str
+        temperature: float
+        pressure: int
+    
+    # Create separate pw.Table sources
+    source1 = pw.io.python.read(Machine1Subject(), schema=MachineSchema)
+    source2 = pw.io.python.read(Machine2Subject(), schema=MachineSchema)
+    
+    # Configure Stream DaQ with multiple sources, each with its own configuration
+    daq = StreamDaQ().configure(
+        sources=[
+            {
+                'source': source1,
+                'source_id': 'machine_1',  # Identifier for traceability
+                'window': Windows.sliding(hop=1, duration=3, origin=0),
+                'time_column': 'timestamp',
+            },
+            {
+                'source': source2,
+                'source_id': 'machine_2',  # Identifier for traceability
+                'window': Windows.sliding(hop=1, duration=2, origin=0),  # Different window!
+                'time_column': 'timestamp',
+            },
+        ],
+        window=Windows.sliding(hop=1, duration=3, origin=0),  # Default for unspecified configs
+        instance="machine_id",
+        time_column="timestamp",
+        wait_for_late=1,
+    )
+    
+    # Define data quality measures across all sources
+    # Output will include _source_id column showing which source each record came from
+    daq.add(dqm.count('machine_id'), assess=">0", name="count_readings") \
+        .add(dqm.mean('temperature'), assess="[65, 80]", name="mean_temp") \
+        .add(dqm.min('pressure'), assess=">1100", name="min_pressure") \
+        .add(dqm.max('pressure'), assess="<1300", name="max_pressure")
+    
+    # Start monitoring all sources in a single instance
+    daq.watch_out()
+
+**Key Features:**
+
+- Each source configuration is a dictionary with ``'source'`` (required) and optional parameters
+- ``'source_id'`` provides traceability - defaults to ``'source_0'``, ``'source_1'``, etc.
+- Each source can have its own ``'window'``, ``'time_column'``, ``'behavior'``, ``'wait_for_late'``, and ``'time_format'``
+- Unspecified parameters default to the global configuration
+- Output includes ``_source_id`` column to track which source generated each record
+- The ``sources`` parameter cannot be used together with the ``source`` parameter
+
 Schema Validation Example
 --------------------------
 
