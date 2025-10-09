@@ -1,6 +1,139 @@
 🧙‍♂️ Advanced Examples
 =============================
 
+Compact Data Monitoring Example
+--------------------------------
+
+Stream DaQ provides seamless support for compact data formats commonly used in IoT and resource-constrained environments. Instead of manually transforming compact data into individual records, Stream DaQ handles this automatically, allowing you to focus on defining meaningful quality measures.
+
+.. seealso::
+   
+   For conceptual background on compact vs native data formats, see :doc:`../concepts/compact-vs-native-data`.
+
+**What makes data "compact"?**
+
+Compact data represents multiple field values in a single record, typically using arrays or lists. This format is prevalent in IoT scenarios because it:
+
+- **Reduces bandwidth usage** by ~60% compared to individual field transmissions
+- **Minimizes storage requirements** on resource-constrained devices  
+- **Enables efficient batch transmission** of multiple sensor readings
+- **Optimizes network protocols** for wireless sensor networks
+
+**Common IoT scenarios using compact data:**
+
+- Environmental monitoring stations (temperature, humidity, pressure)
+- Industrial sensor networks (vibration, temperature, speed)
+- Smart building systems (occupancy, air quality, energy usage)
+- Vehicle telemetry (GPS coordinates, speed, fuel consumption, engine metrics)
+
+.. code-block:: python
+
+    # pip install streamdaq
+    
+    import pathway as pw
+    from streamdaq import DaQMeasures as dqm
+    from streamdaq import CompactData, Windows, StreamDaQ
+
+    # Configuration for compact IoT sensor data
+    FIELDS_COLUMN = "fields"
+    FIELDS = ["temperature", "humidity", "pressure"]  # IoT sensor measurements
+    VALUES_COLUMN = "values"
+    TIMESTAMP_COLUMN = "timestamp"
+
+    # Example compact data source (simulating IoT sensor network)
+    class CompactDataSource(pw.io.python.ConnectorSubject):
+        """Simulates IoT sensors sending compact data format."""
+        def run(self):
+            nof_fields = len(FIELDS)
+            nof_compact_rows = 5
+            timestamp = value = 0
+            for _ in range(nof_compact_rows):
+                message = {
+                    TIMESTAMP_COLUMN: timestamp,
+                    FIELDS_COLUMN: FIELDS,
+                    VALUES_COLUMN: [value + i for i in range(nof_fields)]
+                }
+                value += len(FIELDS)
+                timestamp += 1
+                self.next(**message)
+
+    # Define schema for compact data structure
+    schema_dict = {
+        TIMESTAMP_COLUMN: int,
+        FIELDS_COLUMN: list[str],
+        VALUES_COLUMN: list[int | None]  # Supports missing values
+    }
+    schema = pw.schema_from_dict(schema_dict)
+
+    # Create compact data stream
+    compact_data_stream = pw.io.python.read(
+        CompactDataSource(),
+        schema=schema,
+    )
+
+    # Configure Stream DaQ for automatic compact data handling
+    daq = StreamDaQ().configure(
+        window=Windows.sliding(duration=3, hop=1, origin=0),
+        source=compact_data_stream,
+        time_column=TIMESTAMP_COLUMN,
+        wait_for_late=1,  # Handle late IoT data arrivals
+        
+        # Stream DaQ automatically transforms compact to native format
+        compact_data=CompactData() \
+            .with_fields_column(FIELDS_COLUMN) \
+            .with_values_column(VALUES_COLUMN) \
+            .with_values_dtype(int)
+    )
+
+    # Define quality measures for individual sensor fields
+    # Notice: Direct field access despite compact input format!
+    daq.add(dqm.count('pressure'), name="readings") \
+       .add(dqm.missing_count('temperature') + 
+            dqm.missing_count('pressure') + 
+            dqm.missing_count('humidity'),
+            assess="<2", name="missing_readings") \
+       .add(dqm.is_frozen('humidity'), name="frozen_humidity_sensor")
+
+    # Start monitoring
+    daq.watch_out()
+
+**Stream DaQ's Automatic Transformation Benefits:**
+
+1. **No Manual Preprocessing**: Stream DaQ internally converts compact data to native format for quality analysis
+2. **Seamless Field Access**: Reference individual fields (``temperature``, ``humidity``, ``pressure``) directly in quality measures
+3. **Missing Value Handling**: Automatic support for ``None`` values common in real-world IoT scenarios  
+4. **Type Safety**: Configurable data type handling with validation
+5. **Temporal Alignment**: Proper time-based windowing despite compact input format
+
+**Compact vs Native Data Comparison:**
+
+.. code-block:: json
+
+    // Compact format (1 record):
+    {
+        "timestamp": 1,
+        "fields": ["temperature", "humidity", "pressure"], 
+        "values": [23.5, 65.2, 1013.25]
+    }
+
+    // Equivalent native format (3 records):
+    {"timestamp": 1, "temperature": 23.5}
+    {"timestamp": 1, "humidity": 65.2} 
+    {"timestamp": 1, "pressure": 1013.25}
+
+**Why This Matters for IoT:**
+
+Without Stream DaQ's automatic handling, you would typically need to:
+
+- Manually unpack compact rows into individual field records
+- Handle missing values and data type conversions
+- Manage temporal alignment across different fields
+- Write custom transformation logic before quality monitoring
+
+Stream DaQ eliminates this preprocessing pipeline, allowing you to focus on defining meaningful quality measures rather than data transformation logic. This is especially valuable in resource-constrained environments where development time and computational efficiency are critical.
+
+For a complete working example with detailed comments, see the ``examples/compact_data.py`` file in the examples directory. To understand the conceptual differences between compact and native data formats, see :doc:`../concepts/compact-vs-native-data`.
+
 Schema Validation Example
 --------------------------
 

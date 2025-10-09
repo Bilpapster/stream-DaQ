@@ -40,6 +40,13 @@ Welcome to the conceptual heart of Stream DaQ! Understanding these core concepts
 
         **Stream processing principles** - Understand late arrivals, watermarks, and how Stream DaQ handles the complexity of real-time data.
 
+    .. grid-item-card:: 📊 Compact vs Native Data
+        :link: compact-vs-native-data
+        :link-type: doc
+        :class-header: bg-secondary text-white
+
+        **Data format strategies** - Learn when to use compact vs native formats and how Stream DaQ handles both seamlessly.
+
 The Big Picture
 ---------------------
 
@@ -168,5 +175,6 @@ Ready to dive deeper? Start with :doc:`data-quality` to understand why streaming
    stream-windows
    measures-and-assessments
    real-time-monitoring
+   compact-vs-native-data
 
 |made_with_love|

@@ -454,6 +454,7 @@ What's Next?
 
 Now that you understand how to slice infinite streams into manageable windows:
 
+- 📊 **Understand data formats**: :doc:`compact-vs-native-data` - How different data formats work seamlessly with windows
 - 📏 **Learn about measures**: :doc:`measures-and-assessments` - What to calculate within each window
 - ⚡ **Explore real-time concepts**: :doc:`real-time-monitoring` - Production considerations for windowed monitoring
 - 💡 **See windowing in action**: :doc:`../examples/index` - Real-world windowing patterns
