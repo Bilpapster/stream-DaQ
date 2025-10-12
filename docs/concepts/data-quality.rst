@@ -203,7 +203,7 @@ We've analyzed quality measures from seven major tools and **consolidated them i
 
         Clear, consistent naming that maps to quality dimensions
 
-    .. grid-item-card: **Extensible Framework**
+    .. grid-item-card:: **Extensible Framework**
         :class-header: bg-warning text-dark
 
         Easy to add custom measures for domain-specific quality needs

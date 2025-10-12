@@ -101,9 +101,9 @@ Stream DaQ also supports trend analysis to detect if your data is increasing, de
 
 **Trend Analysis Use Cases:**
 
-- **Increasing Trends** (``assess=">0.1"``): Detect equipment heating up, growing workloads, etc.
-- **Decreasing Trends** (``assess="< -0.2"``): Detect system degradation, pressure drops, etc.  
-- **Stable Trends** (``assess="[-0.1, 0.1]"``): Ensure metrics remain stable within acceptable range.
+- **Increasing Trends** (``must_be=">0.1"``): Detect equipment heating up, growing workloads, etc.
+- **Decreasing Trends** (``must_be="< -0.2"``): Detect system degradation, pressure drops, etc.  
+- **Stable Trends** (``must_be="[-0.1, 0.1]"``): Ensure metrics remain stable within acceptable range.
 
 The trend measure calculates the slope of a linear regression line through the data points in each window. Positive slopes indicate increasing trends, negative slopes indicate decreasing trends, and slopes near zero indicate stable behavior.
 
