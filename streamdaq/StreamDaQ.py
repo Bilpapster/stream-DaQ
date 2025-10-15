@@ -6,9 +6,12 @@ from pathway.internals import ReducerExpression
 from pathway.stdlib.temporal import Window
 
 from streamdaq.artificial_stream_generators import generate_artificial_random_viewership_data_stream as artificial
-from streamdaq.utils import create_comparison_function, extract_violation_count
-from streamdaq.SchemaValidator import SchemaValidator
 from streamdaq.CompactData import CompactData
+from streamdaq.logging_config import get_logger
+from streamdaq.SchemaValidator import SchemaValidator
+from streamdaq.utils import create_comparison_function, extract_violation_count
+
+logger = get_logger(__name__)
 
 
 class StreamDaQ:
@@ -147,7 +150,7 @@ class StreamDaQ:
                 timestamp=pw.cast(float, pw.this.timestamp),
             )
             self.compact_data = None  # The artificial data source is native
-            print("Data set to artificial and data representation to native.")
+            logger.info("Data set to artificial and data representation to native.")
             return data
         return self.source
 
@@ -170,27 +173,22 @@ class StreamDaQ:
 
         pw.io.subscribe(table=data, on_change=on_change)
         pw.run(monitoring_level=pw.MonitoringLevel.NONE)
-        
+
         column_names = self._DAQ_INTERNAL_STATE[self._FIELDS_KEY]
-        compact_to_native_transformations = {
-            column_names[i]: pw.this.values.get(i)
-            for i in range(len(column_names))
-        }
+        compact_to_native_transformations = {column_names[i]: pw.this.values.get(i) for i in range(len(column_names))}
         # at first define all columns to have the 'default' dtype
-        native_data_types = {
-            column_names[i]: values_dtype
-            for i in range(len(column_names))
-        }
+        native_data_types = {column_names[i]: values_dtype for i in range(len(column_names))}
         # overwrite the default types with the user-specified exceptions, if any
         if type_exceptions:
             for column_name, dtype in type_exceptions.items():
                 if column_name in column_names:
                     native_data_types[column_name] = dtype
-        
-        return data \
-            .with_columns(**compact_to_native_transformations) \
-            .update_types(**native_data_types) \
+
+        return (
+            data.with_columns(**compact_to_native_transformations)
+            .update_types(**native_data_types)
             .without(fields_column, values_column)
+        )
 
     def _validate_schema_if_needed(self, data: pw.Table) -> pw.Table:
         """If schema validation is configured, enriches `data`
@@ -226,9 +224,9 @@ class StreamDaQ:
             return None
         if not self.schema_validator.settings().deflect_violating_records:
             return None
-        return data.filter(pw.this._validation_metadata[0] == False)
+        return data.filter(pw.this._validation_metadata[0] is False)
 
-    def _keep_compliant_data_if_needed(self, data:pw.Table) -> pw.Table:
+    def _keep_compliant_data_if_needed(self, data: pw.Table) -> pw.Table:
         """Handles filtering of records compliant to schema constraints,
         only if schema validation is configured *AND* filtering of
         compliant rows is set to `True` during configuration. If any of
@@ -245,7 +243,7 @@ class StreamDaQ:
             return data
         if not self.schema_validator.settings().filter_respecting_records:
             return data
-        return data.filter(pw.this._validation_metadata[0] == True)
+        return data.filter(pw.this._validation_metadata[0] is True)
 
     def _window_measure_and_asses(self, data: pw.Table) -> pw.Table:
         if self.schema_validator:
@@ -253,13 +251,11 @@ class StreamDaQ:
             data = data.with_columns(
                 **{column_name: pw.apply_with_type(extract_violation_count, int, pw.this._validation_metadata[1])},
                 error_messages=pw.apply_with_type(
-                    lambda x: None if x == '' else x,
-                    str | None,
-                    pw.this._validation_metadata[1]
-                )
+                    lambda x: None if x == "" else x, str | None, pw.this._validation_metadata[1]
+                ),
             )
             self.measures[self.schema_validator.settings().column_name] = pw.reducers.sum(pw.this[column_name])
-            self.measures['error_messages'] = pw.reducers.tuple(pw.this.error_messages, skip_nones=True)
+            self.measures["error_messages"] = pw.reducers.tuple(pw.this.error_messages, skip_nones=True)
 
         return data.windowby(
             data[self.time_column],
@@ -287,8 +283,7 @@ class StreamDaQ:
 
         # if neither logging nor exception raising is set for violations, no action needed
         validation_settings = self.schema_validator.settings()
-        if not validation_settings.log_violations and \
-                not validation_settings.raise_on_violation:
+        if not validation_settings.log_violations and not validation_settings.raise_on_violation:
             return None
 
         return self.schema_validator.raise_alerts(data)
@@ -316,8 +311,9 @@ class StreamDaQ:
         cols_to_keep = {col: pw.this[col] for col in quality_meta_stream.column_names() if col != "error_messages"}
         return quality_meta_stream.select(**cols_to_keep)
 
-    def _send_to_sinks_if_needed(self, quality_meta_stream: pw.Table, violations: pw.Table | None,
-                                 alerts: pw.Table | None) -> None:
+    def _send_to_sinks_if_needed(
+        self, quality_meta_stream: pw.Table, violations: pw.Table | None, alerts: pw.Table | None
+    ) -> None:
         """Sends the quality meta-stream (always), the violations
         (if configured so) and the alerts (if configured so) to the
         sinks defined at configuration time. For violations and alerts,
@@ -336,14 +332,13 @@ class StreamDaQ:
 
         # sink for violations (aka deflected stream) if needed - defaults to console
         if violations:
-            print("Violations sink is being set!")
+            logger.debug("Violations sink is being set")
             violations_sink = self.schema_validator.settings().deflection_sink or pw.debug.compute_and_print
             violations_sink(violations)
 
         # sink for alerts if needed - defaults to console (as dict objects)
         if alerts:
             pw.io.null.write(alerts)  # Dummy sink to force computation
-
 
     def watch_out(self, start: bool = True) -> Optional[pw.Table]:
         """
@@ -374,11 +369,7 @@ class StreamDaQ:
         alerts = self._raise_alerts_if_needed(quality_meta_stream)
         quality_meta_stream = self._remove_error_messages_if_needed(quality_meta_stream)
 
-        self._send_to_sinks_if_needed(
-            quality_meta_stream=quality_meta_stream,
-            violations=deflected_data,
-            alerts=alerts
-        )
+        self._send_to_sinks_if_needed(quality_meta_stream=quality_meta_stream, violations=deflected_data, alerts=alerts)
 
         if not start:
             # ideally `return quality_meta_stream, deflected_data, alerts` but it would be a breaking change - TBD

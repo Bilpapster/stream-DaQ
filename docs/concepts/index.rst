@@ -47,6 +47,13 @@ Welcome to the conceptual heart of Stream DaQ! Understanding these core concepts
 
         **Data format strategies** - Learn when to use compact vs native formats and how Stream DaQ handles both seamlessly.
 
+    .. grid-item-card:: 📝 Logging Configuration
+        :link: logging
+        :link-type: doc
+        :class-header: bg-dark text-white
+
+        **Control output verbosity** - Configure logging levels and formats to customize Stream DaQ's output for development or production.
+
 The Big Picture
 ---------------------
 
@@ -176,5 +183,6 @@ Ready to dive deeper? Start with :doc:`data-quality` to understand why streaming
    measures-and-assessments
    real-time-monitoring
    compact-vs-native-data
+   logging
 
 |made_with_love|
