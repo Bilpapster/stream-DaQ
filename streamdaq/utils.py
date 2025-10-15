@@ -1,5 +1,6 @@
 import typing
-from typing import Callable, Optional, get_origin, get_args
+from typing import Callable, Optional, get_args, get_origin
+
 import numpy as np
 
 from streamdaq.logging_config import get_logger
@@ -52,7 +53,7 @@ def calculate_set_conformance_count(elements: tuple, allowed_values: set):
     except TypeError:
         # if not iterable, convert to a list
         elements = [elements]
-    allowed_values = set(allowed_values) # ensure that `allowed_values` is a set
+    allowed_values = set(allowed_values)  # ensure that `allowed_values` is a set
     return sum(element in allowed_values for element in elements)
 
 
@@ -298,7 +299,7 @@ def calculate_correlation(x, y, precision: int, method: str) -> float:
 
 
 def plot_threshold_segments(
-        timestamps, values, max_threshold=None, min_threshold=None, normal_color="blue", violation_color="red"
+    timestamps, values, max_threshold=None, min_threshold=None, normal_color="blue", violation_color="red"
 ):
     """
     Plot line segments with color-coded thresholds.
@@ -333,8 +334,8 @@ def plot_threshold_segments(
 
         # Plot segment with appropriate color
         plt.plot(
-            timestamps.iloc[i: i + 2],
-            values.iloc[i: i + 2],
+            timestamps.iloc[i : i + 2],
+            values.iloc[i : i + 2],
             color=violation_color if is_violation else normal_color,
             linestyle="-",
         )
@@ -560,7 +561,7 @@ def calculate_slope_best_line_fit(elements: tuple, timestamps: tuple, precision:
     except (ValueError, TypeError):
         return float("nan")
 
-      
+
 def construct_error_message(record: dict, error_msg: str, stream_flag=False) -> str:
     """
     Construct a formatted error message for a given event, optionally adapting
@@ -589,11 +590,7 @@ def construct_error_message(record: dict, error_msg: str, stream_flag=False) -> 
     lines = error_msg.splitlines()
 
     # Drop any "For further information..." lines
-    cleaned_lines = [
-        line.rstrip()
-        for line in lines
-        if not line.strip().startswith("For further information")
-    ]
+    cleaned_lines = [line.rstrip() for line in lines if not line.strip().startswith("For further information")]
 
     # Put the record info at the top
     if not stream_flag:
@@ -649,4 +646,3 @@ def extract_violation_count(error_str: str) -> int:
             break
 
     return int(num_str) if num_str else 0
-

@@ -1,8 +1,8 @@
+from .CompactData import CompactData
 from .DaQMeasures import DaQMeasures
+from .logging_config import configure_logging, get_current_level, set_level
 from .StreamDaQ import StreamDaQ
 from .Windows import sliding, tumbling
-from .CompactData import CompactData
-from .logging_config import configure_logging, set_level, get_current_level
 
 try:
     from importlib.metadata import PackageNotFoundError, version
@@ -19,12 +19,12 @@ except PackageNotFoundError:
 
 # Make version accessible
 __all__ = [
-    "StreamDaQ", 
-    "DaQMeasures", 
-    "CompactData", 
-    "Windows", 
-    "__version__", 
-    "tumbling", 
+    "StreamDaQ",
+    "DaQMeasures",
+    "CompactData",
+    "Windows",
+    "__version__",
+    "tumbling",
     "sliding",
     "configure_logging",
     "set_level",
