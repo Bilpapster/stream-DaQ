@@ -71,6 +71,8 @@ quality monitoring on data streams:
 2. *Real time alerts*: Stream DaQ defines highly meaningful data quality checks for data streams, letting the check
    results be a stream on their own, as well. This architectural choice enables real time alerts, in case the standards
    or thresholds you have defined are not met!
+3. *Configurable logging*: Stream DaQ provides a unified logging system with adjustable verbosity levels, allowing you 
+   to control output from detailed debugging to minimal production logs. See [logging configuration examples](examples/logging_configuration.py).
 
 ## Stream DaQ's architecture
 
