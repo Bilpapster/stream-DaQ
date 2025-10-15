@@ -9,6 +9,9 @@ from streamdaq.artificial_stream_generators import generate_artificial_random_vi
 from streamdaq.utils import create_comparison_function, extract_violation_count
 from streamdaq.SchemaValidator import SchemaValidator
 from streamdaq.CompactData import CompactData
+from streamdaq.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 class StreamDaQ:
@@ -147,7 +150,7 @@ class StreamDaQ:
                 timestamp=pw.cast(float, pw.this.timestamp),
             )
             self.compact_data = None  # The artificial data source is native
-            print("Data set to artificial and data representation to native.")
+            logger.info("Data set to artificial and data representation to native.")
             return data
         return self.source
 
@@ -336,7 +339,7 @@ class StreamDaQ:
 
         # sink for violations (aka deflected stream) if needed - defaults to console
         if violations:
-            print("Violations sink is being set!")
+            logger.debug("Violations sink is being set")
             violations_sink = self.schema_validator.settings().deflection_sink or pw.debug.compute_and_print
             violations_sink(violations)
 

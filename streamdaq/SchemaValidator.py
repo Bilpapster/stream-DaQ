@@ -1,4 +1,4 @@
-import logging
+import typing
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional, Callable, Dict, Any, Union, get_type_hints
@@ -8,6 +8,7 @@ from pydantic import BaseModel, ValidationError
 import pathway as pw
 
 from streamdaq.utils import unpack_schema, construct_error_message
+from streamdaq.logging_config import get_logger
 
 
 class AlertMode(Enum):
@@ -52,7 +53,7 @@ class SchemaValidator:
         """
         self.config = config
         self.window_count = 0
-        self.logger = logging.getLogger(__name__)
+        self.logger = get_logger(__name__)
 
         # Validate configuration
         if config.alert_mode == AlertMode.ONLY_ON_FIRST_K and config.k_windows is None:

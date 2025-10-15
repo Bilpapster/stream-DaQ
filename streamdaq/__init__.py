@@ -2,6 +2,7 @@ from .DaQMeasures import DaQMeasures
 from .StreamDaQ import StreamDaQ
 from .Windows import sliding, tumbling
 from .CompactData import CompactData
+from .logging_config import configure_logging, set_level, get_current_level
 
 try:
     from importlib.metadata import PackageNotFoundError, version
@@ -24,5 +25,8 @@ __all__ = [
     "Windows", 
     "__version__", 
     "tumbling", 
-    "sliding"
+    "sliding",
+    "configure_logging",
+    "set_level",
+    "get_current_level",
 ]
