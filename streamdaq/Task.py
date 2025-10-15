@@ -43,7 +43,6 @@ class Task:
         :param name: Unique name for this task
         :param critical: If True, failure of this task will stop all monitoring
         """
-        from collections import OrderedDict
 
         # State management at the task level
         self._TASK_INTERNAL_STATE = None

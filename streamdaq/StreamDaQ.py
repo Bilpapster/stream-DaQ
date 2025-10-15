@@ -362,8 +362,6 @@ class StreamDaQ:
         }
         
         for task_name, task in self._tasks.items():
-            print("skata")
-            print(task_name, task)
             status["tasks"][task_name] = {
                 "name": task_name,
                 "critical": task.critical,
