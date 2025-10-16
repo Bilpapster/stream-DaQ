@@ -311,8 +311,6 @@ Different use cases require different approaches to late data:
 
         ``wait_for_late=3600`` - Very high tolerance. Accuracy over speed.
 
-**Real-World Example
-
 **Real-World Example: IoT Sensor Monitoring**
 
 .. code-block:: python

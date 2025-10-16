@@ -1,6 +1,140 @@
 🧙‍♂️ Advanced Examples
 =============================
 
+This section demonstrates Stream DaQ's advanced capabilities for complex monitoring scenarios. You'll learn how to leverage multi-source task architecture, handle compact IoT data formats, and implement sophisticated schema validation patterns that go beyond basic quality monitoring.
+
+Multi-Source Task Monitoring
+-----------------------------
+
+Stream DaQ's task-based architecture enables monitoring multiple independent data sources within a single StreamDaQ instance. This powerful approach eliminates the need to manage multiple monitoring processes while providing complete isolation and flexibility for each data source.
+
+**Key Benefits:**
+- **Unified Management**: One StreamDaQ instance orchestrates multiple monitoring tasks
+- **Independent Configuration**: Each task has its own windowing, schema validation, and quality checks
+- **Error Isolation**: Non-critical task failures don't affect other tasks
+- **Resource Efficiency**: Shared infrastructure with coordinated execution
+
+**Real-World Scenario: Smart City Platform**
+
+.. code-block:: python
+
+    # pip install streamdaq
+    
+    import pathway as pw
+    from streamdaq import StreamDaQ, DaQMeasures as dqm, Windows, CompactData
+    from streamdaq.SchemaValidator import create_schema_validator, AlertMode
+    from pydantic import BaseModel, Field
+    
+    # Create StreamDaQ instance for multi-source monitoring
+    daq = StreamDaQ()
+    
+    # Task 1: IoT Environmental Sensors (Critical - affects public safety)
+    iot_task = daq.new_task("environmental_sensors", critical=True)
+    iot_task.configure(
+        source=iot_sensor_data,
+        window=Windows.sliding(duration=300, hop=60),  # 5-min windows, updated every minute
+        time_column="sensor_timestamp",
+        instance="sensor_id",
+        compact_data=CompactData()  # Handle compact sensor data automatically
+    )
+    
+    # Environmental quality checks
+    iot_task.check(dqm.count('temperature'), must_be=">50", name="temp_readings") \
+            .check(dqm.missing_count('air_quality'), must_be="<5", name="air_quality_missing") \
+            .check(dqm.mean('temperature'), must_be="(15, 35)", name="temp_range")
+    
+    # Task 2: User Engagement Analytics (Non-critical - for business insights)
+    user_task = daq.new_task("user_analytics", critical=False)
+    user_task.configure(
+        source=user_events_data,
+        window=Windows.tumbling(duration=3600),  # Hourly analysis
+        time_column="event_time",
+        instance="user_id"
+    )
+    
+    # User engagement quality checks
+    user_task.check(dqm.distinct_count('action'), must_be=">3", name="action_diversity") \
+             .check(dqm.mean('session_duration'), must_be="(30, 600)", name="session_quality")
+    
+    # Task 3: Financial Transactions (Critical - affects payments)
+    finance_task = daq.new_task("financial_monitoring", critical=True)
+    finance_task.configure(
+        source=transaction_data,
+        window=Windows.tumbling(duration=60),  # Real-time fraud detection
+        time_column="transaction_time",
+        wait_for_late=0,  # No tolerance for late financial data
+        schema_validator=transaction_validator  # Strict validation
+    )
+    
+    # Financial compliance checks
+    finance_task.check(dqm.count('amount'), must_be=">0", name="transaction_volume") \
+               .check(dqm.sum('amount'), must_be="(1000, 100000)", name="total_amount")
+    
+    # Start monitoring all tasks concurrently
+    daq.watch_out()
+
+**Task Independence Features:**
+
+- **Different Data Formats**: IoT sensors use compact data, others use native format
+- **Different Windowing**: Sliding windows for real-time sensors, tumbling for batch analytics
+- **Different Criticality**: Environmental and financial monitoring are critical, analytics are not
+- **Independent Error Handling**: Non-critical failures don't stop critical monitoring
+
+**Backward Compatibility**
+
+The new task-based architecture maintains full compatibility with existing Stream DaQ code:
+
+.. code-block:: python
+
+    # Existing code continues to work unchanged
+    daq = StreamDaQ().configure(
+        source=legacy_data,
+        window=Windows.tumbling(60),
+        time_column="timestamp"
+    )
+    daq.add(dqm.count('events'), assess=">10", name="count")  # Still works (with deprecation warning)
+    daq.watch_out()
+    
+    # Mixed usage: combine old and new approaches
+    daq = StreamDaQ()
+    
+    # Keep existing configuration (creates default task internally)
+    daq.configure(source=legacy_data, window=Windows.tumbling(60), time_column="timestamp")
+    daq.check(dqm.count('events'), must_be=">10", name="legacy_count")
+    
+    # Add new tasks using new API
+    new_task = daq.new_task("additional_monitoring")
+    new_task.configure(source=new_data, window=Windows.sliding(120, 30), time_column="timestamp")
+    new_task.check(dqm.mean('values'), must_be="(0, 100)", name="avg_check")
+    
+    daq.watch_out()  # Monitors both legacy and new tasks
+
+**Error Handling and Recovery**
+
+.. code-block:: python
+
+    try:
+        daq.watch_out()
+    except CriticalTaskFailureError as e:
+        print(f"Critical task '{e.task_name}' failed: {e.original_error}")
+        print("All monitoring stopped for safety - implement recovery procedures")
+    except Exception as e:
+        print(f"Non-critical task failure: {e}")
+        print("Other tasks continue running normally")
+
+**When to Use Multi-Source Tasks:**
+
+- **IoT Platforms**: Monitor sensors, user devices, and system infrastructure simultaneously
+- **E-commerce**: Track payments (critical), user behavior (non-critical), and inventory (critical)
+- **Financial Services**: Monitor transactions, market data, and compliance reporting
+- **Smart Cities**: Environmental sensors, traffic monitoring, and public safety systems
+- **Manufacturing**: Production lines, quality control, and predictive maintenance
+
+For complete examples, see:
+- ``examples/multi_source_monitoring.py`` - Comprehensive multi-source scenario
+- ``examples/mixed_api_usage.py`` - Backward compatibility demonstration  
+- ``examples/critical_task_handling.py`` - Error handling and recovery patterns
+
 Compact Data Monitoring Example
 --------------------------------
 
