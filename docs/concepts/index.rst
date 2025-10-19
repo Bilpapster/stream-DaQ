@@ -40,6 +40,13 @@ Welcome to the conceptual heart of Stream DaQ! Understanding these core concepts
 
         **Stream processing principles** - Understand late arrivals, watermarks, and how Stream DaQ handles the complexity of real-time data.
 
+    .. grid-item-card:: 🎯 Multi-Source Tasks
+        :link: multi-source-tasks
+        :link-type: doc
+        :class-header: bg-primary text-white
+
+        **Task-based architecture** - Monitor multiple independent data sources with different configurations from a single StreamDaQ instance.
+
     .. grid-item-card:: 📊 Compact vs Native Data
         :link: compact-vs-native-data
         :link-type: doc
@@ -160,7 +167,7 @@ As you explore these concepts, you'll start recognizing common patterns:
 
         Identify missing data, null values, and incomplete records
 
-    .. grid-item-card: **Distribution Analysis**
+    .. grid-item-card:: **Distribution Analysis**
         :class-header: bg-light
 
         Monitor statistical properties and detect data drift
@@ -175,6 +182,7 @@ Ready to dive deeper? Start with :doc:`data-quality` to understand why streaming
    stream-windows
    measures-and-assessments
    real-time-monitoring
+   multi-source-tasks
    compact-vs-native-data
 
 |made_with_love|
