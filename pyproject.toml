@@ -8,7 +8,7 @@ version = "0.3.1"
 description = "Plug-and-play real-time quality monitoring for data streams!"
 authors = [
     {name = "Vassilis Papastergios", email = "papster@csd.auth.gr"},
-    {name = "George Atmatzidis"},
+    {name = "George Atmatzidis", email = "gatmatza@csd.auth.gr},
     {name = "Apostolos Giannoulidis"},
     {name = "Anastasios Gounaris", email = "gounaria@csd.auth.gr"}
 ]
@@ -33,7 +33,7 @@ classifiers = [
 ]
 keywords = ["data-quality", "streaming", "real-time", "monitoring", "data-engineering"]
 dependencies = [
-    "pathway==0.21.*",
+    "pathway==0.*",
     "matplotlib==3.10.1",
     "python-dateutil==2.9.0.post0",
     "datasketch~=1.6.5",
