@@ -33,7 +33,7 @@ classifiers = [
 ]
 keywords = ["data-quality", "streaming", "real-time", "monitoring", "data-engineering"]
 dependencies = [
-    "pathway~=0.26.*",
+    "pathway~=0.26.4",
     "matplotlib==3.10.1",
     "python-dateutil==2.9.0.post0",
     "datasketch~=1.6.5",
