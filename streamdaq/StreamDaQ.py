@@ -6,12 +6,12 @@ import pathway as pw
 from pathway.internals import ReducerExpression
 from pathway.stdlib.temporal import Window
 
-from streamdaq.artificial_stream_generators import generate_artificial_random_viewership_data_stream as artificial
-from streamdaq.utils import create_comparison_function, extract_violation_count
 from streamdaq.SchemaValidator import SchemaValidator
 from streamdaq.CompactData import CompactData
 from streamdaq.Task import Task, CriticalTaskFailureError
+from streamdaq.logging_config import get_logger
 
+logger = get_logger(__name__)
 
 class StreamDaQ:
     """
@@ -149,7 +149,6 @@ class StreamDaQ:
         
         return self
 
-    # TODO: rename to new_task and change all code occurences both here and in the examples
     def new_task(self, name: Optional[str] = None, critical: bool = False) -> Task:
         """
         Add a new monitoring task to this StreamDaQ instance.
@@ -236,7 +235,7 @@ class StreamDaQ:
     def check(
         self,
         measure: pw.ColumnExpression | ReducerExpression,
-        assess: str | Callable[[Any], bool] | None = None,
+        must_be: str | Callable[[Any], bool] | None = None,
         name: Optional[str] = None,
     ) -> Self:
         """
@@ -253,7 +252,7 @@ class StreamDaQ:
             raise RuntimeError("No default task exists. Call configure() first or use add_task() to create tasks explicitly.")
         
         # Add check to default task
-        self._default_task.check(measure, assess, name)
+        self._default_task.check(measure, must_be, name)
         
         # Update instance variables for backward compatibility
         self.measures = self._default_task.task_output
@@ -290,30 +289,30 @@ class StreamDaQ:
         
         for task_name, task in self._tasks.items():
             try:
-                print(f"Starting monitoring for task: {task_name}")
+                logger.info(f"Starting monitoring for task: {task_name}")
                 quality_meta_stream = task.execute_monitoring_pipeline()
                 quality_meta_streams.append(quality_meta_stream)
-                print(f"Task '{task_name}' started successfully")
+                logger.info(f"Task '{task_name}' started successfully")
                 
             except CriticalTaskFailureError as e:
-                print(f"CRITICAL TASK FAILURE: {e}")
-                print(f"Task '{task_name}' is marked as critical. Stopping all monitoring.")
+                logger.error(f"CRITICAL TASK FAILURE: {e}")
+                logger.error(f"Task '{task_name}' is marked as critical. Stopping all monitoring.")
                 self._log_task_failure(task_name, e.original_error, critical=True)
                 raise
                 
             except Exception as e:
                 # Handle non-critical task failures
-                print(f"NON-CRITICAL TASK FAILURE: Task '{task_name}' failed with error: {e}")
+                logger.error(f"NON-CRITICAL TASK FAILURE: Task '{task_name}' failed with error: {e}")
                 self._log_task_failure(task_name, e, critical=False)
                 failed_tasks.append(task_name)
-                print(f"Continuing with remaining tasks...")
+                logger.error(f"Continuing with remaining tasks...")
         
         # Report summary of task execution
         if failed_tasks:
-            print(f"Task execution summary: {len(failed_tasks)} non-critical tasks failed: {failed_tasks}")
-            print(f"Successfully started {len(quality_meta_streams)} tasks")
+            logger.error(f"Task execution summary: {len(failed_tasks)} non-critical tasks failed: {failed_tasks}")
+            logger.error(f"Successfully started {len(quality_meta_streams)} tasks")
         else:
-            print(f"All {len(quality_meta_streams)} tasks started successfully")
+            logger.info(f"All {len(quality_meta_streams)} tasks started successfully")
         
         if not start:
             # For backward compatibility, return default task's quality meta-stream
@@ -338,17 +337,17 @@ class StreamDaQ:
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         severity = "CRITICAL" if critical else "WARNING"
         
-        print(f"\n{'='*60}")
-        print(f"TASK FAILURE REPORT - {severity}")
-        print(f"{'='*60}")
-        print(f"Timestamp: {timestamp}")
-        print(f"Task Name: {task_name}")
-        print(f"Critical: {'Yes' if critical else 'No'}")
-        print(f"Error Type: {type(error).__name__}")
-        print(f"Error Message: {str(error)}")
-        print(f"Traceback:")
-        print(traceback.format_exc())
-        print(f"{'='*60}\n")
+        logger.error(f"\n{'='*60}")
+        logger.error(f"TASK FAILURE REPORT - {severity}")
+        logger.error(f"{'='*60}")
+        logger.error(f"Timestamp: {timestamp}")
+        logger.error(f"Task Name: {task_name}")
+        logger.error(f"Critical: {'Yes' if critical else 'No'}")
+        logger.error(f"Error Type: {type(error).__name__}")
+        logger.error(f"Error Message: {str(error)}")
+        logger.error(f"Traceback:")
+        logger.error(traceback.format_exc())
+        logger.error(f"{'='*60}\n")
 
     def get_task_status(self) -> dict:
         """

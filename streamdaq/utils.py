@@ -1,11 +1,11 @@
-import logging
 import typing
-from typing import Callable, Optional, get_origin, get_args
+from typing import Callable, Optional, get_args, get_origin
+
 import numpy as np
 
-# Configure logging
-logging.basicConfig(level=logging.WARNING)
-logger = logging.getLogger(__name__)
+from streamdaq.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 def create_frequency_dict(elements: tuple) -> dict:

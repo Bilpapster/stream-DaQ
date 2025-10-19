@@ -10,11 +10,14 @@ from streamdaq.artificial_stream_generators import generate_artificial_random_vi
 from streamdaq.utils import create_comparison_function, extract_violation_count
 from streamdaq.SchemaValidator import SchemaValidator
 from streamdaq.CompactData import CompactData
+from streamdaq.logging_config import get_logger
 
 # This is for improved developer experience using type annotations
 # See https://tinyurl.com/4cycs6jn for reference
 if TYPE_CHECKING:
     from streamdaq.StreamDaQ import StreamDaQ
+
+logger = get_logger(__name__)
 
 
 class Task:
@@ -181,7 +184,7 @@ class Task:
             timestamp=pw.cast(float, pw.this.timestamp),
         )
         self.compact_data = None  # The artificial data source is native
-        print(f"Task '{self.name}': No source provided. Data set to artificial and format to native.")
+        logger.debug(f"Task '{self.name}': No source provided. Data set to artificial and format to native.")
         return data
 
     def _convert_to_native_if_needed(self, data: pw.Table) -> pw.Table:
@@ -299,7 +302,7 @@ class Task:
         if violations:
             violations_sink = self.schema_validator.settings().deflection_sink or pw.debug.compute_and_print
             violations_sink(violations)
-            print(f"Task '{self.name}': Violations sink has been successfully set.")
+            logger.info(f"Task '{self.name}': Violations sink has been successfully set.")
 
         # sink for alerts if needed - defaults to console (as dict objects)
         if alerts:
@@ -331,7 +334,7 @@ class Task:
             if self.critical:
                 raise CriticalTaskFailureError(self.name, e)
             else:
-                print(f"Task '{self.name}' failed with error: {e}")
+                logger.error(f"Task '{self.name}' failed with error: {e}")
                 # For non-critical tasks, we could return None or a dummy table
                 # For now, we'll re-raise to let the orchestrator handle it
                 raise
