@@ -123,6 +123,7 @@ class Task:
         :param sink_operation: the operation to perform in order to send data out of Stream DaQ
         :param schema_validator: an optional schema validator to apply on the input data stream
         :param compact_data: an optional compact data configuration for working with compact data representations
+        :param detector: an optional anomaly detector to attach for profiling and anomaly detection
         :return: a self reference for method chaining
         """
         self.window = window
@@ -272,7 +273,7 @@ class Task:
 
     def _attach_detector(self, data: pw.GroupedTable) -> pw.Table:
         if not self.detector:
-            self.detector = StatisticalDetector()
+            return data
 
         profiling_measures = self.detector.set_measures(data, self.time_column, self.instance)
 
@@ -328,7 +329,7 @@ class Task:
             how = pw.JoinMode.INNER
         ).select(
             *[pw.this[col] for col in quality_meta_stream.column_names()],
-            profiling_assessment=pw.this._anomaly_metadata
+            anomaly_assessment=pw.this._anomaly_metadata
         )
 
         return merged_stream
