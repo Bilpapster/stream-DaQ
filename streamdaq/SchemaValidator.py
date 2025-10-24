@@ -159,34 +159,26 @@ class SchemaValidator:
             and validation results. It's a dummy table just to force the computation into the function.
 
         """
-        def alert_if_needed(**kwargs) -> bool:
-            record = dict(kwargs)
-            alert = self.should_alert(record) # Check if alert should be raised based on alert mode
+        def alert_if_needed(key: pw.Pointer, row: dict, time: int, is_addition: bool) -> bool:
+            alert = self.should_alert(row) # Check if alert should be raised based on alert mode
             if not alert:
                 return False  # Return False for clarity.
 
-            for error in record.get('error_messages'):
+            for error in row.get('error_messages'):
                 if not error:
                     continue
                 if self.config.raise_on_violation:
                     raise ValueError(f"Schema violation detected: {error}")
                 # else would be redundant here imho since we are raising an exception
                 self.logger.warning(
-                    f"[{record.get('window_start')}] Schema violation detected: {error}"
+                    f"[{row.get('window_start')}] Schema violation detected: {error}"
                 )
             return alert
 
         # Traverse the data stream and apply alerting logic
-        column_args = {col: pw.this[col] for col in data.column_names()}
-        alert_stream = data.select(
-            is_valid=pw.apply_with_type(
-                alert_if_needed,
-                bool,
-                **column_args
-            )
-        )
+        pw.io.subscribe(data, on_change=alert_if_needed,sort_by=[data.window_start])
 
-        return alert_stream
+        return data
 
 def create_schema_validator(
     schema: BaseModel,

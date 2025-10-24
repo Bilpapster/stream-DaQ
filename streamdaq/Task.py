@@ -301,9 +301,9 @@ class Task:
             violations_sink(violations)
             print(f"Task '{self.name}': Violations sink has been successfully set.")
 
-        # sink for alerts if needed - defaults to console (as dict objects)
+        # dummy sink for alerts to force computation - no need to print alerts again
         if alerts:
-            pw.debug.table_to_dicts(alerts)
+            pw.io.null.write(alerts)
 
     def execute_monitoring_pipeline(self) -> pw.Table:
         """
