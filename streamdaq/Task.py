@@ -249,7 +249,7 @@ class Task:
             return data
         return data.filter(pw.this._validation_metadata[0] == True)
 
-    def _window(self, data: pw.Table) -> pw.Table:
+    def _window(self, data: pw.Table) -> pw.GroupedTable:
         if self.schema_validator:
             column_name = self.schema_validator.settings().column_name
             data = data.with_columns(
@@ -272,21 +272,24 @@ class Task:
         )
 
     def _attach_detector(self, data: pw.GroupedTable) -> pw.Table:
+        """Generates profiling checks and performs anomaly detection on these checks."""
         if not self.detector:
             return data
 
+        # Generate profiling measures for anomaly detection
         profiling_measures = self.detector.set_measures(data, self.time_column, self.instance)
 
-        # Keep the same windowing parameters as the main quality meta-stream
+        # Keep the same windowing operation as the main quality meta-stream
+        # and apply the profiling measures
         profiling_data = data.reduce(**profiling_measures)
 
-        # Produce streamdaq like alerts from profiling data
+        # Execute anomaly detection and generate streamdaq-like results
         alerts = self.detector.consume_windows(profiling_data)
 
         return alerts
 
     def _measure_and_asses(self, data: pw.GroupedTable) -> pw.Table:
-        # First compute all measures
+        """Computes all explicit checks"""
         measured_data = data.reduce(**self.task_output)
 
         return measured_data
@@ -367,12 +370,12 @@ class Task:
             windowed_stream = self._window(data)
             anomaly_detection = self._attach_detector(windowed_stream)
             quality_meta_stream = self._measure_and_asses(windowed_stream)
-            alerts = self._raise_alerts_if_needed(quality_meta_stream)
+            anomaly_alerts = self._raise_alerts_if_needed(quality_meta_stream)
             quality_meta_stream = self._remove_error_messages_if_needed(quality_meta_stream)
             quality_meta_stream = self._merge_streams(quality_meta_stream, anomaly_detection)
 
             self._send_to_sinks_if_needed(
-                quality_meta_stream=quality_meta_stream, violations=deflected_data, alerts=alerts
+                quality_meta_stream=quality_meta_stream, violations=deflected_data, alerts=anomaly_alerts
             )
 
             return quality_meta_stream

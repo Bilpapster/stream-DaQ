@@ -8,6 +8,71 @@ from streamdaq.DaQMeasures import DaQMeasures
 from streamdaq.anomaly_detectors.AnomalyDetector import AnomalyDetector
 
 class StatisticalDetector(AnomalyDetector):
+    """
+    Statistical anomaly detector using rolling window z-score analysis for streaming data.
+
+    This detector implements an online anomaly detection algorithm that:
+    1. Profiles numeric columns using configurable statistical DaQMeasures such as (mean, stddev, min, max, etc.)
+    2. Maintains rolling windows of historical statistics with fixed capacity
+    3. Detects anomalies by comparing current measures against rolling statistics using z-scores
+    4. Provides severity classification and root cause analysis (RCA) via top-k deviating measures
+
+    Algorithm Overview:
+    - **Rolling Window Statistics**: Maintains deques of size `buffer_size` for each profiled measure
+    - **Z-Score Calculation**: Computes standardized deviation from rolling mean: |x - μ| / σ
+    - **Anomaly Detection**: Flags windows where max z-score exceeds `threshold` standard deviations
+    - **Severity Classification**: Categorizes anomalies as moderate/high/critical based on z-score multiples
+    - **Root Cause Analysis**: Identifies top-k measures contributing most to anomaly score
+
+    Key Features:
+    - **Adaptive Baseline**: Rolling statistics adapt to data distribution changes over time
+    - **Memory Efficient**: Fixed-size deques prevent unbounded memory growth
+    - **Warmup Period**: Allows initial windows for stable baseline establishment
+    - **Flexible Profiling**: Supports custom measures via DaQMeasures or user-defined functions
+    - **Multi-Column Analysis**: Simultaneously profiles multiple numeric columns
+
+    Workflow:
+    1. **Initialization**: Configure buffer size, warmup time, threshold, and profiling measures
+    2. **Measure Setup**: Automatically detects numeric columns and creates statistical expressions
+    3. **Window Processing**: For each data window:
+       - Compute statistical measures (mean, stddev, etc.) for current window
+       - Update rolling history with new measure values
+       - Calculate z-scores against rolling baseline statistics
+       - Determine anomaly severity and identify top contributing measures
+    4. **Output**: Returns severity level and ranked list of anomalous measures
+
+    Parameters:
+        buffer_size (int): Rolling window capacity for historical statistics (default: 5)
+        warmup_time (int): Number of initial windows to skip anomaly detection (default: 2)
+        threshold (float): Z-score threshold for anomaly detection in standard deviations (default: 2.0)
+        top_k (int): Number of top deviating measures to return for RCA (default: 1)
+        measures (List[str]): Statistical measures to compute (default: ["mean", "stddev", "min", "max"])
+        columns_profiled (List[str], optional): Specific columns to profile (default: all numeric columns)
+
+    Severity Levels:
+        - "warmup period": During initial warmup_time windows
+        - "normal": Z-score ≤ threshold
+        - "moderate": threshold < Z-score ≤ 2×threshold
+        - "high": 2×threshold < Z-score ≤ 3×threshold
+        - "critical": Z-score > 3×threshold
+
+    Example Usage:
+        detector = StatisticalDetector(
+            buffer_size=10,
+            warmup_time=3,
+            threshold=2.5,
+            top_k=3,
+            measures=["mean", "stddev", "p95"]
+        )
+
+    Returns:
+        For each window: Tuple[severity: str, top_k_measures: List[Tuple[measure_name, z_score]]]
+
+    Note:
+        - Requires at least 2 windows in rolling history for variance calculation
+        - Zero variance cases fall back to absolute difference from mean
+        - Automatically filters non-numeric columns during setup
+    """
     MeasureSpec = Union[
         str,
         Callable[..., Any],
@@ -16,7 +81,7 @@ class StatisticalDetector(AnomalyDetector):
         Tuple[Any, ...],
     ]
 
-    def __init__(self, buffer_size=5, warmup_time=2, anomaly_threshold_method='percentile', training_period=5, top_k=1, measures=["mean", "stddev", "min", "max"], columns_profiled=None):
+    def __init__(self, buffer_size=5, warmup_time=2, threshold = 2, top_k=1, measures=["mean", "stddev", "min", "max"], columns_profiled=None):
         super().__init__()
 
         # Data Profiling setup
@@ -30,13 +95,9 @@ class StatisticalDetector(AnomalyDetector):
         self.top_k = top_k
 
         # Statistical anomaly detection parameters
-        self.training_period = training_period
-        self.rolling_history = defaultdict(lambda: deque(maxlen=buffer_size))
-        self.rolling_means = {}
+        self.rolling_means = defaultdict(lambda: deque(maxlen=buffer_size))
+        self.threshold = threshold
         self.windows_processed = 0
-        self.anomaly_threshold_method = anomaly_threshold_method
-        self.anomaly_scores_history = deque(maxlen=buffer_size)
-        self.anomaly_threshold = None
 
     def _resolve_measure(self, measure_spec: MeasureSpec, column_name: str) -> pw.internals.expression.ColumnExpression:
         """
@@ -122,126 +183,117 @@ class StatisticalDetector(AnomalyDetector):
                         measure_name = f"{prefix}_{col_name}_{measure}"
                         profiling_measures[measure_name] = expr
 
-
         self.nof_summaries = int(len(profiling_measures) / len(numeric_columns) if numeric_columns else 0)
         profiling_measures["_pw_window_start"] = pw.this._pw_window_start
         profiling_measures["_pw_window_end"] = pw.this._pw_window_end
 
         return profiling_measures
 
-    def update_rolling_means(self, current_measures):
-        """Append current values to history and recalculate rolling means."""
-        for measure_name, current_value in current_measures.items():
+    def update_online_normal_stats(self, current_measures):
+        """Update rolling window statistics using deque with fixed capacity."""
+        for measure_name, value in current_measures.items():
             if measure_name in ["_pw_window_start", "_pw_window_end"]:
                 continue
-            self.rolling_history[measure_name].append(current_value)
-            hist = self.rolling_history[measure_name]
-            if len(hist) > 0:
-                self.rolling_means[measure_name] = sum(hist) / len(hist)
+
+            # Add new value to rolling window (automatically removes oldest if at capacity)
+            self.rolling_means[measure_name].append(value)
+
+    def get_rolling_stats(self, measure_name):
+        """Calculate mean and variance from current rolling window."""
+        if measure_name not in self.rolling_means or len(self.rolling_means[measure_name]) == 0:
+            return 0.0, 0.0
+
+        values = list(self.rolling_means[measure_name])
+        count = len(values)
+
+        if count == 1:
+            return values[0], 0.0
+
+        mean = sum(values) / count
+        variance = sum((x - mean) ** 2 for x in values) / (count - 1)
+
+        return mean, variance
 
     def compute_anomaly_score(self, current_measures) -> Tuple[float, List[Tuple[str, float]]]:
-        """Compute anomaly score and identify the measure with the largest deviation.
+        """Compute anomaly score using OnlineNormal algorithm."""
+        # Update rolling statistics with current measures
+        self.update_online_normal_stats(current_measures)
 
-        Returns:
-            (average_score, top_measure_name_or_None, top_diff)
-        """
-        # Return 0 during warmup period (windows_processed counts previously seen windows)
+        # Return 0 during warmup period
         if self.windows_processed < self.warmup_time:
             return 0.0, []
 
-        if not self.rolling_means:
-            return 0.0, []
-
-        diffs = []
+        z_scores = []
         for measure_name, current_value in current_measures.items():
             if measure_name in ["_pw_window_start", "_pw_window_end"]:
                 continue
+
             if measure_name in self.rolling_means:
-                rolling_mean = self.rolling_means[measure_name]
-                # Use relative difference when possible, otherwise absolute difference
-                if rolling_mean != 0:
-                    diff = abs(current_value - rolling_mean) / abs(rolling_mean)
-                else:
-                    diff = abs(current_value - rolling_mean)
-                diffs.append((measure_name, float(diff)))
+                running_mean, running_variance = self.get_rolling_stats(measure_name)
 
-        # overall score = average of diffs
-        anomaly_score = sum(d for _, d in diffs) / len(diffs)
+                if running_variance > 0:
+                    running_std = np.sqrt(running_variance)
+                    z_score = abs(current_value - running_mean) / running_std
+                    z_scores.append((measure_name, float(z_score)))
+                elif len(self.rolling_means[measure_name]) > 1:
+                    # Fallback for zero variance case
+                    diff = abs(current_value - running_mean)
+                    z_scores.append((measure_name, float(diff)))
 
-        # identify top-k deviating measures
-        diffs.sort(key=lambda t: t[1], reverse=True)
-        k = max(1, min(self.top_k, len(diffs)))
-        top_k_list = diffs[:k]
+        if not z_scores:
+            return 0.0, []
+
+        # Overall score = maximum z-score
+        anomaly_score = max(z for _, z in z_scores)
+
+        # Identify top-k deviating measures
+        z_scores.sort(key=lambda t: t[1], reverse=True)
+        k = max(1, min(self.top_k, len(z_scores)))
+        top_k_list = [(name, round(score, 3)) for name, score in z_scores[:k]]
 
         return float(anomaly_score), top_k_list
 
-    def train_anomaly_threshold(self):
-        """Update statistical threshold for anomaly detection."""
-        scores = list(self.anomaly_scores_history)
-        if not scores:
-            return
-
-        if self.anomaly_threshold_method == 'zscore':
-            mean_score = np.mean(scores)
-            std_score = np.std(scores)
-            self.anomaly_threshold = mean_score + 2 * std_score
-        elif self.anomaly_threshold_method == 'percentile':
-            self.anomaly_threshold = float(np.percentile(scores, 95))
-        elif self.anomaly_threshold_method == 'iqr':
-            q1 = np.percentile(scores, 25)
-            q3 = np.percentile(scores, 75)
-            iqr = q3 - q1
-            self.anomaly_threshold = float(q3 + 1.5 * iqr)
-
     def is_anomalous(self, current_anomaly_score):
-        """Determine if current score indicates an anomaly."""
-        return current_anomaly_score > self.anomaly_threshold
+        """Determine if current score indicates an anomaly using standard deviation bound."""
+        # For OnlineNormal, threshold is directly the number of standard deviations
+        return current_anomaly_score > self.threshold
 
     def get_anomaly_severity(self, current_score):
-        """Get anomaly severity level."""
-        if self.anomaly_threshold is None or self.windows_processed < self.warmup_time:
+        """Get anomaly severity based on standard deviation multiples."""
+        if self.windows_processed < self.warmup_time:
             return "warmup period"
 
         if not self.is_anomalous(current_score):
             return "normal"
 
-        severity_ratio = current_score / self.anomaly_threshold
-        if severity_ratio > 2.0:
+        # Severity based on multiples of the threshold
+        if current_score > 3 * self.threshold:
             return "critical"
-        elif severity_ratio > 1.5:
+        elif current_score > 2 * self.threshold:
             return "high"
         else:
             return "moderate"
 
     def window_processor(self, **kwargs) -> Tuple[str, List[Tuple[str, float]]]:
+        """Process a single window of data to detect anomalies."""
         row = dict(kwargs)
 
-        # Compute anomaly score against existing rolling means (history excludes current row)
         anomaly_score, top_k_measures = self.compute_anomaly_score(row)
-        self.anomaly_scores_history.append(anomaly_score)
 
-        # Train threshold if warmup already completed (windows_processed counts previous windows)
-        if self.windows_processed >= self.warmup_time:
-            self.train_anomaly_threshold()
-
-        if self.windows_processed % self.training_period == 0:
-            self.train_anomaly_threshold()
-
-        # Determine severity based on current score
+        # Determine severity
         severity = self.get_anomaly_severity(anomaly_score)
 
-        # Now update history/rolling means with the current row so next window uses it
-        self.update_rolling_means(row)
-
-        # Increment windows processed counter after using it for warmup/training logic
+        # Increment counter after warmup
         self.windows_processed += 1
-        # Only report top-k measures when it's anomalous
+
+        # Return results
         if severity != "normal":
             return severity, top_k_measures or []
         else:
             return severity, []
 
     def consume_windows(self, windowed_stream: pw.Table) -> pw.Table:
+        """Process stream window-by-window to detect anomalies."""
         profiled_stream = windowed_stream.select(
             **{col: pw.this[col] for col in windowed_stream.column_names()},
             _anomaly_metadata =pw.apply(self.window_processor, **{col: pw.this[col] for col in windowed_stream.column_names()})

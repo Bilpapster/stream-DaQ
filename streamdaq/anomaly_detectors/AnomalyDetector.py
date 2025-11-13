@@ -3,7 +3,12 @@ import pathway as pw
 
 
 class AnomalyDetector(ABC):
-    """Abstract base class for all anomaly detectors"""
+    """
+    Abstract base class for all anomaly detectors.
+    All anomaly detectors should inherit from this class and implement the required methods.
+    Anomaly detection strives to identify unusual or problematic windows in a data stream.
+    To do so effectively, one must set appropriate profiling measures and implement the logic to consume windowed data streams.
+    """
 
     def __init__(self, **kwargs):
         """Initialize the anomaly detector with configuration parameters"""
@@ -12,7 +17,7 @@ class AnomalyDetector(ABC):
     @abstractmethod
     def set_measures(self, data: pw.Table, time_column: str, instance: str) -> dict:
         """
-        Set profiling measures based on the data structure
+        Set profiling measures. Parameters of time_column and instance are provided for context.
         :param data: The input data stream to perform anomaly detection on
         :param time_column: The name of the time column in the data
         :param instance: The name of the instance column in the data
