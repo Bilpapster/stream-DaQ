@@ -271,7 +271,7 @@ class Task:
             # TODO (Vassilis) handle the case int | timedelta (in another PR)
         )
 
-    def _attach_detector(self, data: pw.GroupedTable) -> pw.Table:
+    def _attach_detector_if_needed(self, data: pw.GroupedTable) -> pw.Table:
         """Generates profiling checks and performs anomaly detection on these checks."""
         if not self.detector:
             return data
@@ -326,8 +326,11 @@ class Task:
             profiling_assessment:
         :return: the merged stream
         """
-        merged_stream = quality_meta_stream.join(
+        merged_stream = quality_meta_stream.interval_join(
             anomaly_detection,
+            quality_meta_stream.window_end,
+            anomaly_detection._pw_window_end,
+            pw.temporal.interval(0, 0), # Exact match on window boundaries, don't wait for early/late
             quality_meta_stream.window_start == anomaly_detection._pw_window_start, quality_meta_stream.window_end == anomaly_detection._pw_window_end,
             how = pw.JoinMode.INNER
         ).select(
@@ -368,7 +371,7 @@ class Task:
             deflected_data = self._deflect_violations_if_needed(data)
             data = self._keep_compliant_data_if_needed(data)
             windowed_stream = self._window(data)
-            anomaly_detection = self._attach_detector(windowed_stream)
+            anomaly_detection = self._attach_detector_if_needed(windowed_stream)
             quality_meta_stream = self._measure_and_asses(windowed_stream)
             anomaly_alerts = self._raise_alerts_if_needed(quality_meta_stream)
             quality_meta_stream = self._remove_error_messages_if_needed(quality_meta_stream)
