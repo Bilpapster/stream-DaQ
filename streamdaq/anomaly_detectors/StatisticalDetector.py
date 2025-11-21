@@ -6,6 +6,7 @@ import numpy as np
 import pathway as pw
 from streamdaq.DaQMeasures import DaQMeasures
 from streamdaq.anomaly_detectors.AnomalyDetector import AnomalyDetector
+from streamdaq.anomaly_detectors.Severity import Severity
 
 class StatisticalDetector(AnomalyDetector):
     """
@@ -43,14 +44,14 @@ class StatisticalDetector(AnomalyDetector):
 
     Parameters:
         buffer_size (int): Rolling window capacity for historical statistics (default: 5)
-        warmup_time (int): Number of initial windows to skip anomaly detection (default: 2)
+        warmup_windows (int): Number of initial windows to skip anomaly detection (default: 2)
         threshold (float): Z-score threshold for anomaly detection in standard deviations (default: 2.0)
         top_k (int): Number of top deviating measures to return for RCA (default: 1)
         measures (List[str]): Statistical measures to compute (default: ["mean", "stddev", "min", "max"])
         columns_profiled (List[str], optional): Specific columns to profile (default: all numeric columns)
 
     Severity Levels:
-        - "warmup period": During initial warmup_time windows
+        - "warmup period": During initial warmup_windows windows
         - "normal": Z-score ≤ threshold
         - "moderate": threshold < Z-score ≤ 2×threshold
         - "high": 2×threshold < Z-score ≤ 3×threshold
@@ -59,7 +60,7 @@ class StatisticalDetector(AnomalyDetector):
     Example Usage:
         detector = StatisticalDetector(
             buffer_size=10,
-            warmup_time=3,
+            warmup_windows=3,
             threshold=2.5,
             top_k=3,
             measures=["mean", "stddev", "p95"]
@@ -81,7 +82,7 @@ class StatisticalDetector(AnomalyDetector):
         Tuple[Any, ...],
     ]
 
-    def __init__(self, buffer_size=5, warmup_time=2, threshold = 2, top_k=1, measures=["mean", "stddev", "min", "max"], columns_profiled=None):
+    def __init__(self, buffer_size=5, warmup_windows=2, threshold = 2, top_k=1, measures=["mean", "stddev", "min", "max"], columns_profiled=None):
         super().__init__()
 
         # Data Profiling setup
@@ -89,7 +90,7 @@ class StatisticalDetector(AnomalyDetector):
         self.measures = measures
         self.columns_profiled = columns_profiled
         self.buffer_size = buffer_size
-        self.warmup_time = warmup_time
+        self.warmup_windows = warmup_windows
 
         # RCA setup
         self.top_k = top_k
@@ -220,7 +221,7 @@ class StatisticalDetector(AnomalyDetector):
         self.update_online_normal_stats(current_measures)
 
         # Return 0 during warmup period
-        if self.windows_processed < self.warmup_time:
+        if self.windows_processed < self.warmup_windows:
             return 0.0, []
 
         z_scores = []
@@ -260,19 +261,19 @@ class StatisticalDetector(AnomalyDetector):
 
     def get_anomaly_severity(self, current_score):
         """Get anomaly severity based on standard deviation multiples."""
-        if self.windows_processed < self.warmup_time:
-            return "warmup period"
+        if self.windows_processed < self.warmup_windows:
+            return Severity.WARMUP
 
         if not self.is_anomalous(current_score):
-            return "normal"
+            return Severity.NORMAL
 
         # Severity based on multiples of the threshold
         if current_score > 3 * self.threshold:
-            return "critical"
+            return Severity.CRITICAL
         elif current_score > 2 * self.threshold:
-            return "high"
+            return Severity.HIGH
         else:
-            return "moderate"
+            return Severity.MODERATE
 
     def window_processor(self, **kwargs) -> Tuple[str, List[Tuple[str, float]]]:
         """Process a single window of data to detect anomalies."""
@@ -287,7 +288,7 @@ class StatisticalDetector(AnomalyDetector):
         self.windows_processed += 1
 
         # Return results
-        if severity != "normal":
+        if severity != Severity.NORMAL:
             return severity, top_k_measures or []
         else:
             return severity, []

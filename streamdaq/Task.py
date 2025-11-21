@@ -7,7 +7,6 @@ from pathway.internals import ReducerExpression
 from pathway.stdlib.temporal import Window
 
 from streamdaq.anomaly_detectors.AnomalyDetector import AnomalyDetector
-from streamdaq.anomaly_detectors.StatisticalDetector import StatisticalDetector
 from streamdaq.artificial_stream_generators import generate_artificial_random_viewership_data_stream as artificial
 from streamdaq.utils import create_comparison_function, extract_violation_count
 from streamdaq.SchemaValidator import SchemaValidator
@@ -138,10 +137,8 @@ class Task:
 
         self.show_window_start = show_window_start
         self.show_window_end = show_window_end
-        if self.show_window_start:
-            self.task_output["window_start"] = pw.this._pw_window_start
-        if self.show_window_end:
-            self.task_output["window_end"] = pw.this._pw_window_end
+        self.task_output["window_start"] = pw.this._pw_window_start
+        self.task_output["window_end"] = pw.this._pw_window_end
 
         self.source = source
         self.sink_file_name = sink_file_name
@@ -326,6 +323,9 @@ class Task:
             profiling_assessment:
         :return: the merged stream
         """
+        if not self.detector:
+            return quality_meta_stream
+
         merged_stream = quality_meta_stream.interval_join(
             anomaly_detection,
             quality_meta_stream.window_end,
@@ -335,10 +335,41 @@ class Task:
             how = pw.JoinMode.INNER
         ).select(
             *[pw.this[col] for col in quality_meta_stream.column_names()],
-            anomaly_assessment=pw.this._anomaly_metadata
-        )
+            anomaly_assessment=pw.this._anomaly_metadata        )
 
         return merged_stream
+
+    def _organize_output(self, meta_stream: pw.Table) -> pw.Table:
+        """
+        Auxiliary method to organize the output columns of the quality meta-stream.
+        :param meta_stream: the quality meta-stream to organize
+        :return: the final quality meta-stream
+        """
+        base_cols = list(meta_stream.column_names())
+
+        # remove window columns if the user requested hiding them
+        final_cols = [
+            c for c in base_cols
+            if not ((c == "window_start" and not self.show_window_start)
+                    or (c == "window_end" and not self.show_window_end))
+        ]
+
+        # ensure `window_start` and `window_end` appear first (in that order) if present
+        prefix = []
+        if "window_start" in final_cols:
+            prefix.append("window_start")
+        if "window_end" in final_cols:
+            prefix.append("window_end")
+
+        rest = [c for c in final_cols if c not in prefix]
+        final_cols = prefix + rest
+
+        # project the ordered columns and attach anomaly_assessment
+        final_stream = meta_stream.select(
+            *[pw.this[col] for col in final_cols],
+        )
+
+        return final_stream
 
     def _send_to_sinks_if_needed(
         self, quality_meta_stream: pw.Table, violations: pw.Table | None, alerts: pw.Table | None
@@ -376,6 +407,7 @@ class Task:
             anomaly_alerts = self._raise_alerts_if_needed(quality_meta_stream)
             quality_meta_stream = self._remove_error_messages_if_needed(quality_meta_stream)
             quality_meta_stream = self._merge_streams(quality_meta_stream, anomaly_detection)
+            quality_meta_stream = self._organize_output(quality_meta_stream)
 
             self._send_to_sinks_if_needed(
                 quality_meta_stream=quality_meta_stream, violations=deflected_data, alerts=anomaly_alerts

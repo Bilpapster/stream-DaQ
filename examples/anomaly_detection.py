@@ -77,7 +77,7 @@ measures = [("min", "colA"), ("max", "colB"), ("mean", "colA")]
 # Step 4: Configure the Statistical Anomaly Detector
 detector = StatisticalDetector(
     buffer_size=10,  # Number of historical windows to maintain for baseline statistics
-    warmup_time=2,  # Number of initial windows before anomaly detection starts
+    warmup_windows=2,  # Number of initial windows before anomaly detection starts
     threshold=1.5,  # Z-score threshold for anomaly detection (1.5 = moderate sensitivity)
     top_k=2,  # Number of top anomalies to report per window
     measures=measures  # Statistical measures to compute and monitor

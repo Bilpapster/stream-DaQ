@@ -624,7 +624,7 @@ Stream DaQ provides sophisticated anomaly detection capabilities through its int
     # Step 4: Configure the Statistical Anomaly Detector
     detector = StatisticalDetector(
         buffer_size=10,    # Historical windows for baseline
-        warmup_time=2,     # Initial windows before detection starts
+        warmup_windows=2,     # Initial windows before detection starts
         threshold=1.5,     # Z-score threshold (1.5 = moderate sensitivity)
         top_k=2,           # Report top 2 anomalies per window
         measures=measures  # Statistical measures to monitor
@@ -654,7 +654,7 @@ Stream DaQ provides sophisticated anomaly detection capabilities through its int
    * - ``buffer_size``
      - 10
      - Number of historical windows for baseline statistics
-   * - ``warmup_time``
+   * - ``warmup_windows``
      - 2
      - Windows processed before anomaly detection starts
    * - ``threshold``

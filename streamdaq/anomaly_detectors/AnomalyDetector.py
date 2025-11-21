@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Optional
 import pathway as pw
 
 
@@ -15,7 +16,7 @@ class AnomalyDetector(ABC):
         pass
 
     @abstractmethod
-    def set_measures(self, data: pw.Table, time_column: str, instance: str) -> dict:
+    def set_measures(self, data: pw.Table, time_column: str, instance: Optional[str]) -> dict:
         """
         Set profiling measures. Parameters of time_column and instance are provided for context.
         :param data: The input data stream to perform anomaly detection on
