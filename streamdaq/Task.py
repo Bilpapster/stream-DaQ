@@ -6,6 +6,7 @@ import pathway as pw
 from pathway.internals import ReducerExpression
 from pathway.stdlib.temporal import Window
 
+from streamdaq.anomaly_detectors.AnomalyDetector import AnomalyDetector
 from streamdaq.artificial_stream_generators import generate_artificial_random_viewership_data_stream as artificial
 from streamdaq.utils import create_comparison_function, extract_violation_count
 from streamdaq.SchemaValidator import SchemaValidator
@@ -70,6 +71,7 @@ class Task:
         self.sink_operation = None
         self.schema_validator = None
         self.compact_data = None
+        self.detector = None
 
     def __initialize_state(self) -> None:
         self._TASK_INTERNAL_STATE = dict()
@@ -102,6 +104,7 @@ class Task:
         sink_operation: Callable[[pw.internals.Table], None] | None = None,
         schema_validator: SchemaValidator | None = None,
         compact_data: CompactData | None = None,
+        detector: AnomalyDetector | None = None
     ) -> Self:
         """
         Configure the data quality monitoring parameters for this task.
@@ -119,6 +122,7 @@ class Task:
         :param sink_operation: the operation to perform in order to send data out of Stream DaQ
         :param schema_validator: an optional schema validator to apply on the input data stream
         :param compact_data: an optional compact data configuration for working with compact data representations
+        :param detector: an optional anomaly detector to attach for profiling and anomaly detection
         :return: a self reference for method chaining
         """
         self.window = window
@@ -133,16 +137,15 @@ class Task:
 
         self.show_window_start = show_window_start
         self.show_window_end = show_window_end
-        if self.show_window_start:
-            self.task_output["window_start"] = pw.this._pw_window_start
-        if self.show_window_end:
-            self.task_output["window_end"] = pw.this._pw_window_end
+        self.task_output["window_start"] = pw.this._pw_window_start
+        self.task_output["window_end"] = pw.this._pw_window_end
 
         self.source = source
         self.sink_file_name = sink_file_name
         self.sink_operation = sink_operation
         self.schema_validator = schema_validator
         self.compact_data = compact_data
+        self.detector = detector
         return self
 
     def check(
@@ -243,18 +246,19 @@ class Task:
             return data
         return data.filter(pw.this._validation_metadata[0] == True)
 
-    def _window_measure_and_assess(self, data: pw.Table) -> pw.Table:
-        """Apply windowing and compute measures and assessments."""
+    def _window(self, data: pw.Table) -> pw.GroupedTable:
         if self.schema_validator:
             column_name = self.schema_validator.settings().column_name
             data = data.with_columns(
                 **{column_name: pw.apply_with_type(extract_violation_count, int, pw.this._validation_metadata[1])},
                 error_messages=pw.apply_with_type(
-                    lambda x: None if x == "" else x, str | None, pw.this._validation_metadata[1]
-                ),
+                    lambda x: None if x == '' else x,
+                    str | None,
+                    pw.this._validation_metadata[1]
+                )
             )
             self.task_output[self.schema_validator.settings().column_name] = pw.reducers.sum(pw.this[column_name])
-            self.task_output["error_messages"] = pw.reducers.tuple(pw.this.error_messages, skip_nones=True)
+            self.task_output['error_messages'] = pw.reducers.tuple(pw.this.error_messages, skip_nones=True)
 
         return data.windowby(
             data[self.time_column],
@@ -262,7 +266,30 @@ class Task:
             instance=data[self.instance] if self.instance else None,
             behavior=self.window_behavior or pw.temporal.exactly_once_behavior(shift=self.wait_for_late),
             # TODO (Vassilis) handle the case int | timedelta (in another PR)
-        ).reduce(**self.task_output)
+        )
+
+    def _attach_detector_if_needed(self, data: pw.GroupedTable) -> pw.Table:
+        """Generates profiling checks and performs anomaly detection on these checks."""
+        if not self.detector:
+            return data
+
+        # Generate profiling measures for anomaly detection
+        profiling_measures = self.detector.set_measures(data, self.time_column, self.instance)
+
+        # Keep the same windowing operation as the main quality meta-stream
+        # and apply the profiling measures
+        profiling_data = data.reduce(**profiling_measures)
+
+        # Execute anomaly detection and generate streamdaq-like results
+        alerts = self.detector.consume_windows(profiling_data)
+
+        return alerts
+
+    def _measure_and_asses(self, data: pw.GroupedTable) -> pw.Table:
+        """Computes all explicit checks"""
+        measured_data = data.reduce(**self.task_output)
+
+        return measured_data
 
     def _raise_alerts_if_needed(self, data: pw.Table) -> pw.Table | None:
         """Raises alerts only if alerting behavior is configured."""
@@ -286,6 +313,63 @@ class Task:
 
         cols_to_keep = {col: pw.this[col] for col in quality_meta_stream.column_names() if col != "error_messages"}
         return quality_meta_stream.select(**cols_to_keep)
+
+    def _merge_streams(self, quality_meta_stream: pw.Table, anomaly_detection: pw.Table) -> pw.Table:
+        """
+        Merges the quality meta-stream with the profiling assessment stream on
+        :param quality_meta_stream: the quality meta-stream to merge
+        :param anomaly_detection: the profiling assessment stream to merge
+            quality_meta_stream:
+            profiling_assessment:
+        :return: the merged stream
+        """
+        if not self.detector:
+            return quality_meta_stream
+
+        merged_stream = quality_meta_stream.interval_join(
+            anomaly_detection,
+            quality_meta_stream.window_end,
+            anomaly_detection._pw_window_end,
+            pw.temporal.interval(0, 0), # Exact match on window boundaries, don't wait for early/late
+            quality_meta_stream.window_start == anomaly_detection._pw_window_start, quality_meta_stream.window_end == anomaly_detection._pw_window_end,
+            how = pw.JoinMode.INNER
+        ).select(
+            *[pw.this[col] for col in quality_meta_stream.column_names()],
+            anomaly_assessment=pw.this._anomaly_metadata        )
+
+        return merged_stream
+
+    def _organize_output(self, meta_stream: pw.Table) -> pw.Table:
+        """
+        Auxiliary method to organize the output columns of the quality meta-stream.
+        :param meta_stream: the quality meta-stream to organize
+        :return: the final quality meta-stream
+        """
+        base_cols = list(meta_stream.column_names())
+
+        # remove window columns if the user requested hiding them
+        final_cols = [
+            c for c in base_cols
+            if not ((c == "window_start" and not self.show_window_start)
+                    or (c == "window_end" and not self.show_window_end))
+        ]
+
+        # ensure `window_start` and `window_end` appear first (in that order) if present
+        prefix = []
+        if "window_start" in final_cols:
+            prefix.append("window_start")
+        if "window_end" in final_cols:
+            prefix.append("window_end")
+
+        rest = [c for c in final_cols if c not in prefix]
+        final_cols = prefix + rest
+
+        # project the ordered columns and attach anomaly_assessment
+        final_stream = meta_stream.select(
+            *[pw.this[col] for col in final_cols],
+        )
+
+        return final_stream
 
     def _send_to_sinks_if_needed(
         self, quality_meta_stream: pw.Table, violations: pw.Table | None, alerts: pw.Table | None
@@ -317,12 +401,16 @@ class Task:
             data = self._validate_schema_if_needed(data)
             deflected_data = self._deflect_violations_if_needed(data)
             data = self._keep_compliant_data_if_needed(data)
-            quality_meta_stream = self._window_measure_and_assess(data)
-            alerts = self._raise_alerts_if_needed(quality_meta_stream)
+            windowed_stream = self._window(data)
+            anomaly_detection = self._attach_detector_if_needed(windowed_stream)
+            quality_meta_stream = self._measure_and_asses(windowed_stream)
+            anomaly_alerts = self._raise_alerts_if_needed(quality_meta_stream)
             quality_meta_stream = self._remove_error_messages_if_needed(quality_meta_stream)
+            quality_meta_stream = self._merge_streams(quality_meta_stream, anomaly_detection)
+            quality_meta_stream = self._organize_output(quality_meta_stream)
 
             self._send_to_sinks_if_needed(
-                quality_meta_stream=quality_meta_stream, violations=deflected_data, alerts=alerts
+                quality_meta_stream=quality_meta_stream, violations=deflected_data, alerts=anomaly_alerts
             )
 
             return quality_meta_stream
