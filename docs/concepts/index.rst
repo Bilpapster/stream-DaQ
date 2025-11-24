@@ -184,5 +184,7 @@ Ready to dive deeper? Start with :doc:`data-quality` to understand why streaming
    real-time-monitoring
    multi-source-tasks
    compact-vs-native-data
+   anomaly-detection
+   schema-validation
 
 |made_with_love|
