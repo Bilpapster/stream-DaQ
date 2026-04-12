@@ -20,7 +20,7 @@ NEW_VERSION=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml
 echo "📝 New version: $NEW_VERSION"
 
 # Commit and tag
-git add .
+git add pyproject.toml
 git commit -m "Bump version to $NEW_VERSION"
 git tag "v$NEW_VERSION"
 
