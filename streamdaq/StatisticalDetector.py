@@ -5,8 +5,8 @@ from typing import Tuple, List, Union, Callable, Any
 import numpy as np
 import pathway as pw
 from streamdaq.DaQMeasures import DaQMeasures
-from streamdaq.anomaly_detectors.AnomalyDetector import AnomalyDetector
-from streamdaq.anomaly_detectors.Severity import Severity
+from streamdaq.AnomalyDetector import AnomalyDetector
+from streamdaq.Severity import Severity
 
 class StatisticalDetector(AnomalyDetector):
     """

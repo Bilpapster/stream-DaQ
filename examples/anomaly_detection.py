@@ -4,7 +4,7 @@ import random
 import time
 import pathway as pw
 from streamdaq import StreamDaQ, DaQMeasures as dqm, Windows, DaQMeasures
-from streamdaq.anomaly_detectors.StatisticalDetector import StatisticalDetector
+from streamdaq.StatisticalDetector import StatisticalDetector
 
 
 def write_to_jsonlines(data: pw.internals.Table) -> None:

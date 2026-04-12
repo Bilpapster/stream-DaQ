@@ -6,7 +6,7 @@ import pathway as pw
 from pathway.internals import ReducerExpression
 from pathway.stdlib.temporal import Window
 
-from streamdaq.anomaly_detectors.AnomalyDetector import AnomalyDetector
+from streamdaq.AnomalyDetector import AnomalyDetector
 from streamdaq.artificial_stream_generators import generate_artificial_random_viewership_data_stream as artificial
 from streamdaq.utils import create_comparison_function, extract_violation_count
 from streamdaq.SchemaValidator import SchemaValidator

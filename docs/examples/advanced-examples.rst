@@ -578,7 +578,7 @@ Stream DaQ provides sophisticated anomaly detection capabilities through its int
     import time
     import pathway as pw
     from streamdaq import StreamDaQ, DaQMeasures as dqm, Windows
-    from streamdaq.anomaly_detectors.StatisticalDetector import StatisticalDetector
+    from streamdaq.StatisticalDetector import StatisticalDetector
 
     class InputSchema(pw.Schema):
         """Schema for industrial sensor data streams."""
