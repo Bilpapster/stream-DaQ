@@ -1,3 +1,46 @@
+> [!CAUTION]
+> **There is a new data quality sheriff in town, [`streamdaq` V2](https://github.com/Datalab-Csd-Auth/streamdaq)! 🛡️🦆
+> Stream DaQ V1 (this repo) says goodbye 👋!**
+>
+> *What happened?*
+> 
+> We are archiving Stream DaQ V1 (this repository) in favor of `streamdaq` V2, a newer and feature-richer version of the project.
+> While the current repository will be archived, `streamdaq` V2 remains **completely open source** and **actively maintained** 👉 https://github.com/Datalab-Csd-Auth/streamdaq.
+> 
+> 
+> *Why?*
+>
+> Stream DaQ started as a small-scale PhD project powered by [a few Datalab-ists](https://github.com/Datalab-Csd-Auth/streamdaq):
+> [Giorgos](https://linkedin.com/in/gatmatz),
+> [Apostolos](https://linkedin.com/in/apostolosgiannoulidis),
+> [Thodoris](https://linkedin.com/in/theodoros-toliopoulos-59334914a),
+> and [Prof. Gounaris](https://linkedin.com/in/anastasios-gounaris).
+> However, the trust and support we received from all of you, the Stream DaQ community,
+> exceeded all expectations. Truly, thank you ❤️!
+> <p align="center"><img width="400" alt="stream duck star gazers chart" src="https://github.com/user-attachments/assets/440bf6c5-7af8-4762-aee4-69b11a5c263d" /></p>
+>
+> **Success and scale bring broader responsibility.** After thoughtful consideration, and in light of the latest
+> Agentic AI advancements, we decided to re-engineer a new, AI-native version of the project. This new version builds
+> on top of the feedback and learnings we got from developing Stream DaQ V1, adding significant new capabilities, such as
+> an API interface, agentic-ready quality meta-streams, and easier customization in just a few lines of Python code.
+> To support this new era of the project, we are shifting from an individual-based repository to an organization-based
+> one. This is to ensure that `streamdaq` remains a useful, extensible tool for the community, regardless of the individuals that
+> are on the front line of its development at any given point in time.
+>
+> *Where to go next?*
+> 
+> **If you are new to the project**, please start using directly [`streamdaq` V2](https://github.com/Datalab-Csd-Auth/streamdaq),
+> since it offers a superset of capabilities (i.e., all Stream DaQ V1 + more).
+> 
+> **If you are already using Stream DaQ V1**, we suggest that you migrate to `streamdaq` V2](https://github.com/Datalab-Csd-Auth/streamdaq)
+> to enjoy all the latest features (`pip install --upgrade streamdaq>=2.0.0`).
+> That said, all existing releases of `streamdaq<=2.0.0` will stay forever on PyPi,
+> so feel free to continue using them if they serve your use case. Please note that we do not have the capacity to
+> support further V1 releases or support. Thank you for your understanding.
+
+---
+
+
 <p align="center">
   <img height="400px" src="https://github.com/user-attachments/assets/a42a440d-d61c-4cf8-aff0-092209aea052" alt="Stream DaQ logo">
 </p>
